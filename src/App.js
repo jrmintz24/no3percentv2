@@ -1,24 +1,145 @@
-import logo from './logo.svg';
-import './App.css';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
+import Header from './components/layout/Header';
+import HomePage from './pages/HomePage';
+import SignInPage from './pages/SignInPage';
+import SignUpPage from './pages/SignUpPage';
+import AgentLandingPage from './pages/AgentLandingPage'; // New import
+
+// Agent Pages
+import AgentDashboardPage from './pages/AgentPages/AgentDashboardPage';
+import TokenPurchasePage from './pages/AgentPages/TokenPurchasePage';
+import ListingBrowser from './components/agents/ListingBrowser';
+import AgentBuyerListingDetail from './components/agents/AgentBuyerListingDetail';
+import AgentSellerListingDetail from './components/agents/AgentSellerListingDetail';
+import AgentProposals from './components/agents/AgentProposals';
+import ProposalDetail from './components/agents/ProposalDetail';
+import ListingSearch from './components/agents/ListingSearch';
+import AgentClientsPage from './components/agents/AgentClientsPage';
+
+// Buyer Pages
+import BuyerDashboardPage from './pages/BuyerPages/BuyerDashboardPage';
+import BuyerListingForm from './components/buyer/BuyerListingForm';
+import BuyerListingDetail from './components/buyer/BuyerListingDetail';
+import BuyerListings from './components/buyer/BuyerListings';
+import BuyerProposals from './components/buyer/BuyerProposals';
+
+// Seller Pages
+import SellerDashboardPage from './pages/SellerPages/SellerDashboardPage';
+import SellerListingForm from './components/seller/SellerListingForm';
+import SellerListingDetail from './components/seller/SellerListingDetail';
+import SellerListings from './components/seller/SellerListings';
+
+// Scheduling Components
+import AgentAvailabilityCalendar from './components/scheduling/AgentAvailabilityCalendar';
+import AppointmentsDashboard from './components/scheduling/AppointmentsDashboard';
+
+// Shared Components
+import ProtectedRoute from './routes/ProtectedRoute';
+import UserProfile from './components/user/UserProfile';
+import ProposalResponse from './components/shared/ProposalResponse';
+import MessagesList from './components/shared/MessagesList';
+import MessageChannel from './components/shared/MessageChannel';
+
+// Admin Pages
+import VerificationRequests from './pages/AdminPages/VerificationRequests';
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <AuthProvider>
+        <div className="App">
+          <Header />
+          <main>
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/signin" element={<SignInPage />} />
+              <Route path="/signup" element={<SignUpPage />} />
+              <Route path="/agents" element={<AgentLandingPage />} /> {/* New route */}
+              
+              {/* Agent Routes */}
+              <Route 
+                path="/agent/*" 
+                element={
+                  <ProtectedRoute requiredRole="agent">
+                    <Routes>
+                      <Route path="/" element={<AgentDashboardPage />} />
+                      <Route path="buy-tokens" element={<TokenPurchasePage />} />
+                      <Route path="listings" element={<ListingBrowser />} />
+                      <Route path="buyer-listing/:listingId" element={<AgentBuyerListingDetail />} />
+                      <Route path="seller-listing/:listingId" element={<AgentSellerListingDetail />} />
+                      <Route path="proposals" element={<AgentProposals />} />
+                      <Route path="proposals/:proposalId" element={<ProposalDetail />} />
+                      <Route path="clients" element={<AgentClientsPage />} />
+                      <Route path="search" element={<ListingSearch />} />
+                      <Route path="profile" element={<UserProfile />} />
+                      <Route path="messages" element={<MessagesList />} />
+                      <Route path="messages/:channelId" element={<MessageChannel />} />
+                      <Route path="availability" element={<AgentAvailabilityCalendar />} />
+                      <Route path="appointments" element={<AppointmentsDashboard />} />
+                    </Routes>
+                  </ProtectedRoute>
+                } 
+              />
+              
+              {/* Buyer Routes */}
+              <Route 
+                path="/buyer/*" 
+                element={
+                  <ProtectedRoute requiredRole="buyer">
+                    <Routes>
+                      <Route path="/" element={<BuyerDashboardPage />} />
+                      <Route path="create-listing" element={<BuyerListingForm />} />
+                      <Route path="listing/:listingId" element={<BuyerListingDetail />} />
+                      <Route path="my-listings" element={<BuyerListings />} />
+                      <Route path="proposals" element={<BuyerProposals />} />
+                      <Route path="proposals/:proposalId" element={<ProposalResponse />} />
+                      <Route path="profile" element={<UserProfile />} />
+                      <Route path="messages" element={<MessagesList />} />
+                      <Route path="messages/:channelId" element={<MessageChannel />} />
+                      <Route path="appointments" element={<AppointmentsDashboard />} />
+                    </Routes>
+                  </ProtectedRoute>
+                } 
+              />
+              
+              {/* Seller Routes */}
+              <Route 
+                path="/seller/*" 
+                element={
+                  <ProtectedRoute requiredRole="seller">
+                    <Routes>
+                      <Route path="/" element={<SellerDashboardPage />} />
+                      <Route path="create-listing" element={<SellerListingForm />} />
+                      <Route path="listing/:listingId" element={<SellerListingDetail />} />
+                      <Route path="my-listings" element={<SellerListings />} />
+                      <Route path="proposals/:proposalId" element={<ProposalResponse />} />
+                      <Route path="profile" element={<UserProfile />} />
+                      <Route path="messages" element={<MessagesList />} />
+                      <Route path="messages/:channelId" element={<MessageChannel />} />
+                      <Route path="appointments" element={<AppointmentsDashboard />} />
+                    </Routes>
+                  </ProtectedRoute>
+                } 
+              />
+              
+              {/* Admin Routes */}
+              <Route 
+                path="/admin/*" 
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <Routes>
+                      <Route path="verification-requests" element={<VerificationRequests />} />
+                    </Routes>
+                  </ProtectedRoute>
+                } 
+              />
+            </Routes>
+          </main>
+        </div>
+      </AuthProvider>
+    </Router>
   );
 }
 
