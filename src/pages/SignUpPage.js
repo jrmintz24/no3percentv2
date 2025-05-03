@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Card, CardHeader, CardBody, CardFooter } from '../components/common/Card';
 import { Button } from '../components/common/Button';
 
 // Helper function to parse query parameters
@@ -61,212 +60,466 @@ const SignUpPage = () => {
       setLoading(false);
     }
   };
+
+  const userTypeOptions = [
+    {
+      value: 'buyer',
+      label: 'Home Buyer',
+      icon: '🏠',
+      description: 'Find your dream home with expert agents',
+      benefits: ['Get rebates', 'Compare agents', 'Save money']
+    },
+    {
+      value: 'seller',
+      label: 'Home Seller',
+      icon: '💰',
+      description: 'Sell your property for more, pay less',
+      benefits: ['Save on commission', 'Choose services', 'Control the process']
+    },
+    {
+      value: 'agent',
+      label: 'Real Estate Agent',
+      icon: '🏆',
+      description: 'Connect with motivated clients',
+      benefits: ['Quality leads', 'Grow your business', 'Set your rates']
+    }
+  ];
   
   return (
-    <div style={{ maxWidth: '500px', margin: '0 auto', padding: '2rem 1rem' }}>
-      <Card>
-        <CardHeader>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>
-            Create Your Account
-          </h1>
-        </CardHeader>
-        
-        <form onSubmit={handleSubmit}>
-          <CardBody>
+    <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb' }}>
+      <div style={{ 
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        minHeight: '100vh'
+      }}>
+        {/* Left side - Form */}
+        <div style={{ 
+          padding: '2rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: 'white'
+        }}>
+          <div style={{ width: '100%', maxWidth: '480px' }}>
+            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+              <Link 
+                to="/"
+                style={{ 
+                  fontSize: '1.75rem', 
+                  fontWeight: 'bold', 
+                  color: '#2563eb',
+                  textDecoration: 'none',
+                  display: 'inline-block',
+                  marginBottom: '1rem'
+                }}
+              >
+                RealEstateMatch
+              </Link>
+              <h1 style={{ 
+                fontSize: '2rem', 
+                fontWeight: '800', 
+                marginBottom: '0.5rem',
+                color: '#0f172a'
+              }}>
+                Create Your Account
+              </h1>
+              <p style={{ 
+                color: '#64748b', 
+                fontSize: '1.125rem',
+                marginBottom: '2rem'
+              }}>
+                Join thousands saving money on real estate
+              </p>
+            </div>
+            
             {error && (
               <div style={{ 
                 backgroundColor: '#fee2e2', 
                 color: '#b91c1c', 
                 padding: '1rem', 
-                borderRadius: '0.375rem', 
-                marginBottom: '1rem' 
+                borderRadius: '0.5rem', 
+                marginBottom: '1.5rem',
+                fontSize: '0.875rem',
+                textAlign: 'center'
               }}>
                 {error}
               </div>
             )}
             
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label 
-                htmlFor="displayName" 
-                style={{ 
-                  display: 'block', 
-                  marginBottom: '0.5rem', 
-                  fontWeight: '500' 
-                }}
-              >
-                Full Name
-              </label>
-              <input
-                id="displayName"
-                type="text"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                required
-                style={{ 
-                  width: '100%',
-                  padding: '0.75rem',
-                  borderRadius: '0.375rem',
-                  border: '1px solid #d1d5db'
-                }}
-              />
-            </div>
-            
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label 
-                htmlFor="email" 
-                style={{ 
-                  display: 'block', 
-                  marginBottom: '0.5rem', 
-                  fontWeight: '500' 
-                }}
-              >
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                style={{ 
-                  width: '100%',
-                  padding: '0.75rem',
-                  borderRadius: '0.375rem',
-                  border: '1px solid #d1d5db'
-                }}
-              />
-            </div>
-            
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label 
-                htmlFor="password" 
-                style={{ 
-                  display: 'block', 
-                  marginBottom: '0.5rem', 
-                  fontWeight: '500' 
-                }}
-              >
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                style={{ 
-                  width: '100%',
-                  padding: '0.75rem',
-                  borderRadius: '0.375rem',
-                  border: '1px solid #d1d5db'
-                }}
-              />
-            </div>
-            
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label 
-                htmlFor="confirmPassword" 
-                style={{ 
-                  display: 'block', 
-                  marginBottom: '0.5rem', 
-                  fontWeight: '500' 
-                }}
-              >
-                Confirm Password
-              </label>
-              <input
-                id="confirmPassword"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                style={{ 
-                  width: '100%',
-                  padding: '0.75rem',
-                  borderRadius: '0.375rem',
-                  border: '1px solid #d1d5db'
-                }}
-              />
-            </div>
-            
-            <div>
-              <label style={{ 
-                display: 'block', 
-                marginBottom: '0.5rem', 
-                fontWeight: '500' 
-              }}>
-                I am a:
-              </label>
-              
-              <div style={{ display: 'flex', gap: '1rem' }}>
+            <form onSubmit={handleSubmit}>
+              {/* User Type Selection */}
+              <div style={{ marginBottom: '2rem' }}>
                 <label style={{ 
-                  display: 'flex',
-                  alignItems: 'center',
-                  cursor: 'pointer'
+                  display: 'block', 
+                  marginBottom: '0.75rem', 
+                  fontWeight: '600',
+                  color: '#374151'
                 }}>
-                  <input
-                    type="radio"
-                    name="userType"
-                    value="buyer"
-                    checked={userType === 'buyer'}
-                    onChange={() => setUserType('buyer')}
-                    style={{ marginRight: '0.5rem' }}
-                  />
-                  Buyer
+                  I want to:
                 </label>
                 
-                <label style={{ 
-                  display: 'flex',
-                  alignItems: 'center',
-                  cursor: 'pointer'
+                <div style={{ 
+                  display: 'grid',
+                  gap: '1rem'
                 }}>
-                  <input
-                    type="radio"
-                    name="userType"
-                    value="seller"
-                    checked={userType === 'seller'}
-                    onChange={() => setUserType('seller')}
-                    style={{ marginRight: '0.5rem' }}
-                  />
-                  Seller
-                </label>
-                
-                <label style={{ 
-                  display: 'flex',
-                  alignItems: 'center',
-                  cursor: 'pointer'
-                }}>
-                  <input
-                    type="radio"
-                    name="userType"
-                    value="agent"
-                    checked={userType === 'agent'}
-                    onChange={() => setUserType('agent')}
-                    style={{ marginRight: '0.5rem' }}
-                  />
-                  Agent
-                </label>
+                  {userTypeOptions.map((option) => (
+                    <label 
+                      key={option.value}
+                      style={{ 
+                        display: 'flex',
+                        alignItems: 'center',
+                        padding: '1rem',
+                        border: `2px solid ${userType === option.value ? '#3b82f6' : '#e5e7eb'}`,
+                        borderRadius: '0.75rem',
+                        cursor: 'pointer',
+                        backgroundColor: userType === option.value ? '#eff6ff' : 'white',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      <input
+                        type="radio"
+                        name="userType"
+                        value={option.value}
+                        checked={userType === option.value}
+                        onChange={() => setUserType(option.value)}
+                        style={{ display: 'none' }}
+                      />
+                      <div style={{ 
+                        width: '2.5rem',
+                        height: '2.5rem',
+                        borderRadius: '0.5rem',
+                        backgroundColor: userType === option.value ? '#dbeafe' : '#f3f4f6',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginRight: '1rem',
+                        fontSize: '1.5rem'
+                      }}>
+                        {option.icon}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ 
+                          fontWeight: '600',
+                          color: '#111827',
+                          marginBottom: '0.25rem'
+                        }}>
+                          {option.label}
+                        </div>
+                        <div style={{ 
+                          fontSize: '0.875rem',
+                          color: '#6b7280'
+                        }}>
+                          {option.description}
+                        </div>
+                      </div>
+                      <div style={{ 
+                        width: '1.5rem',
+                        height: '1.5rem',
+                        borderRadius: '50%',
+                        border: `2px solid ${userType === option.value ? '#3b82f6' : '#d1d5db'}`,
+                        backgroundColor: userType === option.value ? '#3b82f6' : 'white',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        {userType === option.value && (
+                          <div style={{ 
+                            width: '0.5rem',
+                            height: '0.5rem',
+                            borderRadius: '50%',
+                            backgroundColor: 'white'
+                          }} />
+                        )}
+                      </div>
+                    </label>
+                  ))}
+                </div>
               </div>
-            </div>
-          </CardBody>
-          
-          <CardFooter>
-            <div style={{ marginBottom: '1rem' }}>
+              
+              {/* Name Input */}
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label 
+                  htmlFor="displayName" 
+                  style={{ 
+                    display: 'block', 
+                    marginBottom: '0.5rem', 
+                    fontWeight: '500',
+                    color: '#374151'
+                  }}
+                >
+                  Full Name
+                </label>
+                <input
+                  id="displayName"
+                  type="text"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  required
+                  placeholder="Enter your full name"
+                  style={{ 
+                    width: '100%',
+                    padding: '0.875rem',
+                    borderRadius: '0.5rem',
+                    border: '1px solid #d1d5db',
+                    fontSize: '1rem',
+                    outline: 'none',
+                    transition: 'border-color 0.15s ease',
+                    ':focus': {
+                      borderColor: '#3b82f6',
+                      boxShadow: '0 0 0 3px rgba(59, 130, 246, 0.1)'
+                    }
+                  }}
+                />
+              </div>
+              
+              {/* Email Input */}
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label 
+                  htmlFor="email" 
+                  style={{ 
+                    display: 'block', 
+                    marginBottom: '0.5rem', 
+                    fontWeight: '500',
+                    color: '#374151'
+                  }}
+                >
+                  Email Address
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  placeholder="you@example.com"
+                  style={{ 
+                    width: '100%',
+                    padding: '0.875rem',
+                    borderRadius: '0.5rem',
+                    border: '1px solid #d1d5db',
+                    fontSize: '1rem'
+                  }}
+                />
+              </div>
+              
+              {/* Password Input */}
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label 
+                  htmlFor="password" 
+                  style={{ 
+                    display: 'block', 
+                    marginBottom: '0.5rem', 
+                    fontWeight: '500',
+                    color: '#374151'
+                  }}
+                >
+                  Password
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  placeholder="Create a password"
+                  style={{ 
+                    width: '100%',
+                    padding: '0.875rem',
+                    borderRadius: '0.5rem',
+                    border: '1px solid #d1d5db',
+                    fontSize: '1rem'
+                  }}
+                />
+              </div>
+              
+              {/* Confirm Password Input */}
+              <div style={{ marginBottom: '2rem' }}>
+                <label 
+                  htmlFor="confirmPassword" 
+                  style={{ 
+                    display: 'block', 
+                    marginBottom: '0.5rem', 
+                    fontWeight: '500',
+                    color: '#374151'
+                  }}
+                >
+                  Confirm Password
+                </label>
+                <input
+                  id="confirmPassword"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  placeholder="Confirm your password"
+                  style={{ 
+                    width: '100%',
+                    padding: '0.875rem',
+                    borderRadius: '0.5rem',
+                    border: '1px solid #d1d5db',
+                    fontSize: '1rem'
+                  }}
+                />
+              </div>
+              
+              {/* Submit Button */}
               <Button 
                 type="submit" 
                 fullWidth
                 disabled={loading}
+                style={{
+                  padding: '1rem',
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  marginBottom: '1.5rem'
+                }}
               >
-                {loading ? 'Creating Account...' : 'Sign Up'}
+                {loading ? 'Creating Account...' : 'Create My Account'}
               </Button>
+              
+              {/* Sign In Link */}
+              <div style={{ textAlign: 'center', color: '#6b7280' }}>
+                Already have an account?{' '}
+                <Link 
+                  to="/signin" 
+                  style={{ 
+                    color: '#3b82f6', 
+                    textDecoration: 'none',
+                    fontWeight: '600'
+                  }}
+                >
+                  Sign In
+                </Link>
+              </div>
+            </form>
+          </div>
+        </div>
+        
+        {/* Right side - Benefits */}
+        <div style={{ 
+          background: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
+          padding: '2rem',
+          color: 'white',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          position: 'relative',
+          overflow: 'hidden'
+        }}>
+          <div style={{
+            position: 'absolute',
+            top: '0',
+            left: '0',
+            right: '0',
+            bottom: '0',
+            background: 'radial-gradient(circle at 30% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%)',
+            pointerEvents: 'none'
+          }} />
+          
+          <div style={{ position: 'relative', zIndex: 1, maxWidth: '500px' }}>
+            <h2 style={{ 
+              fontSize: '2.5rem', 
+              fontWeight: '800', 
+              marginBottom: '1.5rem',
+              lineHeight: '1.2'
+            }}>
+              Join the Future of Real Estate
+            </h2>
+            
+            <p style={{ 
+              fontSize: '1.25rem', 
+              marginBottom: '3rem',
+              opacity: '0.9',
+              lineHeight: '1.6'
+            }}>
+              Experience a transparent, competitive marketplace where you control every aspect of your real estate journey.
+            </p>
+            
+            <div style={{ marginBottom: '3rem' }}>
+              {userTypeOptions.map((option) => (
+                <div 
+                  key={option.value}
+                  style={{ 
+                    marginBottom: '2rem',
+                    opacity: userType === option.value ? '1' : '0.6',
+                    transition: 'opacity 0.3s ease'
+                  }}
+                >
+                  <h3 style={{ 
+                    fontSize: '1.25rem', 
+                    fontWeight: '700', 
+                    marginBottom: '0.75rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}>
+                    <span style={{ fontSize: '1.5rem' }}>{option.icon}</span>
+                    {option.label} Benefits
+                  </h3>
+                  <ul style={{ 
+                    listStyle: 'none', 
+                    padding: 0,
+                    margin: 0 
+                  }}>
+                    {option.benefits.map((benefit, index) => (
+                      <li 
+                        key={index}
+                        style={{ 
+                          marginBottom: '0.5rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          fontSize: '1rem'
+                        }}
+                      >
+                        <span style={{ color: '#93c5fd' }}>✓</span>
+                        {benefit}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
             </div>
             
-            <div style={{ textAlign: 'center' }}>
-              Already have an account? <Link to="/signin" style={{ color: '#2563eb', textDecoration: 'none' }}>Sign In</Link>
+            <div style={{ 
+              borderTop: '1px solid rgba(255, 255, 255, 0.2)',
+              paddingTop: '2rem'
+            }}>
+              <div style={{ 
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3, 1fr)',
+                gap: '1rem',
+                textAlign: 'center'
+              }}>
+                <div>
+                  <div style={{ fontSize: '1.75rem', fontWeight: '700', marginBottom: '0.25rem' }}>
+                    10,000+
+                  </div>
+                  <div style={{ fontSize: '0.875rem', opacity: '0.8' }}>
+                    Happy Users
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '1.75rem', fontWeight: '700', marginBottom: '0.25rem' }}>
+                    $2.5M+
+                  </div>
+                  <div style={{ fontSize: '0.875rem', opacity: '0.8' }}>
+                    Saved
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '1.75rem', fontWeight: '700', marginBottom: '0.25rem' }}>
+                    4.9/5
+                  </div>
+                  <div style={{ fontSize: '0.875rem', opacity: '0.8' }}>
+                    Rating
+                  </div>
+                </div>
+              </div>
             </div>
-          </CardFooter>
-        </form>
-      </Card>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

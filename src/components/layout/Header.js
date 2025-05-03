@@ -49,16 +49,78 @@ const Header = () => {
         <div className="hidden md:block">
           <nav style={{ 
             display: 'flex', 
-            gap: '2rem'
+            gap: '2rem',
+            alignItems: 'center'
           }}>
             {!currentUser ? (
               <>
+                <Link 
+                  to="/buyers" 
+                  style={{ 
+                    color: '#4b5563',
+                    textDecoration: 'none',
+                    fontWeight: '500',
+                    transition: 'color 0.2s ease',
+                    ':hover': {
+                      color: '#2563eb'
+                    }
+                  }}
+                >
+                  For Buyers
+                </Link>
+                <Link 
+                  to="/sellers" 
+                  style={{ 
+                    color: '#4b5563',
+                    textDecoration: 'none',
+                    fontWeight: '500',
+                    transition: 'color 0.2s ease',
+                    ':hover': {
+                      color: '#2563eb'
+                    }
+                  }}
+                >
+                  For Sellers
+                </Link>
+                <Link 
+                  to="/agents" 
+                  style={{ 
+                    color: '#4b5563',
+                    textDecoration: 'none',
+                    fontWeight: '500',
+                    transition: 'color 0.2s ease',
+                    ':hover': {
+                      color: '#2563eb'
+                    }
+                  }}
+                >
+                  For Agents
+                </Link>
+                <Link 
+                  to="/faq" 
+                  style={{ 
+                    color: '#4b5563',
+                    textDecoration: 'none',
+                    fontWeight: '500',
+                    transition: 'color 0.2s ease',
+                    ':hover': {
+                      color: '#2563eb'
+                    }
+                  }}
+                >
+                  FAQ
+                </Link>
+                <div style={{ height: '20px', width: '1px', backgroundColor: '#e5e7eb', margin: '0 0.5rem' }} />
                 <Link 
                   to="/signin" 
                   style={{ 
                     color: '#4b5563',
                     textDecoration: 'none',
-                    fontWeight: '500'
+                    fontWeight: '500',
+                    transition: 'color 0.2s ease',
+                    ':hover': {
+                      color: '#2563eb'
+                    }
                   }}
                 >
                   Sign In
@@ -66,12 +128,19 @@ const Header = () => {
                 <Link 
                   to="/signup" 
                   style={{ 
-                    color: '#4b5563',
+                    backgroundColor: '#2563eb',
+                    color: 'white',
+                    padding: '0.5rem 1.25rem',
+                    borderRadius: '0.5rem',
                     textDecoration: 'none',
-                    fontWeight: '500'
+                    fontWeight: '600',
+                    transition: 'background-color 0.2s ease',
+                    ':hover': {
+                      backgroundColor: '#1d4ed8'
+                    }
                   }}
                 >
-                  Sign Up
+                  Get Started
                 </Link>
               </>
             ) : (
@@ -271,11 +340,61 @@ const Header = () => {
             {!currentUser ? (
               <>
                 <Link 
+                  to="/buyers" 
+                  style={{ 
+                    color: '#4b5563',
+                    textDecoration: 'none',
+                    fontWeight: '500',
+                    padding: '0.5rem 0',
+                  }}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  For Buyers
+                </Link>
+                <Link 
+                  to="/sellers" 
+                  style={{ 
+                    color: '#4b5563',
+                    textDecoration: 'none',
+                    fontWeight: '500',
+                    padding: '0.5rem 0',
+                  }}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  For Sellers
+                </Link>
+                <Link 
+                  to="/agents" 
+                  style={{ 
+                    color: '#4b5563',
+                    textDecoration: 'none',
+                    fontWeight: '500',
+                    padding: '0.5rem 0',
+                  }}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  For Agents
+                </Link>
+                <Link 
+                  to="/faq" 
+                  style={{ 
+                    color: '#4b5563',
+                    textDecoration: 'none',
+                    fontWeight: '500',
+                    padding: '0.5rem 0',
+                  }}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  FAQ
+                </Link>
+                <div style={{ height: '1px', backgroundColor: '#e5e7eb', margin: '0.5rem 0' }} />
+                <Link 
                   to="/signin" 
                   style={{ 
                     color: '#4b5563',
                     textDecoration: 'none',
-                    fontWeight: '500'
+                    fontWeight: '500',
+                    padding: '0.5rem 0',
                   }}
                   onClick={() => setIsMenuOpen(false)}
                 >
@@ -284,13 +403,18 @@ const Header = () => {
                 <Link 
                   to="/signup" 
                   style={{ 
-                    color: '#4b5563',
+                    backgroundColor: '#2563eb',
+                    color: 'white',
+                    padding: '0.75rem',
+                    borderRadius: '0.5rem',
                     textDecoration: 'none',
-                    fontWeight: '500'
+                    fontWeight: '600',
+                    textAlign: 'center',
+                    marginTop: '0.5rem'
                   }}
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  Sign Up
+                  Get Started
                 </Link>
               </>
             ) : (

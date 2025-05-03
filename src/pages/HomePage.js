@@ -256,7 +256,7 @@ const HomePage = () => {
         </div>
       </section>
       
-      {/* How It Works Section - Removed the agent CTA banner */}
+      {/* How It Works Section - Updated to link to landing pages */}
       <section style={{ padding: '6rem 1rem', backgroundColor: 'white' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
@@ -379,7 +379,7 @@ const HomePage = () => {
                 </div>
               ))}
               
-              <Link to="/signup?type=buyer">
+              <Link to="/buyers">
                 <Button style={{
                   backgroundColor: '#3b82f6',
                   color: 'white',
@@ -485,7 +485,7 @@ const HomePage = () => {
                 </div>
               ))}
               
-              <Link to="/signup?type=seller">
+              <Link to="/sellers">
                 <Button style={{
                   backgroundColor: '#10b981',
                   color: 'white',
@@ -665,7 +665,7 @@ const HomePage = () => {
         </div>
       </section>
       
-      {/* Footer */}
+      {/* Footer - Updated FAQ links */}
       <footer style={{ 
         padding: '4rem 1rem 2rem',
         backgroundColor: '#0f172a',
@@ -698,10 +698,12 @@ const HomePage = () => {
                 For Buyers
               </h4>
               <ul style={{ listStyle: 'none', padding: 0 }}>
-                {['Sign Up', 'How It Works', 'Success Stories', 'FAQ'].map((item) => (
+                {['Learn More', 'Sign Up', 'How It Works', 'FAQ'].map((item) => (
                   <li key={item} style={{ marginBottom: '0.75rem' }}>
                     <Link 
-                      to={item === 'Sign Up' ? '/signup?type=buyer' : '#'} 
+                      to={item === 'Learn More' ? '/buyers' : 
+                         item === 'Sign Up' ? '/signup?type=buyer' : 
+                         item === 'FAQ' ? '/faq' : '#'} 
                       style={{ 
                         color: '#94a3b8', 
                         textDecoration: 'none',
@@ -721,10 +723,12 @@ const HomePage = () => {
                 For Sellers
               </h4>
               <ul style={{ listStyle: 'none', padding: 0 }}>
-                {['Sign Up', 'How It Works', 'Pricing', 'FAQ'].map((item) => (
+                {['Learn More', 'Sign Up', 'How It Works', 'FAQ'].map((item) => (
                   <li key={item} style={{ marginBottom: '0.75rem' }}>
                     <Link 
-                      to={item === 'Sign Up' ? '/signup?type=seller' : '#'} 
+                      to={item === 'Learn More' ? '/sellers' : 
+                         item === 'Sign Up' ? '/signup?type=seller' : 
+                         item === 'FAQ' ? '/faq' : '#'} 
                       style={{ 
                         color: '#94a3b8', 
                         textDecoration: 'none',
@@ -744,10 +748,11 @@ const HomePage = () => {
                 For Agents
               </h4>
               <ul style={{ listStyle: 'none', padding: 0 }}>
-                {['Sign Up', 'Dashboard', 'Pricing', 'Resources'].map((item) => (
+                {['Learn More', 'Sign Up', 'Dashboard', 'Resources'].map((item) => (
                   <li key={item} style={{ marginBottom: '0.75rem' }}>
                     <Link 
-                      to={item === 'Sign Up' ? '/signup?type=agent' : '#'} 
+                      to={item === 'Learn More' ? '/agents' : 
+                         item === 'Sign Up' ? '/signup?type=agent' : '#'} 
                       style={{ 
                         color: '#94a3b8', 
                         textDecoration: 'none',
