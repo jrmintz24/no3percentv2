@@ -2,7 +2,6 @@
   "name": "no3percent-v2",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://jrmintz24.github.io/no3percentv2",
   "dependencies": {
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
@@ -21,8 +20,8 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d build"
+    "predeploy": "npm run build && echo '' > build/.nojekyll",
+    "deploy": "gh-pages -d build -t true"
   },
   "eslintConfig": {
     "extends": [
