@@ -4,7 +4,7 @@ import { doc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/fires
 import { db } from '../../services/firebase/config';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTokens } from '../../hooks/useTokens';
-import { spendTokenForBid } from '../../services/firebase/tokens';
+import { spendTokenForBid, addTokens } from '../../services/firebase/tokens';
 import { Card, CardHeader, CardBody } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 
@@ -27,6 +27,20 @@ const AgentBuyerListingDetail = () => {
   const [bidLoading, setBidLoading] = useState(false);
   const [bidError, setBidError] = useState('');
   const [alreadyBid, setAlreadyBid] = useState(false);
+  
+  // Token purchase states
+  const [showTokenPurchase, setShowTokenPurchase] = useState(false);
+  const [selectedPackage, setSelectedPackage] = useState(null);
+  const [purchaseLoading, setPurchaseLoading] = useState(false);
+  const [purchaseError, setPurchaseError] = useState('');
+  const [purchaseSuccess, setPurchaseSuccess] = useState('');
+  
+  // Token packages
+  const tokenPackages = [
+    { id: 'basic', name: 'Basic', tokens: 5, price: 25 },
+    { id: 'standard', name: 'Standard', tokens: 20, price: 80, popular: true },
+    { id: 'premium', name: 'Premium', tokens: 50, price: 150 }
+  ];
   
   // Available agent services for buyers
   const availableServices = [
@@ -89,6 +103,44 @@ const AgentBuyerListingDetail = () => {
         return [...prevSelected, serviceId];
       }
     });
+  };
+
+  const handleTokenPurchase = async () => {
+    if (!selectedPackage) {
+      setPurchaseError('Please select a token package');
+      return;
+    }
+    
+    try {
+      setPurchaseLoading(true);
+      setPurchaseError('');
+      
+      const selectedPkg = tokenPackages.find(pkg => pkg.id === selectedPackage);
+      
+      // In a real application, you would integrate with a payment gateway here
+      // For now, we'll just simulate a successful payment and add tokens
+      
+      // Simulate payment processing delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Add tokens to user account
+      await addTokens(currentUser.uid, selectedPkg.tokens);
+      
+      setPurchaseSuccess(`Successfully purchased ${selectedPkg.tokens} tokens!`);
+      setSelectedPackage(null);
+      
+      // Wait a moment for the tokens to update
+      setTimeout(() => {
+        setShowTokenPurchase(false);
+        setPurchaseSuccess('');
+      }, 2000);
+      
+    } catch (err) {
+      console.error('Error processing token purchase:', err);
+      setPurchaseError('Error processing your purchase: ' + err.message);
+    } finally {
+      setPurchaseLoading(false);
+    }
   };
   
   const handleSubmitBid = async (e) => {
@@ -229,12 +281,23 @@ const AgentBuyerListingDetail = () => {
         <Button to="/agent/listings" variant="secondary">Back to Listings</Button>
         
         {!bidOpen && !alreadyBid && (
-          <Button 
-            onClick={() => setBidOpen(true)}
-            disabled={tokens < 1}
-          >
-            {tokens < 1 ? 'Need More Tokens to Bid' : 'Submit Proposal (1 Token)'}
-          </Button>
+          tokens < 1 ? (
+            <Button 
+              onClick={() => setShowTokenPurchase(true)}
+              style={{
+                backgroundColor: '#f59e0b',
+                color: 'white',
+              }}
+            >
+              Need More Tokens to Bid
+            </Button>
+          ) : (
+            <Button 
+              onClick={() => setBidOpen(true)}
+            >
+              Submit Proposal (1 Token)
+            </Button>
+          )
         )}
         
         {alreadyBid && (
@@ -249,6 +312,168 @@ const AgentBuyerListingDetail = () => {
           </div>
         )}
       </div>
+
+      {/* Token Purchase Modal */}
+      {showTokenPurchase && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '0.5rem',
+            padding: '2rem',
+            maxWidth: '600px',
+            width: '90%',
+            maxHeight: '90vh',
+            overflow: 'auto'
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '1.5rem'
+            }}>
+              <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 'bold' }}>
+                Purchase Tokens
+              </h2>
+              <button
+                onClick={() => setShowTokenPurchase(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '1.5rem',
+                  cursor: 'pointer',
+                  color: '#6b7280'
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            {purchaseError && (
+              <div style={{ 
+                backgroundColor: '#fee2e2', 
+                color: '#b91c1c', 
+                padding: '1rem', 
+                borderRadius: '0.375rem', 
+                marginBottom: '1rem' 
+              }}>
+                {purchaseError}
+              </div>
+            )}
+            
+            {purchaseSuccess && (
+              <div style={{ 
+                backgroundColor: '#dcfce7', 
+                color: '#15803d', 
+                padding: '1rem', 
+                borderRadius: '0.375rem', 
+                marginBottom: '1rem' 
+              }}>
+                {purchaseSuccess}
+              </div>
+            )}
+
+            <div style={{ marginBottom: '1.5rem' }}>
+              <p style={{ marginBottom: '0.5rem' }}>
+                You currently have <strong>{tokens} token{tokens !== 1 ? 's' : ''}</strong>.
+              </p>
+              <p style={{ color: '#6b7280', margin: 0 }}>
+                Each token allows you to submit one proposal to a buyer or seller.
+              </p>
+            </div>
+
+            <div style={{ 
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '1rem',
+              marginBottom: '1.5rem'
+            }}>
+              {tokenPackages.map((pkg) => (
+                <div 
+                  key={pkg.id}
+                  style={{ 
+                    border: selectedPackage === pkg.id ? '2px solid #2563eb' : '1px solid #e5e7eb',
+                    borderRadius: '0.5rem',
+                    padding: '1rem',
+                    position: 'relative',
+                    backgroundColor: 'white',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onClick={() => setSelectedPackage(pkg.id)}
+                >
+                  {pkg.popular && (
+                    <div style={{ 
+                      position: 'absolute',
+                      top: '-12px',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      backgroundColor: '#2563eb',
+                      color: 'white',
+                      padding: '0.25rem 0.75rem',
+                      borderRadius: '9999px',
+                      fontSize: '0.75rem',
+                      fontWeight: '500'
+                    }}>
+                      Most Popular
+                    </div>
+                  )}
+                  
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '0.5rem', textAlign: 'center' }}>
+                    {pkg.name}
+                  </h3>
+                  
+                  <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#2563eb', textAlign: 'center', marginBottom: '0.5rem' }}>
+                    ${pkg.price}
+                  </div>
+                  
+                  <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
+                    <span style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{pkg.tokens}</span> Tokens
+                  </div>
+                  
+                  <div style={{ display: 'flex', justifyContent: 'center' }}>
+                    <input 
+                      type="radio" 
+                      id={`pkg-${pkg.id}`} 
+                      name="tokenPackage" 
+                      checked={selectedPackage === pkg.id}
+                      onChange={() => setSelectedPackage(pkg.id)}
+                      style={{ marginRight: '0.5rem' }}
+                    />
+                    <label htmlFor={`pkg-${pkg.id}`}>Select</label>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+              <Button 
+                onClick={handleTokenPurchase}
+                disabled={!selectedPackage || purchaseLoading}
+              >
+                {purchaseLoading ? 'Processing...' : 'Purchase Tokens'}
+              </Button>
+              <Button 
+                variant="secondary"
+                onClick={() => setShowTokenPurchase(false)}
+                disabled={purchaseLoading}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
       
       <Card>
         <CardHeader>
