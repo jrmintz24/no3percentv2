@@ -7,8 +7,11 @@ import SignInPage from './pages/SignInPage';
 import SignUpPage from './pages/SignUpPage';
 import AgentLandingPage from './pages/AgentLandingPage';
 import BuyerLandingPage from './pages/BuyerLandingPage';
-import SellerLandingPage from './pages/SellerLandingPage'; // New import
+import SellerLandingPage from './pages/SellerLandingPage';
 import FAQPage from './pages/FAQPage';
+import ServicesPage from './pages/ServicesPage';
+import BuyerServicesPage from './pages/BuyerServicesPage';
+import SellerServicesPage from './pages/SellerServicesPage';
 
 // Agent Pages
 import AgentDashboardPage from './pages/AgentPages/AgentDashboardPage';
@@ -61,8 +64,13 @@ function App() {
               <Route path="/signup" element={<SignUpPage />} />
               <Route path="/agents" element={<AgentLandingPage />} />
               <Route path="/buyers" element={<BuyerLandingPage />} />
-              <Route path="/sellers" element={<SellerLandingPage />} /> {/* New route */}
+              <Route path="/sellers" element={<SellerLandingPage />} />
               <Route path="/faq" element={<FAQPage />} />
+              
+              {/* Service Pages */}
+              <Route path="/services" element={<ServicesPage />} />
+              <Route path="/services/buyers" element={<BuyerServicesPage />} />
+              <Route path="/services/sellers" element={<SellerServicesPage />} />
               
               {/* Agent Routes */}
               <Route 

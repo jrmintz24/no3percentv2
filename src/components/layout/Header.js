@@ -36,13 +36,15 @@ const Header = () => {
           <Link 
             to="/" 
             style={{ 
-              fontSize: '1.5rem', 
-              fontWeight: 'bold', 
-              color: '#2563eb',
-              textDecoration: 'none'
+              display: 'flex',
+              alignItems: 'center',
+              textDecoration: 'none',
+              fontSize: '1.75rem',
+              fontWeight: 'bold'
             }}
           >
-            RealEstateMatch
+            <span style={{ color: '#000000' }}>no</span>
+            <span style={{ color: '#ef4444' }}>3%</span>
           </Link>
         </div>
         
@@ -95,6 +97,20 @@ const Header = () => {
                   }}
                 >
                   For Agents
+                </Link>
+                <Link 
+                  to="/services" 
+                  style={{ 
+                    color: '#4b5563',
+                    textDecoration: 'none',
+                    fontWeight: '500',
+                    transition: 'color 0.2s ease',
+                    ':hover': {
+                      color: '#2563eb'
+                    }
+                  }}
+                >
+                  Services
                 </Link>
                 <Link 
                   to="/faq" 
@@ -374,6 +390,18 @@ const Header = () => {
                   onClick={() => setIsMenuOpen(false)}
                 >
                   For Agents
+                </Link>
+                <Link 
+                  to="/services" 
+                  style={{ 
+                    color: '#4b5563',
+                    textDecoration: 'none',
+                    fontWeight: '500',
+                    padding: '0.5rem 0',
+                  }}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Services
                 </Link>
                 <Link 
                   to="/faq" 

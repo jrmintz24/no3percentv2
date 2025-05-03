@@ -26,19 +26,28 @@ const HomePage = () => {
         }}>
           <Link to="/agents">
             <Button style={{
-              backgroundColor: 'rgba(245, 158, 11, 0.1)',
-              color: '#f59e0b',
+              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              color: '#60a5fa',
               padding: '0.5rem 1rem',
               fontSize: '0.875rem',
               borderRadius: '0.5rem',
-              border: '1px solid rgba(245, 158, 11, 0.3)',
+              border: '1px solid rgba(59, 130, 246, 0.3)',
               backdropFilter: 'blur(10px)',
               transition: 'all 0.2s ease',
               ':hover': {
-                backgroundColor: 'rgba(245, 158, 11, 0.2)',
-                borderColor: 'rgba(245, 158, 11, 0.5)'
+                backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                borderColor: 'rgba(59, 130, 246, 0.5)'
               }
-            }}>
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.2)';
+              e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.5)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
+              e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+            }}
+            >
               Are you an agent?
             </Button>
           </Link>
@@ -685,7 +694,7 @@ const HomePage = () => {
                 marginBottom: '1.5rem',
                 color: 'white'
               }}>
-                RealEstateMatch
+                no3%
               </h3>
               <p style={{ color: '#94a3b8', lineHeight: '1.6', marginBottom: '1.5rem', fontSize: '0.9375rem' }}>
                 Putting you in control of your real estate journey. 
@@ -766,6 +775,31 @@ const HomePage = () => {
                 ))}
               </ul>
             </div>
+            
+            <div>
+              <h4 style={{ fontWeight: '600', marginBottom: '1.5rem', color: 'white', fontSize: '1rem' }}>
+                Services
+              </h4>
+              <ul style={{ listStyle: 'none', padding: 0 }}>
+                {['All Services', 'Buyer Services', 'Seller Services', 'Service Packages'].map((item) => (
+                  <li key={item} style={{ marginBottom: '0.75rem' }}>
+                    <Link 
+                      to={item === 'All Services' ? '/services' : 
+                         item === 'Buyer Services' ? '/services/buyers' : 
+                         item === 'Seller Services' ? '/services/sellers' : '#'} 
+                      style={{ 
+                        color: '#94a3b8', 
+                        textDecoration: 'none',
+                        transition: 'color 0.2s ease',
+                        fontSize: '0.9375rem'
+                      }}
+                    >
+                      {item}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
           
           <div style={{ 
@@ -778,7 +812,7 @@ const HomePage = () => {
             gap: '1.5rem'
           }}>
             <div style={{ color: '#64748b', fontSize: '0.875rem' }}>
-              © 2025 RealEstateMatch. All rights reserved.
+              © 2025 no3%. All rights reserved.
             </div>
             
             <div style={{ display: 'flex', gap: '2rem' }}>

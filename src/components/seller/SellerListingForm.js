@@ -1,548 +1,545 @@
-// src/components/seller/SellerListingForm.js
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../services/firebase/config';
 import { useAuth } from '../../contexts/AuthContext';
+import { Card, CardHeader, CardBody, CardFooter } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
+import ServiceSelector from '../services/ServiceSelector';
+import { sellerServices } from '../../config/services';
 
 const SellerListingForm = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, userProfile } = useAuth();
   const navigate = useNavigate();
   
-  // Form state
-  const [propertyName, setPropertyName] = useState('');
-  const [address, setAddress] = useState('');
-  const [price, setPrice] = useState('');
-  const [bedrooms, setBedrooms] = useState('');
-  const [bathrooms, setBathrooms] = useState('');
-  const [squareFootage, setSquareFootage] = useState('');
-  const [propertyType, setPropertyType] = useState('Single Family');
-  const [description, setDescription] = useState('');
-  const [additionalInfo, setAdditionalInfo] = useState('');
-  
-  // Services selection
-  const [selectedMustHaveServices, setSelectedMustHaveServices] = useState([]);
-  const [selectedNiceToHaveServices, setSelectedNiceToHaveServices] = useState([]);
-  const [selectedNotInterestedServices, setSelectedNotInterestedServices] = useState([]);
-  
-  // Available services
-  const availableServices = [
-    "Professional Photography",
-    "Virtual Tours",
-    "Open House Events",
-    "Home Staging",
-    "Marketing Campaign",
-    "Social Media Promotion",
-    "MLS Listing",
-    "Pricing Strategy",
-    "Negotiation Support",
-    "Contract Review",
-    "Property Valuation",
-    "Closing Coordination"
-  ];
-  
-  // Form submission state
-  const [submitting, setSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    title: '',
+    address: '',
+    price: '',
+    propertyType: '',
+    bedrooms: '',
+    bathrooms: '',
+    squareFootage: '',
+    yearBuilt: '',
+    description: '',
+    features: [],
+    services: [],
+    photos: [],
+    availableForShowing: true,
+    occupancyStatus: 'owner',
+    preferredClosingDate: '',
+    additionalNotes: ''
+  });
+
+  const [currentFeature, setCurrentFeature] = useState('');
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  
-  // Handle service selection
-  const toggleService = (service, category) => {
-    if (category === 'mustHave') {
-      if (selectedMustHaveServices.includes(service)) {
-        setSelectedMustHaveServices(selectedMustHaveServices.filter(s => s !== service));
-      } else {
-        setSelectedMustHaveServices([...selectedMustHaveServices, service]);
-        setSelectedNiceToHaveServices(selectedNiceToHaveServices.filter(s => s !== service));
-        setSelectedNotInterestedServices(selectedNotInterestedServices.filter(s => s !== service));
-      }
-    } else if (category === 'niceToHave') {
-      if (selectedNiceToHaveServices.includes(service)) {
-        setSelectedNiceToHaveServices(selectedNiceToHaveServices.filter(s => s !== service));
-      } else {
-        setSelectedNiceToHaveServices([...selectedNiceToHaveServices, service]);
-        setSelectedMustHaveServices(selectedMustHaveServices.filter(s => s !== service));
-        setSelectedNotInterestedServices(selectedNotInterestedServices.filter(s => s !== service));
-      }
-    } else if (category === 'notInterested') {
-      if (selectedNotInterestedServices.includes(service)) {
-        setSelectedNotInterestedServices(selectedNotInterestedServices.filter(s => s !== service));
-      } else {
-        setSelectedNotInterestedServices([...selectedNotInterestedServices, service]);
-        setSelectedMustHaveServices(selectedMustHaveServices.filter(s => s !== service));
-        setSelectedNiceToHaveServices(selectedNiceToHaveServices.filter(s => s !== service));
-      }
+
+  const propertyTypes = [
+    'Single Family Home',
+    'Townhouse',
+    'Condo',
+    'Multi-Family',
+    'Land',
+    'Other'
+  ];
+
+  const occupancyOptions = [
+    { value: 'owner', label: 'Owner Occupied' },
+    { value: 'tenant', label: 'Tenant Occupied' },
+    { value: 'vacant', label: 'Vacant' }
+  ];
+
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    
+    if (type === 'checkbox') {
+      setFormData(prev => ({
+        ...prev,
+        [name]: checked
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
     }
   };
-  
-  // Handle form submission
+
+  const handleAddFeature = () => {
+    if (currentFeature.trim()) {
+      setFormData(prev => ({
+        ...prev,
+        features: [...prev.features, currentFeature.trim()]
+      }));
+      setCurrentFeature('');
+    }
+  };
+
+  const handleRemoveFeature = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      features: prev.features.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleServiceSelection = (selectedServices) => {
+    setFormData(prev => ({
+      ...prev,
+      services: selectedServices
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Basic validation
-    if (!propertyName || !address || !price) {
-      setError('Please fill in all required fields');
-      return;
-    }
-    
+    setLoading(true);
+    setError('');
+
     try {
-      setSubmitting(true);
-      setError('');
-      
-      // Format the price correctly - remove commas and convert to number
-      const parsedPrice = parseFloat(price.replace(/,/g, ''));
-      
-      // Create a new listing document
-      const newListing = {
-        propertyName,
-        address,
-        price: parsedPrice,
-        bedrooms: bedrooms ? parseInt(bedrooms) : null,
-        bathrooms: bathrooms ? parseInt(bathrooms) : null,
-        squareFootage: squareFootage ? parseInt(squareFootage.replace(/,/g, '')) : null,
-        propertyType,
-        description,
-        additionalInfo,
-        services: {
-          mustHave: selectedMustHaveServices,
-          niceToHave: selectedNiceToHaveServices,
-          notInterested: selectedNotInterestedServices
-        },
-        userId: currentUser.uid, // Crucial - sets the current user as the owner
-        status: 'Active',
-        createdAt: serverTimestamp()
+      // Create the listing
+      const listingData = {
+        ...formData,
+        userId: currentUser.uid,
+        userEmail: currentUser.email,
+        userName: userProfile?.displayName || 'Anonymous',
+        status: 'active',
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
       };
+
+      const docRef = await addDoc(collection(db, 'sellerListings'), listingData);
       
-      console.log('Creating listing with data:', newListing); // Debugging log
-      
-      // Add the new listing to Firestore
-      const docRef = await addDoc(collection(db, 'sellerListings'), newListing);
-      
-      console.log('Listing created with ID:', docRef.id); // Debugging log
-      
-      // Navigate to the listing detail page
       navigate(`/seller/listing/${docRef.id}`);
-      
     } catch (err) {
       console.error('Error creating listing:', err);
-      setError(`Error creating listing: ${err.message}`);
+      setError('Failed to create listing. Please try again.');
     } finally {
-      setSubmitting(false);
+      setLoading(false);
     }
   };
-  
+
   return (
     <div style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem 1rem' }}>
-      <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '2rem' }}>
-        Create Property Listing
-      </h1>
-      
-      {error && (
-        <div style={{ 
-          backgroundColor: '#fee2e2', 
-          color: '#b91c1c', 
-          padding: '1rem', 
-          borderRadius: '0.375rem', 
-          marginBottom: '1rem' 
-        }}>
-          {error}
-        </div>
-      )}
-      
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '1.5rem' }}>
-          <label 
-            htmlFor="propertyName" 
-            style={{ 
-              display: 'block', 
-              marginBottom: '0.5rem', 
-              fontWeight: '500' 
-            }}
-          >
-            Property Name / Title *
-          </label>
-          <input
-            id="propertyName"
-            type="text"
-            value={propertyName}
-            onChange={(e) => setPropertyName(e.target.value)}
-            required
-            style={{ 
-              width: '100%',
-              padding: '0.75rem',
-              borderRadius: '0.375rem',
-              border: '1px solid #d1d5db'
-            }}
-            placeholder="e.g., Beautiful Family Home in Parkside"
-          />
-        </div>
-        
-        <div style={{ marginBottom: '1.5rem' }}>
-          <label 
-            htmlFor="address" 
-            style={{ 
-              display: 'block', 
-              marginBottom: '0.5rem', 
-              fontWeight: '500' 
-            }}
-          >
-            Property Address *
-          </label>
-          <input
-            id="address"
-            type="text"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            required
-            style={{ 
-              width: '100%',
-              padding: '0.75rem',
-              borderRadius: '0.375rem',
-              border: '1px solid #d1d5db'
-            }}
-            placeholder="e.g., 123 Main Street, City, State, ZIP"
-          />
-        </div>
-        
-        <div style={{ 
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '1rem',
-          marginBottom: '1.5rem'
-        }}>
-          <div>
-            <label 
-              htmlFor="price" 
-              style={{ 
-                display: 'block', 
-                marginBottom: '0.5rem', 
-                fontWeight: '500' 
-              }}
-            >
-              Asking Price ($) *
-            </label>
-            <input
-              id="price"
-              type="text"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              required
-              style={{ 
-                width: '100%',
-                padding: '0.75rem',
-                borderRadius: '0.375rem',
-                border: '1px solid #d1d5db'
-              }}
-              placeholder="e.g., 450000"
-            />
-          </div>
-          
-          <div>
-            <label 
-              htmlFor="bedrooms" 
-              style={{ 
-                display: 'block', 
-                marginBottom: '0.5rem', 
-                fontWeight: '500' 
-              }}
-            >
-              Bedrooms
-            </label>
-            <input
-              id="bedrooms"
-              type="number"
-              min="0"
-              value={bedrooms}
-              onChange={(e) => setBedrooms(e.target.value)}
-              style={{ 
-                width: '100%',
-                padding: '0.75rem',
-                borderRadius: '0.375rem',
-                border: '1px solid #d1d5db'
-              }}
-              placeholder="e.g., 3"
-            />
-          </div>
-          
-          <div>
-            <label 
-              htmlFor="bathrooms" 
-              style={{ 
-                display: 'block', 
-                marginBottom: '0.5rem', 
-                fontWeight: '500' 
-              }}
-            >
-              Bathrooms
-            </label>
-            <input
-              id="bathrooms"
-              type="number"
-              min="0"
-              step="0.5"
-              value={bathrooms}
-              onChange={(e) => setBathrooms(e.target.value)}
-              style={{ 
-                width: '100%',
-                padding: '0.75rem',
-                borderRadius: '0.375rem',
-                border: '1px solid #d1d5db'
-              }}
-              placeholder="e.g., 2.5"
-            />
-          </div>
-          
-          <div>
-            <label 
-              htmlFor="squareFootage" 
-              style={{ 
-                display: 'block', 
-                marginBottom: '0.5rem', 
-                fontWeight: '500' 
-              }}
-            >
-              Square Footage
-            </label>
-            <input
-              id="squareFootage"
-              type="text"
-              value={squareFootage}
-              onChange={(e) => setSquareFootage(e.target.value)}
-              style={{ 
-                width: '100%',
-                padding: '0.75rem',
-                borderRadius: '0.375rem',
-                border: '1px solid #d1d5db'
-              }}
-              placeholder="e.g., 2000"
-            />
-          </div>
-        </div>
-        
-        <div style={{ marginBottom: '1.5rem' }}>
-          <label 
-            htmlFor="propertyType" 
-            style={{ 
-              display: 'block', 
-              marginBottom: '0.5rem', 
-              fontWeight: '500' 
-            }}
-          >
-            Property Type
-          </label>
-          <select
-            id="propertyType"
-            value={propertyType}
-            onChange={(e) => setPropertyType(e.target.value)}
-            style={{ 
-              width: '100%',
-              padding: '0.75rem',
-              borderRadius: '0.375rem',
-              border: '1px solid #d1d5db'
-            }}
-          >
-            <option value="Single Family">Single Family</option>
-            <option value="Condo">Condo</option>
-            <option value="Townhouse">Townhouse</option>
-            <option value="Multi-Family">Multi-Family</option>
-            <option value="Land">Land</option>
-            <option value="Other">Other</option>
-          </select>
-        </div>
-        
-        <div style={{ marginBottom: '1.5rem' }}>
-          <label 
-            htmlFor="description" 
-            style={{ 
-              display: 'block', 
-              marginBottom: '0.5rem', 
-              fontWeight: '500' 
-            }}
-          >
-            Property Description
-          </label>
-          <textarea
-            id="description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={5}
-            style={{ 
-              width: '100%',
-              padding: '0.75rem',
-              borderRadius: '0.375rem',
-              border: '1px solid #d1d5db',
-              resize: 'vertical'
-            }}
-            placeholder="Describe your property, highlighting its best features and amenities..."
-          />
-        </div>
-        
-        <div style={{ marginBottom: '2rem' }}>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>
-            Agent Services
-          </h2>
-          <p style={{ marginBottom: '1rem', color: '#6b7280' }}>
-            Select which services you would like from your real estate agent:
+      <Card>
+        <CardHeader>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+            List Your Property
+          </h1>
+          <p style={{ color: '#6b7280' }}>
+            Create your listing and let agents compete for your business with their best offers.
           </p>
-          
-          <div style={{ 
-            backgroundColor: '#f9fafb',
-            padding: '1.5rem',
-            borderRadius: '0.5rem',
-            marginBottom: '1.5rem'
-          }}>
-            <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '1rem' }}>
-              Must-Have Services
-            </h3>
-            <div style={{ 
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-              gap: '0.5rem'
-            }}>
-              {availableServices.map((service) => (
-                <label 
-                  key={`must-${service}`}
-                  style={{ 
-                    display: 'flex',
-                    alignItems: 'center',
-                    cursor: 'pointer',
+        </CardHeader>
+
+        <form onSubmit={handleSubmit}>
+          <CardBody>
+            {error && (
+              <div style={{
+                backgroundColor: '#fee2e2',
+                color: '#dc2626',
+                padding: '1rem',
+                borderRadius: '0.5rem',
+                marginBottom: '1.5rem'
+              }}>
+                {error}
+              </div>
+            )}
+
+            {/* Basic Information */}
+            <div style={{ marginBottom: '2rem' }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>
+                Property Information
+              </h2>
+              
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label htmlFor="title" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                  Listing Title
+                </label>
+                <input
+                  type="text"
+                  id="title"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleInputChange}
+                  required
+                  placeholder="e.g., 'Beautiful 3-bedroom home in Downtown'"
+                  style={{
+                    width: '100%',
                     padding: '0.5rem',
-                    borderRadius: '0.375rem',
-                    backgroundColor: selectedMustHaveServices.includes(service) ? '#dbeafe' : 'transparent'
+                    border: '1px solid #d1d5db',
+                    borderRadius: '0.375rem'
                   }}
-                >
+                />
+              </div>
+
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label htmlFor="address" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                  Property Address
+                </label>
+                <input
+                  type="text"
+                  id="address"
+                  name="address"
+                  value={formData.address}
+                  onChange={handleInputChange}
+                  required
+                  placeholder="Full property address"
+                  style={{
+                    width: '100%',
+                    padding: '0.5rem',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '0.375rem'
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                <div>
+                  <label htmlFor="price" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                    Asking Price
+                  </label>
+                  <input
+                    type="number"
+                    id="price"
+                    name="price"
+                    value={formData.price}
+                    onChange={handleInputChange}
+                    required
+                    placeholder="Enter price"
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '0.375rem'
+                    }}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="propertyType" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                    Property Type
+                  </label>
+                  <select
+                    id="propertyType"
+                    name="propertyType"
+                    value={formData.propertyType}
+                    onChange={handleInputChange}
+                    required
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '0.375rem'
+                    }}
+                  >
+                    <option value="">Select property type</option>
+                    {propertyTypes.map(type => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Property Details */}
+            <div style={{ marginBottom: '2rem' }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>
+                Property Details
+              </h2>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
+                <div>
+                  <label htmlFor="bedrooms" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                    Bedrooms
+                  </label>
+                  <input
+                    type="number"
+                    id="bedrooms"
+                    name="bedrooms"
+                    value={formData.bedrooms}
+                    onChange={handleInputChange}
+                    required
+                    min="0"
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '0.375rem'
+                    }}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="bathrooms" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                    Bathrooms
+                  </label>
+                  <input
+                    type="number"
+                    id="bathrooms"
+                    name="bathrooms"
+                    value={formData.bathrooms}
+                    onChange={handleInputChange}
+                    required
+                    min="0"
+                    step="0.5"
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '0.375rem'
+                    }}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="squareFootage" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                    Square Footage
+                  </label>
+                  <input
+                    type="number"
+                    id="squareFootage"
+                    name="squareFootage"
+                    value={formData.squareFootage}
+                    onChange={handleInputChange}
+                    required
+                    min="0"
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '0.375rem'
+                    }}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="yearBuilt" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                    Year Built
+                  </label>
+                  <input
+                    type="number"
+                    id="yearBuilt"
+                    name="yearBuilt"
+                    value={formData.yearBuilt}
+                    onChange={handleInputChange}
+                    required
+                    min="1800"
+                    max={new Date().getFullYear()}
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '0.375rem'
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label htmlFor="description" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                  Property Description
+                </label>
+                <textarea
+                  id="description"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  required
+                  rows={6}
+                  placeholder="Describe your property, highlighting its best features..."
+                  style={{
+                    width: '100%',
+                    padding: '0.5rem',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '0.375rem'
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Features */}
+            <div style={{ marginBottom: '2rem' }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>
+                Property Features
+              </h2>
+              
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                  Add Features
+                </label>
+                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                  <input
+                    type="text"
+                    value={currentFeature}
+                    onChange={(e) => setCurrentFeature(e.target.value)}
+                    placeholder="e.g., Hardwood floors, Updated kitchen, Pool"
+                    style={{
+                      flex: '1',
+                      padding: '0.5rem',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '0.375rem'
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    onClick={handleAddFeature}
+                    variant="secondary"
+                  >
+                    Add
+                  </Button>
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  {formData.features.map((feature, index) => (
+                    <span
+                      key={index}
+                      style={{
+                        backgroundColor: '#dbeafe',
+                        color: '#1e40af',
+                        padding: '0.25rem 0.75rem',
+                        borderRadius: '9999px',
+                        fontSize: '0.875rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem'
+                      }}
+                    >
+                      {feature}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveFeature(index)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#1e40af',
+                          cursor: 'pointer',
+                          padding: '0',
+                          fontSize: '1rem',
+                          lineHeight: '1'
+                        }}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Services Selection */}
+            <div style={{ marginBottom: '2rem' }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>
+                Select the services you need
+              </h2>
+              
+              <ServiceSelector
+                services={sellerServices}
+                selectedServices={formData.services}
+                onSelectionChange={handleServiceSelection}
+                userType="seller"
+              />
+            </div>
+
+            {/* Additional Information */}
+            <div style={{ marginBottom: '2rem' }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>
+                Additional Information
+              </h2>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                <div>
+                  <label htmlFor="occupancyStatus" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                    Occupancy Status
+                  </label>
+                  <select
+                    id="occupancyStatus"
+                    name="occupancyStatus"
+                    value={formData.occupancyStatus}
+                    onChange={handleInputChange}
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '0.375rem'
+                    }}
+                  >
+                    {occupancyOptions.map(option => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div>
+                  <label htmlFor="preferredClosingDate" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                    Preferred Closing Date
+                  </label>
+                  <input
+                    type="date"
+                    id="preferredClosingDate"
+                    name="preferredClosingDate"
+                    value={formData.preferredClosingDate}
+                    onChange={handleInputChange}
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '0.375rem'
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '1.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
                   <input
                     type="checkbox"
-                    checked={selectedMustHaveServices.includes(service)}
-                    onChange={() => toggleService(service, 'mustHave')}
+                    id="availableForShowing"
+                    name="availableForShowing"
+                    checked={formData.availableForShowing}
+                    onChange={handleInputChange}
                     style={{ marginRight: '0.5rem' }}
                   />
-                  {service}
+                  <label htmlFor="availableForShowing">Property is available for showings</label>
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="additionalNotes" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                  Additional Notes for Agents
                 </label>
-              ))}
-            </div>
-          </div>
-          
-          <div style={{ 
-            backgroundColor: '#f9fafb',
-            padding: '1.5rem',
-            borderRadius: '0.5rem',
-            marginBottom: '1.5rem'
-          }}>
-            <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '1rem' }}>
-              Nice-to-Have Services
-            </h3>
-            <div style={{ 
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-              gap: '0.5rem'
-            }}>
-              {availableServices.map((service) => (
-                <label 
-                  key={`nice-${service}`}
-                  style={{ 
-                    display: 'flex',
-                    alignItems: 'center',
-                    cursor: 'pointer',
+                <textarea
+                  id="additionalNotes"
+                  name="additionalNotes"
+                  value={formData.additionalNotes}
+                  onChange={handleInputChange}
+                  rows={4}
+                  placeholder="Any other information you'd like agents to know..."
+                  style={{
+                    width: '100%',
                     padding: '0.5rem',
-                    borderRadius: '0.375rem',
-                    backgroundColor: selectedNiceToHaveServices.includes(service) ? '#e0f2fe' : 'transparent'
+                    border: '1px solid #d1d5db',
+                    borderRadius: '0.375rem'
                   }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedNiceToHaveServices.includes(service)}
-                    onChange={() => toggleService(service, 'niceToHave')}
-                    style={{ marginRight: '0.5rem' }}
-                  />
-                  {service}
-                </label>
-              ))}
+                />
+              </div>
             </div>
-          </div>
-          
-          <div style={{ 
-            backgroundColor: '#f9fafb',
-            padding: '1.5rem',
-            borderRadius: '0.5rem'
-          }}>
-            <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '1rem' }}>
-              Not Interested In
-            </h3>
-            <div style={{ 
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-              gap: '0.5rem'
-            }}>
-              {availableServices.map((service) => (
-                <label 
-                  key={`not-${service}`}
-                  style={{ 
-                    display: 'flex',
-                    alignItems: 'center',
-                    cursor: 'pointer',
-                    padding: '0.5rem',
-                    borderRadius: '0.375rem',
-                    backgroundColor: selectedNotInterestedServices.includes(service) ? '#fee2e2' : 'transparent'
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedNotInterestedServices.includes(service)}
-                    onChange={() => toggleService(service, 'notInterested')}
-                    style={{ marginRight: '0.5rem' }}
-                  />
-                  {service}
-                </label>
-              ))}
+          </CardBody>
+
+          <CardFooter>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => navigate('/seller')}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={loading}
+              >
+                {loading ? 'Creating Listing...' : 'Create Listing'}
+              </Button>
             </div>
-          </div>
-        </div>
-        
-        <div style={{ marginBottom: '1.5rem' }}>
-          <label 
-            htmlFor="additionalInfo" 
-            style={{ 
-              display: 'block', 
-              marginBottom: '0.5rem', 
-              fontWeight: '500' 
-            }}
-          >
-            Additional Information for Agents
-          </label>
-          <textarea
-            id="additionalInfo"
-            value={additionalInfo}
-            onChange={(e) => setAdditionalInfo(e.target.value)}
-            rows={4}
-            style={{ 
-              width: '100%',
-              padding: '0.75rem',
-              borderRadius: '0.375rem',
-              border: '1px solid #d1d5db',
-              resize: 'vertical'
-            }}
-            placeholder="Share any additional information, requirements, or questions for potential agents..."
-          />
-        </div>
-        
-        <div style={{ display: 'flex', gap: '1rem' }}>
-          <Button 
-            type="submit"
-            disabled={submitting}
-          >
-            {submitting ? 'Creating Listing...' : 'Create Listing'}
-          </Button>
-          <Button 
-            type="button"
-            variant="secondary"
-            onClick={() => navigate('/seller/my-listings')}
-            disabled={submitting}
-          >
-            Cancel
-          </Button>
-        </div>
-      </form>
+          </CardFooter>
+        </form>
+      </Card>
     </div>
   );
 };

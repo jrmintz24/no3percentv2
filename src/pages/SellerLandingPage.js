@@ -1,457 +1,279 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/common/Button';
 
 const SellerLandingPage = () => {
-  const { currentUser } = useAuth();
+  const [salePrice, setSalePrice] = useState(500000);
+  const traditionalFee = salePrice * 0.06;
+  const ourFee = salePrice * 0.04;
+  const savings = traditionalFee - ourFee;
 
   return (
-    <div>
+    <div className="min-h-screen">
       {/* Hero Section */}
-      <section style={{ 
-        padding: '8rem 1rem',
-        background: 'linear-gradient(180deg, #065f46 0%, #10b981 100%)',
-        textAlign: 'center',
-        color: 'white',
-        position: 'relative',
-        overflow: 'hidden'
-      }}>
+      <section 
+        style={{
+          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+          color: 'white',
+          padding: '6rem 1rem',
+          textAlign: 'center',
+          position: 'relative',
+          overflow: 'hidden'
+        }}
+      >
         <div style={{
           position: 'absolute',
-          top: '0',
-          left: '0',
-          right: '0',
-          bottom: '0',
-          background: 'radial-gradient(circle at 50% 30%, rgba(16, 185, 129, 0.15) 0%, transparent 60%)',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'radial-gradient(circle at 70% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%)',
           pointerEvents: 'none'
         }} />
         
-        <div style={{ maxWidth: '1000px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            background: 'rgba(255, 255, 255, 0.1)',
-            backdropFilter: 'blur(12px)',
-            borderRadius: '2rem',
-            padding: '0.625rem 1.5rem',
-            marginBottom: '2.5rem',
-            fontSize: '1rem',
-            fontWeight: '600',
-            color: '#ffffff',
-            border: '1px solid rgba(255, 255, 255, 0.15)',
-            gap: '0.5rem'
-          }}>
-            <span style={{ fontSize: '1.25rem' }}>💰</span>
-            <span>Save Thousands on Commission</span>
-          </div>
-          
-          <h1 style={{ 
-            fontSize: '4.5rem',
+        <div style={{ maxWidth: '800px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
+          <h1 style={{
+            fontSize: '3.5rem',
             fontWeight: '800',
             marginBottom: '1.5rem',
-            lineHeight: '1',
-            letterSpacing: '-0.02em',
-            background: 'linear-gradient(to right, #ffffff 20%, #6ee7b7 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
+            lineHeight: '1.1'
           }}>
-            Sell Smarter,<br />Not Harder
+            Sell Your Home for Less Commission
           </h1>
-          
-          <p style={{ 
+          <p style={{
             fontSize: '1.5rem',
-            maxWidth: '750px',
-            margin: '0 auto 3rem',
-            color: '#d1fae5',
-            lineHeight: '1.7',
-            fontWeight: '400'
+            marginBottom: '2.5rem',
+            opacity: '0.9',
+            lineHeight: '1.6'
           }}>
-            Take control of your home sale. Let agents compete to sell your property 
-            with transparent pricing and custom service packages. Save thousands while 
-            getting exactly what you need.
+            Save thousands on agent fees. Get multiple offers from top agents competing for your listing.
           </p>
-          
-          {currentUser ? (
-            <Link to="/seller">
-              <Button size="large" style={{
+          <Link to="/signup?type=seller">
+            <Button
+              size="large"
+              style={{
                 backgroundColor: 'white',
-                color: '#065f46',
-                padding: '1rem 3rem',
-                fontSize: '1.125rem',
-                borderRadius: '0.625rem',
-                fontWeight: '700',
-                boxShadow: '0 4px 14px 0 rgba(255, 255, 255, 0.25)',
-              }}>
-                Go to Dashboard
-              </Button>
-            </Link>
-          ) : (
-            <Link to="/signup?type=seller">
-              <Button size="large" style={{
-                backgroundColor: 'white',
-                color: '#065f46',
-                padding: '1rem 3rem',
-                fontSize: '1.125rem',
-                borderRadius: '0.625rem',
-                fontWeight: '700',
-                boxShadow: '0 4px 14px 0 rgba(255, 255, 255, 0.25)',
-              }}>
-                List Your Property Today
-              </Button>
-            </Link>
-          )}
+                color: '#059669',
+                padding: '1rem 2.5rem',
+                fontSize: '1.25rem',
+                fontWeight: '600',
+                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+              }}
+            >
+              List Your Property
+            </Button>
+          </Link>
         </div>
       </section>
 
       {/* Commission Savings Calculator */}
-      <section style={{ 
-        padding: '6rem 1rem',
-        backgroundColor: '#ffffff',
-        borderBottom: '1px solid #e2e8f0'
-      }}>
-        <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
-            <div style={{
-              display: 'inline-block',
-              backgroundColor: '#dcfce7',
-              borderRadius: '2rem',
-              padding: '0.625rem 1.75rem',
-              marginBottom: '1.25rem',
-              fontSize: '1rem',
-              fontWeight: '600',
-              color: '#166534'
-            }}>
-              Commission Savings
-            </div>
-            <h2 style={{ 
-              fontSize: '2.75rem',
-              fontWeight: '800',
-              color: '#0f172a',
-              letterSpacing: '-0.025em',
-              maxWidth: '800px',
-              margin: '0 auto'
-            }}>
-              See How Much You Can Save
-            </h2>
-          </div>
-          
-          <div style={{ 
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))',
-            gap: '3rem',
-            alignItems: 'center'
+      <section style={{ padding: '5rem 1rem', backgroundColor: 'white' }}>
+        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+          <h2 style={{
+            fontSize: '2.5rem',
+            fontWeight: '700',
+            textAlign: 'center',
+            marginBottom: '3rem',
+            color: '#111827'
           }}>
-            <div style={{ 
-              backgroundColor: '#f8fafc',
-              borderRadius: '1rem',
-              padding: '2rem',
-              border: '1px solid #e2e8f0'
-            }}>
-              <h3 style={{ 
-                fontSize: '1.5rem', 
-                fontWeight: '700', 
-                marginBottom: '1.5rem',
-                color: '#0f172a' 
-              }}>
-                Commission Savings Calculator
-              </h3>
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ 
-                  display: 'block', 
-                  marginBottom: '0.5rem', 
-                  color: '#374151',
-                  fontWeight: '500' 
-                }}>
-                  Your Home's Value
-                </label>
-                <div style={{ 
-                  fontSize: '1.875rem',
-                  fontWeight: '700',
-                  color: '#166534',
-                  marginBottom: '0.5rem'
-                }}>
-                  $500,000
-                </div>
-                <input 
-                  type="range" 
-                  min="200000" 
-                  max="2000000" 
-                  step="50000" 
-                  defaultValue="500000"
-                  style={{ width: '100%' }}
-                />
-              </div>
-              
-              <div style={{ 
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: '1.5rem',
-                marginTop: '2rem'
-              }}>
-                <div style={{ 
-                  backgroundColor: '#fee2e2',
-                  borderRadius: '0.75rem',
-                  padding: '1.5rem',
-                  textAlign: 'center'
-                }}>
-                  <p style={{ 
-                    fontSize: '0.875rem',
-                    color: '#991b1b',
-                    marginBottom: '0.5rem'
-                  }}>
-                    Traditional 6% Commission
-                  </p>
-                  <p style={{ 
-                    fontSize: '1.875rem',
-                    fontWeight: '800',
-                    color: '#991b1b',
-                    margin: 0
-                  }}>
-                    $30,000
-                  </p>
-                </div>
-                <div style={{ 
-                  backgroundColor: '#dcfce7',
-                  borderRadius: '0.75rem',
-                  padding: '1.5rem',
-                  textAlign: 'center'
-                }}>
-                  <p style={{ 
-                    fontSize: '0.875rem',
-                    color: '#166534',
-                    marginBottom: '0.5rem'
-                  }}>
-                    Average on RealEstateMatch
-                  </p>
-                  <p style={{ 
-                    fontSize: '1.875rem',
-                    fontWeight: '800',
-                    color: '#166534',
-                    margin: 0
-                  }}>
-                    $15,000
-                  </p>
-                </div>
-              </div>
-              
-              <div style={{ 
-                backgroundColor: '#f0fdf4',
-                borderRadius: '0.75rem',
-                padding: '1.5rem',
-                marginTop: '1.5rem',
-                textAlign: 'center',
-                border: '1px solid #bbf7d0'
-              }}>
-                <p style={{ 
-                  fontSize: '1rem',
-                  color: '#166534',
-                  marginBottom: '0.5rem'
-                }}>
-                  Your Potential Savings
-                </p>
-                <p style={{ 
-                  fontSize: '2.5rem',
-                  fontWeight: '800',
-                  color: '#166534',
-                  margin: 0
-                }}>
-                  $15,000
-                </p>
-              </div>
+            Commission Savings Calculator
+          </h2>
+          
+          <div style={{
+            backgroundColor: '#f0fdf4',
+            borderRadius: '1rem',
+            padding: '2rem',
+            marginBottom: '3rem'
+          }}>
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                Your Home's Sale Price
+              </label>
+              <input
+                type="number"
+                value={salePrice}
+                onChange={(e) => setSalePrice(Number(e.target.value))}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  borderRadius: '0.5rem',
+                  border: '1px solid #d1d5db',
+                  fontSize: '1.125rem'
+                }}
+              />
             </div>
             
-            <div>
-              <h3 style={{ 
-                fontSize: '1.75rem',
-                fontWeight: '700',
-                color: '#0f172a',
-                marginBottom: '1.5rem'
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: '1rem',
+              marginTop: '2rem'
+            }}>
+              <div style={{
+                backgroundColor: '#fee2e2',
+                padding: '1.5rem',
+                borderRadius: '0.5rem',
+                textAlign: 'center'
               }}>
-                Why Pay 6% When You Don't Have To?
-              </h3>
-              <p style={{ 
-                fontSize: '1.125rem',
-                color: '#374151',
-                lineHeight: '1.7',
-                marginBottom: '2rem'
+                <p style={{ fontSize: '0.875rem', color: '#991b1b', marginBottom: '0.25rem' }}>
+                  Traditional 6%
+                </p>
+                <p style={{ fontSize: '1.5rem', fontWeight: '700', color: '#dc2626' }}>
+                  ${traditionalFee.toLocaleString()}
+                </p>
+              </div>
+              
+              <div style={{
+                backgroundColor: '#dcfce7',
+                padding: '1.5rem',
+                borderRadius: '0.5rem',
+                textAlign: 'center'
               }}>
-                The traditional 6% commission structure hasn't changed in decades, 
-                while technology has made selling homes more efficient. Our platform 
-                lets agents compete for your business, driving commissions down to 
-                fair market rates.
-              </p>
-              <ul style={{ 
-                listStyle: 'none', 
-                padding: 0,
-                margin: 0,
-                color: '#374151'
+                <p style={{ fontSize: '0.875rem', color: '#166534', marginBottom: '0.25rem' }}>
+                  With Us (3-4%)
+                </p>
+                <p style={{ fontSize: '1.5rem', fontWeight: '700', color: '#15803d' }}>
+                  ${ourFee.toLocaleString()}
+                </p>
+              </div>
+              
+              <div style={{
+                backgroundColor: '#dbeafe',
+                padding: '1.5rem',
+                borderRadius: '0.5rem',
+                textAlign: 'center'
               }}>
-                {[
-                  'Agents typically offer 1.5-4% commission rates',
-                  'Choose full service or à la carte options',
-                  'Pay only for the services you actually need',
-                  'Keep more equity in your pocket'
-                ].map((item, index) => (
-                  <li key={index} style={{ 
-                    marginBottom: '1rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.75rem',
-                    fontSize: '1rem'
-                  }}>
-                    <span style={{ 
-                      color: '#059669',
-                      fontSize: '1.25rem',
-                      fontWeight: 'bold'
-                    }}>✓</span>
-                    {item}
-                  </li>
-                ))}
-              </ul>
+                <p style={{ fontSize: '0.875rem', color: '#1e40af', marginBottom: '0.25rem' }}>
+                  You Save
+                </p>
+                <p style={{ fontSize: '1.5rem', fontWeight: '700', color: '#2563eb' }}>
+                  ${savings.toLocaleString()}
+                </p>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Service Options */}
-      <section style={{ 
-        padding: '6rem 1rem',
-        backgroundColor: '#fafafa'
-      }}>
-        <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
-            <div style={{
-              display: 'inline-block',
-              backgroundColor: '#e0f2fe',
-              borderRadius: '2rem',
-              padding: '0.625rem 1.75rem',
-              marginBottom: '1.25rem',
-              fontSize: '1rem',
-              fontWeight: '600',
-              color: '#0369a1'
-            }}>
-              Choose Your Service Level
-            </div>
-            <h2 style={{ 
-              fontSize: '2.75rem',
-              fontWeight: '800',
-              color: '#0f172a',
-              letterSpacing: '-0.025em'
-            }}>
-              Sell Your Way
-            </h2>
-          </div>
+      {/* Service Options Section */}
+      <section style={{ padding: '5rem 1rem', backgroundColor: '#f9fafb' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <h2 style={{
+            fontSize: '2.5rem',
+            fontWeight: '700',
+            textAlign: 'center',
+            marginBottom: '1rem',
+            color: '#111827'
+          }}>
+            Choose Your Service Level
+          </h2>
+          <p style={{
+            fontSize: '1.25rem',
+            textAlign: 'center',
+            marginBottom: '3rem',
+            color: '#4b5563',
+            maxWidth: '800px',
+            margin: '0 auto 3rem'
+          }}>
+            Pay only for the services you need. No hidden fees, no surprises.
+          </p>
           
-          <div style={{ 
+          <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
             gap: '2rem'
           }}>
             {[
               {
                 title: 'Full Service',
-                price: '4-5%',
-                desc: 'Traditional full-service experience with competitive rates. Your agent handles everything from listing to closing.',
+                commission: '4-5%',
                 features: [
                   'Professional photography',
-                  'Marketing & advertising',
-                  'Open houses & showings',
-                  'Offer negotiation',
-                  'Paperwork & closing'
+                  'Virtual tours & videos',
+                  'MLS listing & syndication',
+                  'Open houses',
+                  'Price negotiations',
+                  'Contract to closing'
                 ],
-                color: '#3b82f6',
-                bgColor: '#dbeafe'
+                best: true
               },
               {
                 title: 'Limited Service',
-                price: '2-3%',
-                desc: 'Perfect for hands-on sellers. Get professional help where you need it, handle some tasks yourself.',
+                commission: '2-3%',
                 features: [
                   'MLS listing',
-                  'Professional photos',
+                  'Basic photography',
+                  'Yard sign',
                   'Contract preparation',
-                  'Negotiation support',
-                  'You handle showings'
-                ],
-                color: '#8b5cf6',
-                bgColor: '#ede9fe'
+                  'Limited showings',
+                  'You handle negotiations'
+                ]
               },
               {
                 title: 'À La Carte',
-                price: 'Pay per service',
-                desc: 'Maximum savings for DIY sellers. Choose only the services you need, when you need them.',
+                commission: 'Pay per service',
                 features: [
-                  'Choose services individually',
-                  'Pay as you go',
-                  'Photography: $300-500',
+                  'Choose only what you need',
+                  'MLS listing only: $299',
+                  'Photography: $350',
+                  'Virtual tour: $250',
                   'Contract review: $500',
-                  'Showing service: $50/showing'
-                ],
-                color: '#10b981',
-                bgColor: '#d1fae5'
+                  'Negotiation support: $800'
+                ]
               }
             ].map((option, index) => (
-              <div key={index} style={{ 
+              <div key={index} style={{
                 backgroundColor: 'white',
                 borderRadius: '1rem',
                 padding: '2rem',
-                border: '1px solid #e2e8f0',
-                position: 'relative',
-                transition: 'all 0.3s ease',
-                ':hover': {
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
-                }
+                border: option.best ? '2px solid #10b981' : '1px solid #e5e7eb',
+                position: 'relative'
               }}>
-                <div style={{
-                  backgroundColor: option.bgColor,
-                  color: option.color,
-                  padding: '0.5rem 1rem',
-                  borderRadius: '0.5rem',
-                  display: 'inline-block',
-                  fontSize: '0.875rem',
-                  fontWeight: '600',
-                  marginBottom: '1rem'
-                }}>
-                  {option.price}
-                </div>
+                {option.best && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '-1rem',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    backgroundColor: '#10b981',
+                    color: 'white',
+                    padding: '0.25rem 1rem',
+                    borderRadius: '2rem',
+                    fontSize: '0.875rem',
+                    fontWeight: '500'
+                  }}>
+                    Most Popular
+                  </div>
+                )}
                 
-                <h3 style={{ 
-                  fontSize: '1.5rem', 
-                  fontWeight: '700', 
-                  marginBottom: '1rem',
-                  color: '#0f172a'
+                <h3 style={{
+                  fontSize: '1.5rem',
+                  fontWeight: '700',
+                  marginBottom: '0.5rem',
+                  color: '#111827'
                 }}>
                   {option.title}
                 </h3>
-                
-                <p style={{ 
-                  color: '#475569', 
-                  marginBottom: '1.5rem',
-                  lineHeight: '1.6'
+                <p style={{
+                  fontSize: '1.25rem',
+                  fontWeight: '600',
+                  color: '#059669',
+                  marginBottom: '1.5rem'
                 }}>
-                  {option.desc}
+                  {option.commission}
                 </p>
                 
-                <ul style={{ 
-                  listStyle: 'none', 
-                  padding: 0,
-                  margin: 0
-                }}>
+                <ul style={{ listStyle: 'none', padding: 0 }}>
                   {option.features.map((feature, idx) => (
-                    <li key={idx} style={{ 
-                      marginBottom: '0.75rem',
+                    <li key={idx} style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.5rem',
-                      color: '#374151',
-                      fontSize: '0.9375rem'
+                      marginBottom: '0.75rem',
+                      color: '#374151'
                     }}>
-                      <span style={{ 
-                        color: option.color,
-                        fontSize: '1rem'
-                      }}>✓</span>
+                      <svg style={{ width: '1.25rem', height: '1.25rem', marginRight: '0.5rem', color: '#10b981' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                      </svg>
                       {feature}
                     </li>
                   ))}
@@ -462,184 +284,78 @@ const SellerLandingPage = () => {
         </div>
       </section>
 
-      {/* How It Works */}
-      <section style={{ padding: '6rem 1rem', backgroundColor: 'white' }}>
+      {/* Process Section */}
+      <section style={{ padding: '5rem 1rem', backgroundColor: 'white' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
-            <div style={{
-              display: 'inline-block',
-              backgroundColor: '#dcfce7',
-              borderRadius: '2rem',
-              padding: '0.625rem 1.75rem',
-              marginBottom: '1.25rem',
-              fontSize: '1rem',
-              fontWeight: '600',
-              color: '#166534'
-            }}>
-              Simple Process
-            </div>
-            <h2 style={{ 
-              fontSize: '2.75rem',
-              fontWeight: '800',
-              color: '#0f172a',
-              letterSpacing: '-0.025em'
-            }}>
-              Sell in 4 Easy Steps
-            </h2>
-          </div>
+          <h2 style={{
+            fontSize: '2.5rem',
+            fontWeight: '700',
+            textAlign: 'center',
+            marginBottom: '3rem',
+            color: '#111827'
+          }}>
+            How It Works
+          </h2>
           
-          <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+            gap: '2rem'
+          }}>
             {[
               {
                 step: '1',
                 title: 'List Your Property',
-                desc: 'Create your listing in minutes. Add photos, describe your home, and specify what services you need from an agent.',
-                icon: '📝'
+                description: 'Create your listing with photos, details, and your preferred service level.'
               },
               {
                 step: '2',
                 title: 'Receive Proposals',
-                desc: 'Qualified agents review your listing and submit custom proposals with their commission rates and service offerings.',
-                icon: '📥'
+                description: 'Get competitive offers from verified agents within 24-48 hours.'
               },
               {
                 step: '3',
                 title: 'Compare & Choose',
-                desc: 'Review proposals side by side. Compare commission rates, services, experience, and reviews. Choose the best fit.',
-                icon: '🔍'
+                description: 'Review commission rates, services, and agent profiles side-by-side.'
               },
               {
                 step: '4',
                 title: 'Sell & Save',
-                desc: 'Work with your chosen agent to sell your home. Save thousands on commission while getting great service.',
-                icon: '🎉'
+                description: 'Work with your chosen agent and save thousands on commission.'
               }
             ].map((item, index) => (
-              <div key={index} style={{ 
-                display: 'flex',
-                alignItems: 'flex-start',
-                marginBottom: index < 3 ? '3rem' : '0',
-                gap: '1.5rem'
+              <div key={index} style={{
+                textAlign: 'center',
+                padding: '2rem'
               }}>
-                <div style={{ 
-                  backgroundColor: '#dcfce7',
-                  borderRadius: '1rem',
+                <div style={{
                   width: '3rem',
                   height: '3rem',
+                  borderRadius: '50%',
+                  backgroundColor: '#10b981',
+                  color: 'white',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontWeight: '700',
-                  color: '#166534',
-                  flexShrink: 0,
-                  fontSize: '1.25rem'
-                }}>{item.step}</div>
-                <div>
-                  <h3 style={{ 
-                    fontWeight: '700', 
-                    marginBottom: '0.5rem', 
-                    color: '#0f172a', 
-                    fontSize: '1.25rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.75rem'
-                  }}>
-                    {item.title}
-                    <span style={{ fontSize: '1.25rem' }}>{item.icon}</span>
-                  </h3>
-                  <p style={{ color: '#475569', lineHeight: '1.6', fontSize: '1rem' }}>
-                    {item.desc}
-                  </p>
+                  margin: '0 auto 1rem',
+                  fontSize: '1.5rem',
+                  fontWeight: '700'
+                }}>
+                  {item.step}
                 </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Control Features */}
-      <section style={{ padding: '6rem 1rem', backgroundColor: '#f8fafc' }}>
-        <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
-            <div style={{
-              display: 'inline-block',
-              backgroundColor: '#fef3c7',
-              borderRadius: '2rem',
-              padding: '0.625rem 1.75rem',
-              marginBottom: '1.25rem',
-              fontSize: '1rem',
-              fontWeight: '600',
-              color: '#92400e'
-            }}>
-              You're In Control
-            </div>
-            <h2 style={{ 
-              fontSize: '2.75rem',
-              fontWeight: '800',
-              color: '#0f172a',
-              letterSpacing: '-0.025em'
-            }}>
-              Sell on Your Terms
-            </h2>
-          </div>
-          
-          <div style={{ 
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-            gap: '1.5rem'
-          }}>
-            {[
-              {
-                icon: '🎯',
-                title: 'Set Your Own Terms',
-                desc: 'Specify exactly what you need - from full service to minimal assistance. You decide how much help you want.'
-              },
-              {
-                icon: '💡',
-                title: 'Complete Transparency',
-                desc: 'See all fees, services, and agent qualifications upfront. No hidden costs or surprise charges.'
-              },
-              {
-                icon: '🏆',
-                title: 'Quality Agents Only',
-                desc: 'All agents are verified, licensed professionals. Read reviews from past clients before choosing.'
-              },
-              {
-                icon: '⚡',
-                title: 'Fast Proposals',
-                desc: 'Most sellers receive their first proposals within 24 hours. Compare and choose quickly.'
-              },
-              {
-                icon: '💬',
-                title: 'Direct Communication',
-                desc: 'Message agents directly through our platform. Ask questions and negotiate before committing.'
-              },
-              {
-                icon: '🔒',
-                title: 'No Obligations',
-                desc: 'Review proposals with no commitment. Only pay when you sign an agreement with your chosen agent.'
-              }
-            ].map((item, index) => (
-              <div key={index} style={{ 
-                padding: '1.75rem',
-                borderRadius: '0.875rem',
-                backgroundColor: 'white',
-                border: '1px solid #e2e8f0',
-                transition: 'all 0.3s ease'
-              }}>
-                <div style={{ fontSize: '2rem', marginBottom: '0.875rem' }}>
-                  {item.icon}
-                </div>
-                <h3 style={{ 
-                  fontWeight: '700', 
-                  fontSize: '1.125rem', 
-                  marginBottom: '0.625rem',
-                  color: '#0f172a'
+                <h3 style={{
+                  fontSize: '1.25rem',
+                  fontWeight: '600',
+                  marginBottom: '0.5rem',
+                  color: '#111827'
                 }}>
                   {item.title}
                 </h3>
-                <p style={{ color: '#475569', lineHeight: '1.5', fontSize: '0.9375rem' }}>
-                  {item.desc}
+                <p style={{
+                  color: '#4b5563',
+                  lineHeight: '1.6'
+                }}>
+                  {item.description}
                 </p>
               </div>
             ))}
@@ -647,109 +363,192 @@ const SellerLandingPage = () => {
         </div>
       </section>
 
-      {/* Success Stories */}
-      <section style={{ padding: '6rem 1rem', backgroundColor: 'white' }}>
-        <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
-            <div style={{
-              display: 'inline-block',
-              backgroundColor: '#dcfce7',
-              borderRadius: '2rem',
-              padding: '0.625rem 1.75rem',
-              marginBottom: '1.25rem',
-              fontSize: '1rem',
-              fontWeight: '600',
-              color: '#166534'
-            }}>
-              Success Stories
-            </div>
-            <h2 style={{ 
-              fontSize: '2.75rem',
-              fontWeight: '800',
-              color: '#0f172a',
-              letterSpacing: '-0.025em'
-            }}>
-              Sellers Love Our Platform
-            </h2>
-          </div>
+      {/* Control Features Section */}
+      <section style={{ padding: '5rem 1rem', backgroundColor: '#f9fafb' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <h2 style={{
+            fontSize: '2.5rem',
+            fontWeight: '700',
+            textAlign: 'center',
+            marginBottom: '3rem',
+            color: '#111827'
+          }}>
+            You're Always in Control
+          </h2>
           
-          <div style={{ 
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+            gap: '2rem'
+          }}>
+            {[
+              {
+                icon: '🎯',
+                title: 'Set Your Terms',
+                description: 'Specify exactly what you need and what you\'re willing to pay.'
+              },
+              {
+                icon: '👥',
+                title: 'Choose Your Agent',
+                description: 'Interview agents, review their track records, and pick the best fit.'
+              },
+              {
+                icon: '💬',
+                title: 'Direct Communication',
+                description: 'Communicate directly with agents through our secure platform.'
+              },
+              {
+                icon: '📊',
+                title: 'Transparent Pricing',
+                description: 'See all fees upfront. No hidden costs or surprise charges.'
+              },
+              {
+                icon: '🔄',
+                title: 'Change Services Anytime',
+                description: 'Upgrade or downgrade your service package as needed.'
+              },
+              {
+                icon: '💰',
+                title: 'Pay at Closing',
+                description: 'No upfront fees. Pay commission only when your home sells.'
+              }
+            ].map((feature, index) => (
+              <div key={index} style={{
+                backgroundColor: 'white',
+                borderRadius: '0.5rem',
+                padding: '1.5rem',
+                textAlign: 'center',
+                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+              }}>
+                <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>
+                  {feature.icon}
+                </div>
+                <h3 style={{
+                  fontSize: '1.125rem',
+                  fontWeight: '600',
+                  marginBottom: '0.5rem',
+                  color: '#111827'
+                }}>
+                  {feature.title}
+                </h3>
+                <p style={{
+                  color: '#4b5563',
+                  lineHeight: '1.5',
+                  fontSize: '0.875rem'
+                }}>
+                  {feature.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Services Section */}
+      <section style={{ padding: '4rem 1rem', backgroundColor: 'white' }}>
+        <div style={{ maxWidth: '1000px', margin: '0 auto', textAlign: 'center' }}>
+          <h2 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '1rem' }}>
+            Explore Available Services
+          </h2>
+          <p style={{ color: '#4b5563', marginBottom: '2rem', maxWidth: '600px', margin: '0 auto 2rem' }}>
+            Browse our full catalog of services to understand exactly what you can expect from our agents.
+          </p>
+          <Link to="/services/sellers">
+            <Button
+              style={{
+                backgroundColor: '#10b981',
+                color: 'white',
+                padding: '0.75rem 2rem'
+              }}
+            >
+              View All Services
+            </Button>
+          </Link>
+        </div>
+      </section>
+
+      {/* Success Stories Section */}
+      <section style={{ padding: '5rem 1rem', backgroundColor: '#f9fafb' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <h2 style={{
+            fontSize: '2.5rem',
+            fontWeight: '700',
+            textAlign: 'center',
+            marginBottom: '3rem',
+            color: '#111827'
+          }}>
+            Success Stories
+          </h2>
+          
+          <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
             gap: '2rem'
           }}>
             {[
               {
-                quote: "Saved $18,000 on commission! I chose a 2.5% full-service agent instead of paying 6%. The service was excellent and my home sold in 12 days.",
-                author: "Jennifer K.",
-                location: "Seattle, WA",
-                savings: "$18,000 saved",
-                soldIn: "12 days"
+                name: 'David & Sarah M.',
+                location: 'Portland, OR',
+                text: 'We saved $12,000 in commission and sold our home in just 3 weeks. The agents competed to give us the best service.',
+                savings: 'Saved $12,000',
+                soldIn: 'Sold in 3 weeks'
               },
               {
-                quote: "I used the à la carte option and only paid $2,500 total. Did my own showings but had professional photos and contract help. Perfect for my needs!",
-                author: "Robert M.",
-                location: "Phoenix, AZ",
-                savings: "$22,500 saved",
-                soldIn: "18 days"
+                name: 'Jennifer K.',
+                location: 'Miami, FL',
+                text: 'I chose exactly which services I needed and paid only 3.5% commission. Traditional agents quoted me 6%!',
+                savings: 'Saved $8,500',
+                soldIn: 'Sold in 2 weeks'
               },
               {
-                quote: "Received 6 proposals within 24 hours. Compared everything side by side and chose an agent offering 3% with amazing marketing. So much better than interviewing agents myself!",
-                author: "Maria S.",
-                location: "Miami, FL",
-                savings: "$15,000 saved",
-                soldIn: "8 days"
+                name: 'Robert T.',
+                location: 'Chicago, IL',
+                text: 'The transparency was incredible. I knew exactly what I was paying for and got amazing service.',
+                savings: 'Saved $15,000',
+                soldIn: 'Sold in 4 weeks'
               }
-            ].map((item, index) => (
-              <div key={index} style={{ 
-                padding: '2rem',
+            ].map((testimonial, index) => (
+              <div key={index} style={{
+                backgroundColor: 'white',
                 borderRadius: '1rem',
-                backgroundColor: '#fafafa',
-                border: '1px solid #e2e8f0'
+                padding: '2rem',
+                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
               }}>
-                <div style={{ marginBottom: '1.5rem' }}>
-                  <span style={{ color: '#f59e0b', fontSize: '2rem' }}>★★★★★</span>
-                </div>
-                <p style={{ 
+                <p style={{
                   fontSize: '1.125rem',
-                  lineHeight: '1.7',
-                  color: '#374151',
+                  lineHeight: '1.6',
                   marginBottom: '1.5rem',
-                  fontStyle: 'italic'
+                  color: '#374151'
                 }}>
-                  "{item.quote}"
+                  "{testimonial.text}"
                 </p>
-                <div style={{ marginBottom: '1rem' }}>
-                  <p style={{ fontWeight: '700', color: '#0f172a', marginBottom: '0.25rem' }}>
-                    {item.author}
-                  </p>
-                  <p style={{ color: '#64748b', fontSize: '0.875rem' }}>
-                    {item.location}
-                  </p>
-                </div>
-                <div style={{ 
-                  display: 'flex',
-                  gap: '1rem'
+                <div style={{
+                  borderTop: '1px solid #e5e7eb',
+                  paddingTop: '1rem'
                 }}>
-                  <div style={{
-                    backgroundColor: '#dcfce7',
-                    color: '#166534',
-                    padding: '0.5rem 1rem',
-                    borderRadius: '2rem',
-                    fontSize: '0.875rem',
-                    fontWeight: '600'
-                  }}>
-                    {item.savings}
-                  </div>
-                  <div style={{
-                    backgroundColor: '#dbeafe',
-                    color: '#1e40af',
-                    padding: '0.5rem 1rem',
-                    borderRadius: '2rem',
-                    fontSize: '0.875rem',
-                    fontWeight: '600'
-                  }}>
-                    Sold in {item.soldIn}
+                  <p style={{ fontWeight: '600', color: '#111827' }}>{testimonial.name}</p>
+                  <p style={{ color: '#6b7280', fontSize: '0.875rem', marginBottom: '1rem' }}>{testimonial.location}</p>
+                  <div style={{ display: 'flex', gap: '1rem' }}>
+                    <span style={{
+                      backgroundColor: '#dcfce7',
+                      color: '#166534',
+                      padding: '0.25rem 0.75rem',
+                      borderRadius: '2rem',
+                      fontSize: '0.875rem',
+                      fontWeight: '500'
+                    }}>
+                      {testimonial.savings}
+                    </span>
+                    <span style={{
+                      backgroundColor: '#dbeafe',
+                      color: '#1e40af',
+                      padding: '0.25rem 0.75rem',
+                      borderRadius: '2rem',
+                      fontSize: '0.875rem',
+                      fontWeight: '500'
+                    }}>
+                      {testimonial.soldIn}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -758,96 +557,62 @@ const SellerLandingPage = () => {
         </div>
       </section>
 
-      {/* FAQ Preview */}
-      <section style={{ padding: '6rem 1rem', backgroundColor: '#f8fafc' }}>
-        <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
-            <div style={{
-              display: 'inline-block',
-              backgroundColor: '#e0f2fe',
-              borderRadius: '2rem',
-              padding: '0.625rem 1.75rem',
-              marginBottom: '1.25rem',
-              fontSize: '1rem',
-              fontWeight: '600',
-              color: '#0369a1'
-            }}>
-              Common Questions
-            </div>
-            <h2 style={{ 
-              fontSize: '2.75rem',
-              fontWeight: '800',
-              color: '#0f172a',
-              letterSpacing: '-0.025em'
-            }}>
-              Quick Answers for Sellers
-            </h2>
-          </div>
-          
-          <div style={{ 
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
-            gap: '1.5rem',
-            marginBottom: '2rem'
+      {/* FAQ Preview Section */}
+      <section style={{ padding: '5rem 1rem', backgroundColor: 'white' }}>
+        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+          <h2 style={{
+            fontSize: '2.5rem',
+            fontWeight: '700',
+            textAlign: 'center',
+            marginBottom: '3rem',
+            color: '#111827'
           }}>
+            Common Questions
+          </h2>
+          
+          <div style={{ display: 'grid', gap: '1rem' }}>
             {[
               {
-                q: 'How quickly will I receive proposals?',
-                a: 'Most sellers receive their first proposals within 24 hours. For well-priced homes in popular areas, you might start seeing proposals within just a few hours.'
+                question: 'How much can I really save?',
+                answer: 'Most sellers save between $6,000-$15,000 on a $400,000 home. Our agents typically charge 3-4% total commission instead of the traditional 6%.'
               },
               {
-                q: 'Are the agents qualified?',
-                a: 'Yes! All agents on our platform are licensed professionals who have been verified. You can view their credentials, experience, and reviews from past clients.'
+                question: 'Will my home get the same exposure?',
+                answer: 'Yes! Your home will be listed on the MLS and all major real estate websites. You get the same exposure as traditional listings.'
               },
               {
-                q: 'Can I negotiate commission rates?',
-                a: 'Absolutely! You can message agents directly to discuss their proposals, negotiate rates, or request different service packages before making your decision.'
-              },
-              {
-                q: 'What if I\'m not happy with the proposals?',
-                a: 'You\'re never obligated to accept any proposal. You can update your listing, adjust your requirements, or wait for more agents to submit proposals.'
+                question: 'How quickly will I get agent proposals?',
+                answer: 'Most sellers receive their first proposals within 24 hours. You typically get 3-5 proposals within 48 hours.'
               }
-            ].map((item, index) => (
+            ].map((faq, index) => (
               <div key={index} style={{
-                backgroundColor: 'white',
-                borderRadius: '0.75rem',
-                padding: '1.5rem',
-                border: '1px solid #e2e8f0'
+                backgroundColor: '#f9fafb',
+                borderRadius: '0.5rem',
+                padding: '1.5rem'
               }}>
                 <h3 style={{
                   fontSize: '1.125rem',
                   fontWeight: '600',
-                  color: '#0f172a',
-                  marginBottom: '0.75rem'
+                  marginBottom: '0.5rem',
+                  color: '#111827'
                 }}>
-                  {item.q}
+                  {faq.question}
                 </h3>
                 <p style={{
-                  color: '#475569',
-                  lineHeight: '1.6',
-                  fontSize: '0.9375rem'
+                  color: '#4b5563',
+                  lineHeight: '1.6'
                 }}>
-                  {item.a}
+                  {faq.answer}
                 </p>
               </div>
             ))}
           </div>
           
-          <div style={{ textAlign: 'center' }}>
-            <Link 
-              to="/faq"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                color: '#3b82f6',
-                textDecoration: 'none',
-                fontWeight: '600',
-                fontSize: '1rem'
-              }}
-            >
-              View All FAQs
-              <span style={{ fontSize: '1.25rem' }}>→</span>
+          <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+            <Link to="/faq">
+              <Button variant="secondary">
+                View All FAQs
+              </Button>
             </Link>
           </div>
         </div>
@@ -855,82 +620,41 @@ const SellerLandingPage = () => {
 
       {/* CTA Section */}
       <section style={{ 
-        padding: '8rem 1rem',
-        background: 'linear-gradient(135deg, #065f46 0%, #10b981 100%)',
+        padding: '5rem 1rem',
+        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
         color: 'white',
-        textAlign: 'center',
-        position: 'relative',
-        overflow: 'hidden'
+        textAlign: 'center'
       }}>
-        <div style={{
-          position: 'absolute',
-          top: '0',
-          left: '0',
-          right: '0',
-          bottom: '0',
-          background: 'radial-gradient(circle at 70% 30%, rgba(255, 255, 255, 0.08) 0%, transparent 50%)',
-          pointerEvents: 'none'
-        }} />
-        
-        <div style={{ maxWidth: '800px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
-          <h2 style={{ 
-            fontSize: '3rem',
-            fontWeight: '800',
-            marginBottom: '1.5rem',
-            lineHeight: '1.1',
-            letterSpacing: '-0.02em'
+        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+          <h2 style={{
+            fontSize: '2.5rem',
+            fontWeight: '700',
+            marginBottom: '1.5rem'
           }}>
             Ready to Save Thousands?
           </h2>
-          <p style={{ 
+          <p style={{
             fontSize: '1.25rem',
-            marginBottom: '2.5rem',
-            opacity: '0.9',
-            lineHeight: '1.6',
-            maxWidth: '600px',
-            margin: '0 auto 2.5rem'
+            marginBottom: '2rem',
+            opacity: '0.9'
           }}>
-            List your property today and let qualified agents compete for your business. 
-            It's free to list, and you're never obligated to accept a proposal.
+            List your property today and let top agents compete for your business.
           </p>
-          
-          {currentUser ? (
-            <Link to="/seller">
-              <Button size="large" style={{ 
+          <Link to="/signup?type=seller">
+            <Button
+              size="large"
+              style={{
                 backgroundColor: 'white',
-                color: '#065f46',
-                padding: '1rem 3rem',
-                fontSize: '1.125rem',
-                borderRadius: '0.625rem',
-                fontWeight: '700',
-                boxShadow: '0 4px 14px 0 rgba(0, 0, 0, 0.15)',
-              }}>
-                Go to Dashboard
-              </Button>
-            </Link>
-          ) : (
-            <Link to="/signup?type=seller">
-              <Button size="large" style={{ 
-                backgroundColor: 'white',
-                color: '#065f46',
-                padding: '1rem 3rem',
-                fontSize: '1.125rem',
-                borderRadius: '0.625rem',
-                fontWeight: '700',
-                boxShadow: '0 4px 14px 0 rgba(0, 0, 0, 0.15)',
-              }}>
-                List Your Property Now
-              </Button>
-            </Link>
-          )}
-          
-          <p style={{ 
-            marginTop: '1.5rem',
-            fontSize: '1rem',
-            opacity: '0.8'
-          }}>
-            No upfront costs • No obligations • Get proposals in 24 hours
-          </p>
+                color: '#059669',
+                padding: '1rem 2.5rem',
+                fontSize: '1.25rem',
+                fontWeight: '600',
+                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+              }}
+            >
+              List Your Property
+            </Button>
+          </Link>
         </div>
       </section>
     </div>

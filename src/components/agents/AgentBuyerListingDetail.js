@@ -7,6 +7,8 @@ import { useTokens } from '../../hooks/useTokens';
 import { spendTokenForBid, addTokens } from '../../services/firebase/tokens';
 import { Card, CardHeader, CardBody } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
+import ServiceSelector from '../services/ServiceSelector';
+import { buyerServices } from '../../config/services';
 
 const AgentBuyerListingDetail = () => {
   const { listingId } = useParams();
@@ -42,21 +44,6 @@ const AgentBuyerListingDetail = () => {
     { id: 'premium', name: 'Premium', tokens: 50, price: 150 }
   ];
   
-  // Available agent services for buyers
-  const availableServices = [
-    { id: 'search', name: 'Property Search Assistance', defaultIncluded: true },
-    { id: 'showings', name: 'Property Showings', defaultIncluded: true },
-    { id: 'negotiation', name: 'Negotiation Representation', defaultIncluded: true },
-    { id: 'analysis', name: 'Comparative Market Analysis', defaultIncluded: true },
-    { id: 'contractReview', name: 'Contract Review & Support', defaultIncluded: true },
-    { id: 'inspection', name: 'Inspection Coordination', defaultIncluded: true },
-    { id: 'closing', name: 'Closing Coordination', defaultIncluded: true },
-    { id: 'mortgage', name: 'Mortgage Lender Recommendations', defaultIncluded: true },
-    { id: 'market', name: 'Market Trend Analysis', defaultIncluded: false },
-    { id: 'neighborhood', name: 'Neighborhood Analysis', defaultIncluded: false },
-    { id: 'virtual', name: 'Virtual Tours', defaultIncluded: false },
-  ];
-  
   useEffect(() => {
     const fetchListing = async () => {
       try {
@@ -68,11 +55,6 @@ const AgentBuyerListingDetail = () => {
         
         if (docSnap.exists()) {
           setListing({ id: docSnap.id, ...docSnap.data() });
-          
-          // Initialize selected services with default included ones
-          setSelectedServices(availableServices
-            .filter(service => service.defaultIncluded)
-            .map(service => service.id));
           
           // Check if user has already bid on this listing
           const tokenUsageRef = doc(db, 'tokenUsage', `${currentUser.uid}_${listingId}`);
@@ -94,16 +76,6 @@ const AgentBuyerListingDetail = () => {
       fetchListing();
     }
   }, [listingId, currentUser]);
-  
-  const handleServiceToggle = (serviceId) => {
-    setSelectedServices(prevSelected => {
-      if (prevSelected.includes(serviceId)) {
-        return prevSelected.filter(id => id !== serviceId);
-      } else {
-        return [...prevSelected, serviceId];
-      }
-    });
-  };
 
   const handleTokenPurchase = async () => {
     if (!selectedPackage) {
@@ -179,7 +151,7 @@ const AgentBuyerListingDetail = () => {
       }
       
       // Get the names of selected services
-      const selectedServiceNames = availableServices
+      const selectedServiceNames = buyerServices
         .filter(service => selectedServices.includes(service.id))
         .map(service => service.name);
       
@@ -775,34 +747,14 @@ const AgentBuyerListingDetail = () => {
                   >
                     Services You Will Provide:
                   </label>
-                  <div style={{ 
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-                    gap: '0.5rem',
-                    marginBottom: '1rem'
-                  }}>
-                    {availableServices.map(service => (
-                      <label 
-                        key={service.id}
-                        style={{ 
-                          display: 'flex',
-                          alignItems: 'center',
-                          padding: '0.5rem',
-                          backgroundColor: selectedServices.includes(service.id) ? '#e0f2fe' : 'transparent',
-                          borderRadius: '0.375rem',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={selectedServices.includes(service.id)}
-                          onChange={() => handleServiceToggle(service.id)}
-                          style={{ marginRight: '0.5rem' }}
-                        />
-                        {service.name}
-                      </label>
-                    ))}
-                  </div>
+                  
+                  <ServiceSelector
+                    services={buyerServices}
+                    selectedServices={selectedServices}
+                    onSelectionChange={setSelectedServices}
+                    userType="buyer"
+                    showCategories={false} // Don't show categories in the bid form
+                  />
                 </div>
                 
                 <div style={{ marginBottom: '1.5rem' }}>
