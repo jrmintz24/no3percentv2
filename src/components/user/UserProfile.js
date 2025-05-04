@@ -1,258 +1,270 @@
+// src/components/user/UserProfile.js
+
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { doc, getDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
-import { updateEmail, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
-import { db, auth } from '../../services/firebase/config';
 import { useAuth } from '../../contexts/AuthContext';
-import { Card, CardHeader, CardBody, CardFooter } from '../../components/common/Card';
-import { Button } from '../../components/common/Button';
+import { Card, CardHeader, CardBody, CardFooter } from '../common/Card';
+import { Button } from '../common/Button';
+import { subscriptionTiers } from '../../config/subscriptions';
+import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { db } from '../../services/firebase/config';
+import { updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import VerificationStatusBadge from './VerificationStatusBadge';
 import AgentVerificationForm from './AgentVerificationForm';
 import BuyerVerificationForm from './BuyerVerificationForm';
 import SellerVerificationForm from './SellerVerificationForm';
 
 const UserProfile = () => {
-  const { currentUser, userProfile } = useAuth();
-  const navigate = useNavigate();
-  
-  // Form states
-  const [isEditMode, setIsEditMode] = useState(false);
+  const { currentUser, userProfile, updateUserProfile, getUserSubscriptionTier } = useAuth();
+  const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
   const [showPasswordForm, setShowPasswordForm] = useState(false);
-  
-  // Verification states
+  const [showVerificationForm, setShowVerificationForm] = useState(false);
   const [verificationData, setVerificationData] = useState(null);
   const [verificationLoading, setVerificationLoading] = useState(true);
-  const [verificationError, setVerificationError] = useState('');
-  const [showVerificationForm, setShowVerificationForm] = useState(false);
+  const [stats, setStats] = useState({
+    totalProposals: 0,
+    acceptedProposals: 0,
+    totalTokensUsed: 0,
+    successRate: 0
+  });
   
-  // Profile form data
   const [formData, setFormData] = useState({
     displayName: '',
     phone: '',
     location: '',
-    bio: ''
+    bio: '',
+    specialties: '',
+    experience: '',
+    licenseNumber: '',
+    brokerageName: '',
+    serviceAreas: '',
+    languages: ''
   });
-  
-  // Password form data
+
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   });
-  
-  // Load user data
+
+  const currentTier = getUserSubscriptionTier(userProfile);
+  const isAgent = userProfile?.userType === 'agent';
+
   useEffect(() => {
     if (userProfile) {
       setFormData({
         displayName: userProfile.displayName || '',
         phone: userProfile.phone || '',
         location: userProfile.location || '',
-        bio: userProfile.bio || ''
+        bio: userProfile.bio || '',
+        specialties: userProfile.specialties || '',
+        experience: userProfile.experience || '',
+        licenseNumber: userProfile.licenseNumber || '',
+        brokerageName: userProfile.brokerageName || '',
+        serviceAreas: userProfile.serviceAreas || '',
+        languages: userProfile.languages || ''
       });
-      
-      // Fetch verification data if user has it
       fetchVerificationData();
     }
   }, [userProfile]);
-  
-  // Fetch user's verification data
+
+  useEffect(() => {
+    const fetchAgentStats = async () => {
+      if (!currentUser || !isAgent) return;
+
+      try {
+        setLoading(true);
+        
+        const proposalsQuery = query(
+          collection(db, 'proposals'),
+          where('agentId', '==', currentUser.uid)
+        );
+        const proposalsSnapshot = await getDocs(proposalsQuery);
+        
+        const totalProposals = proposalsSnapshot.size;
+        const acceptedProposals = proposalsSnapshot.docs.filter(
+          doc => doc.data().status === 'Accepted'
+        ).length;
+        
+        const successRate = totalProposals > 0 
+          ? Math.round((acceptedProposals / totalProposals) * 100) 
+          : 0;
+        
+        setStats({
+          totalProposals,
+          acceptedProposals,
+          totalTokensUsed: userProfile.tokensUsed || 0,
+          successRate
+        });
+      } catch (error) {
+        console.error('Error fetching agent stats:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (isAgent) {
+      fetchAgentStats();
+    }
+  }, [currentUser, userProfile, isAgent]);
+
   const fetchVerificationData = async () => {
     if (!currentUser || !userProfile) return;
     
     setVerificationLoading(true);
-    setVerificationError('');
     
     try {
-      // Check if user has existing verification reference
-      if (userProfile.verificationData && userProfile.verificationData.documentId) {
-        const { documentId, type } = userProfile.verificationData;
-        let collectionName;
-        
-        switch (type) {
-          case 'agent':
-            collectionName = 'agentVerifications';
-            break;
-          case 'buyer':
-            collectionName = 'buyerVerifications';
-            break;
-          case 'seller':
-            collectionName = 'sellerVerifications';
-            break;
-          default:
-            throw new Error('Invalid verification type');
-        }
-        
-        const verificationDoc = await getDoc(doc(db, collectionName, documentId));
-        
-        if (verificationDoc.exists()) {
-          setVerificationData({
-            id: verificationDoc.id,
-            ...verificationDoc.data()
-          });
-        } else {
-          setVerificationData(null);
-        }
-      } else {
-        // Try to find verification by userId
-        let collectionName;
-        
-        switch (userProfile.userType) {
-          case 'agent':
-            collectionName = 'agentVerifications';
-            break;
-          case 'buyer':
-            collectionName = 'buyerVerifications';
-            break;
-          case 'seller':
-            collectionName = 'sellerVerifications';
-            break;
-          default:
-            throw new Error('Invalid user type');
-        }
-        
-        const q = query(
-          collection(db, collectionName),
-          where('userId', '==', currentUser.uid)
-        );
-        
-        const querySnapshot = await getDocs(q);
-        
-        if (!querySnapshot.empty) {
-          // Use the most recent verification
-          let mostRecent = null;
-          
-          querySnapshot.forEach(doc => {
-            const data = { id: doc.id, ...doc.data() };
-            
-            if (!mostRecent || 
-                (data.updatedAt && mostRecent.updatedAt && 
-                 data.updatedAt.seconds > mostRecent.updatedAt.seconds)) {
-              mostRecent = data;
-            }
-          });
-          
-          setVerificationData(mostRecent);
-        } else {
-          setVerificationData(null);
-        }
+      let collectionName;
+      switch (userProfile.userType) {
+        case 'agent':
+          collectionName = 'agentVerifications';
+          break;
+        case 'buyer':
+          collectionName = 'buyerVerifications';
+          break;
+        case 'seller':
+          collectionName = 'sellerVerifications';
+          break;
+        default:
+          return;
       }
-    } catch (err) {
-      console.error('Error fetching verification data:', err);
-      setVerificationError('Failed to load verification data');
+      
+      const q = query(
+        collection(db, collectionName),
+        where('userId', '==', currentUser.uid)
+      );
+      
+      const querySnapshot = await getDocs(q);
+      
+      if (!querySnapshot.empty) {
+        let mostRecent = null;
+        querySnapshot.forEach(doc => {
+          const data = { id: doc.id, ...doc.data() };
+          if (!mostRecent || (data.updatedAt && mostRecent.updatedAt && 
+              data.updatedAt.seconds > mostRecent.updatedAt.seconds)) {
+            mostRecent = data;
+          }
+        });
+        setVerificationData(mostRecent);
+      }
+    } catch (error) {
+      console.error('Error fetching verification data:', error);
     } finally {
       setVerificationLoading(false);
     }
   };
-  
-  // Handle profile form input changes
-  const handleInputChange = (e) => {
+
+  const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prevData => ({
-      ...prevData,
+    setFormData(prev => ({
+      ...prev,
       [name]: value
     }));
   };
-  
-  // Handle password form input changes
+
   const handlePasswordChange = (e) => {
     const { name, value } = e.target;
-    setPasswordData(prevData => ({
-      ...prevData,
+    setPasswordData(prev => ({
+      ...prev,
       [name]: value
     }));
   };
-  
-  // Handle profile update
-  const handleProfileUpdate = async (e) => {
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
+    setSaving(true);
+    setErrorMessage('');
+    setSuccessMessage('');
+
     try {
-      setLoading(true);
-      setError('');
-      setSuccess('');
-      
-      // Update user profile in Firestore
-      const userDocRef = doc(db, 'users', currentUser.uid);
-      await updateDoc(userDocRef, {
-        displayName: formData.displayName,
-        phone: formData.phone,
-        location: formData.location,
-        bio: formData.bio,
-        updatedAt: new Date()
-      });
-      
-      setSuccess('Profile updated successfully!');
-      setIsEditMode(false);
-    } catch (err) {
-      console.error('Error updating profile:', err);
-      setError('Error updating profile: ' + err.message);
+      await updateUserProfile(formData);
+      setSuccessMessage('Profile updated successfully!');
+      setEditing(false);
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (error) {
+      setErrorMessage('Failed to update profile. Please try again.');
+      console.error('Error updating profile:', error);
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
-  
-  // Handle password update
+
   const handlePasswordUpdate = async (e) => {
     e.preventDefault();
     
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setError('New passwords do not match');
+      setErrorMessage('New passwords do not match');
       return;
     }
     
+    setSaving(true);
+    setErrorMessage('');
+    setSuccessMessage('');
+    
     try {
-      setLoading(true);
-      setError('');
-      setSuccess('');
-      
-      // Re-authenticate user
       const credential = EmailAuthProvider.credential(
         currentUser.email,
         passwordData.currentPassword
       );
       
       await reauthenticateWithCredential(currentUser, credential);
-      
-      // Update password
       await updatePassword(currentUser, passwordData.newPassword);
       
-      setSuccess('Password updated successfully!');
+      setSuccessMessage('Password updated successfully!');
       setPasswordData({
         currentPassword: '',
         newPassword: '',
         confirmPassword: ''
       });
       setShowPasswordForm(false);
-    } catch (err) {
-      console.error('Error updating password:', err);
-      setError('Error updating password: ' + err.message);
+    } catch (error) {
+      setErrorMessage('Failed to update password. Please check your current password.');
+      console.error('Error updating password:', error);
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
-  
-  // Handle verification submission success
+
   const handleVerificationSuccess = () => {
-    setSuccess('Verification information submitted successfully!');
+    setSuccessMessage('Verification information submitted successfully!');
     setShowVerificationForm(false);
-    // Refetch the verification data
     fetchVerificationData();
   };
-  
-  // Get user type display
-  const getUserTypeDisplay = (type) => {
-    switch (type) {
-      case 'buyer': return 'Property Buyer';
-      case 'seller': return 'Property Seller';
-      case 'agent': return 'Real Estate Agent';
-      default: return 'User';
-    }
+
+  // Subscription Badge Component
+  const SubscriptionBadge = ({ tier }) => {
+    const colors = {
+      starter: { bg: '#f3f4f6', text: '#374151', border: '#d1d5db' },
+      professional: { bg: '#dbeafe', text: '#1e40af', border: '#93c5fd' },
+      premium: { bg: '#fef3c7', text: '#92400e', border: '#fcd34d' },
+      enterprise: { bg: '#ede9fe', text: '#5b21b6', border: '#a78bfa' }
+    };
+
+    const color = colors[tier?.id] || colors.starter;
+
+    return (
+      <div style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        padding: '0.5rem 1rem',
+        borderRadius: '9999px',
+        backgroundColor: color.bg,
+        border: `1px solid ${color.border}`,
+        color: color.text,
+        fontWeight: '600',
+        fontSize: '0.875rem'
+      }}>
+        {tier?.id === 'professional' && '⭐ '}
+        {tier?.id === 'premium' && '🌟 '}
+        {tier?.id === 'enterprise' && '👑 '}
+        {tier?.name} Member
+      </div>
+    );
   };
-  
-  // Render verification form based on user type
+
   const renderVerificationForm = () => {
     if (!userProfile) return null;
     
@@ -285,9 +297,10 @@ const UserProfile = () => {
         return <p>Verification is not available for your user type.</p>;
     }
   };
-  
+
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem 1rem' }}>
+    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1rem' }}>
+      {/* Header */}
       <div style={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
@@ -295,12 +308,11 @@ const UserProfile = () => {
         marginBottom: '2rem'
       }}>
         <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>
-          {isEditMode ? 'Edit Profile' : 'My Profile'}
+          My Profile
         </h1>
-        
-        {!isEditMode && !showPasswordForm && !showVerificationForm && (
+        {!editing && !showPasswordForm && !showVerificationForm && (
           <div style={{ display: 'flex', gap: '1rem' }}>
-            <Button onClick={() => setIsEditMode(true)}>
+            <Button onClick={() => setEditing(true)}>
               Edit Profile
             </Button>
             <Button 
@@ -312,31 +324,33 @@ const UserProfile = () => {
           </div>
         )}
       </div>
-      
-      {error && (
-        <div style={{ 
-          backgroundColor: '#fee2e2', 
-          color: '#b91c1c', 
-          padding: '1rem', 
-          borderRadius: '0.375rem', 
-          marginBottom: '1rem' 
-        }}>
-          {error}
-        </div>
-      )}
-      
-      {success && (
+
+      {/* Messages */}
+      {successMessage && (
         <div style={{ 
           backgroundColor: '#dcfce7', 
-          color: '#15803d', 
+          color: '#166534', 
           padding: '1rem', 
-          borderRadius: '0.375rem', 
+          borderRadius: '0.5rem', 
           marginBottom: '1rem' 
         }}>
-          {success}
+          {successMessage}
         </div>
       )}
-      
+
+      {errorMessage && (
+        <div style={{ 
+          backgroundColor: '#fee2e2', 
+          color: '#991b1b', 
+          padding: '1rem', 
+          borderRadius: '0.5rem', 
+          marginBottom: '1rem' 
+        }}>
+          {errorMessage}
+        </div>
+      )}
+
+      {/* Password Form */}
       {showPasswordForm ? (
         <Card>
           <form onSubmit={handlePasswordUpdate}>
@@ -345,113 +359,78 @@ const UserProfile = () => {
                 Change Password
               </h2>
             </CardHeader>
-            
             <CardBody>
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label 
-                  htmlFor="currentPassword" 
-                  style={{ 
-                    display: 'block', 
-                    marginBottom: '0.5rem', 
-                    fontWeight: '500' 
-                  }}
-                >
-                  Current Password
-                </label>
-                <input
-                  id="currentPassword"
-                  name="currentPassword"
-                  type="password"
-                  value={passwordData.currentPassword}
-                  onChange={handlePasswordChange}
-                  required
-                  style={{ 
-                    width: '100%',
-                    padding: '0.75rem',
-                    borderRadius: '0.375rem',
-                    border: '1px solid #d1d5db'
-                  }}
-                />
-              </div>
-              
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label 
-                  htmlFor="newPassword" 
-                  style={{ 
-                    display: 'block', 
-                    marginBottom: '0.5rem', 
-                    fontWeight: '500' 
-                  }}
-                >
-                  New Password
-                </label>
-                <input
-                  id="newPassword"
-                  name="newPassword"
-                  type="password"
-                  value={passwordData.newPassword}
-                  onChange={handlePasswordChange}
-                  required
-                  style={{ 
-                    width: '100%',
-                    padding: '0.75rem',
-                    borderRadius: '0.375rem',
-                    border: '1px solid #d1d5db'
-                  }}
-                />
-              </div>
-              
-              <div>
-                <label 
-                  htmlFor="confirmPassword" 
-                  style={{ 
-                    display: 'block', 
-                    marginBottom: '0.5rem', 
-                    fontWeight: '500' 
-                  }}
-                >
-                  Confirm New Password
-                </label>
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  value={passwordData.confirmPassword}
-                  onChange={handlePasswordChange}
-                  required
-                  style={{ 
-                    width: '100%',
-                    padding: '0.75rem',
-                    borderRadius: '0.375rem',
-                    border: '1px solid #d1d5db'
-                  }}
-                />
+              <div style={{ display: 'grid', gap: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                    Current Password
+                  </label>
+                  <input
+                    type="password"
+                    name="currentPassword"
+                    value={passwordData.currentPassword}
+                    onChange={handlePasswordChange}
+                    required
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '0.375rem'
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                    New Password
+                  </label>
+                  <input
+                    type="password"
+                    name="newPassword"
+                    value={passwordData.newPassword}
+                    onChange={handlePasswordChange}
+                    required
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '0.375rem'
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                    Confirm New Password
+                  </label>
+                  <input
+                    type="password"
+                    name="confirmPassword"
+                    value={passwordData.confirmPassword}
+                    onChange={handlePasswordChange}
+                    required
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '0.375rem'
+                    }}
+                  />
+                </div>
               </div>
             </CardBody>
-            
             <CardFooter>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Button 
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+                <Button
                   type="button"
                   variant="secondary"
                   onClick={() => {
                     setShowPasswordForm(false);
-                    setPasswordData({
-                      currentPassword: '',
-                      newPassword: '',
-                      confirmPassword: ''
-                    });
-                    setError('');
-                    setSuccess('');
+                    setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
                   }}
                 >
                   Cancel
                 </Button>
-                <Button 
-                  type="submit"
-                  disabled={loading}
-                >
-                  {loading ? 'Updating...' : 'Update Password'}
+                <Button type="submit" disabled={saving}>
+                  {saving ? 'Updating...' : 'Update Password'}
                 </Button>
               </div>
             </CardFooter>
@@ -460,392 +439,579 @@ const UserProfile = () => {
       ) : showVerificationForm ? (
         <Card>
           <CardHeader>
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              alignItems: 'center' 
-            }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', margin: 0 }}>
-                Profile Verification
-              </h2>
-              <VerificationStatusBadge status={userProfile?.verificationStatus || 'unverified'} />
-            </div>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', margin: 0 }}>
+              Profile Verification
+            </h2>
           </CardHeader>
-          
           <CardBody>
             {renderVerificationForm()}
           </CardBody>
-          
           <CardFooter>
-            <Button 
+            <Button
               type="button"
               variant="secondary"
-              onClick={() => {
-                setShowVerificationForm(false);
-                setError('');
-                setSuccess('');
-              }}
+              onClick={() => setShowVerificationForm(false)}
             >
               Back to Profile
             </Button>
           </CardFooter>
         </Card>
-      ) : isEditMode ? (
-        <Card>
-          <form onSubmit={handleProfileUpdate}>
-            <CardHeader>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', margin: 0 }}>
-                Edit Profile Information
-              </h2>
-            </CardHeader>
-            
-            <CardBody>
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label 
-                  htmlFor="displayName" 
-                  style={{ 
-                    display: 'block', 
-                    marginBottom: '0.5rem', 
-                    fontWeight: '500' 
-                  }}
-                >
-                  Full Name
-                </label>
-                <input
-                  id="displayName"
-                  name="displayName"
-                  type="text"
-                  value={formData.displayName}
-                  onChange={handleInputChange}
-                  style={{ 
-                    width: '100%',
-                    padding: '0.75rem',
-                    borderRadius: '0.375rem',
-                    border: '1px solid #d1d5db'
-                  }}
-                />
-              </div>
-              
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label 
-                  htmlFor="phone" 
-                  style={{ 
-                    display: 'block', 
-                    marginBottom: '0.5rem', 
-                    fontWeight: '500' 
-                  }}
-                >
-                  Phone Number
-                </label>
-                <input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  style={{ 
-                    width: '100%',
-                    padding: '0.75rem',
-                    borderRadius: '0.375rem',
-                    border: '1px solid #d1d5db'
-                  }}
-                />
-              </div>
-              
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label 
-                  htmlFor="location" 
-                  style={{ 
-                    display: 'block', 
-                    marginBottom: '0.5rem', 
-                    fontWeight: '500' 
-                  }}
-                >
-                  Location
-                </label>
-                <input
-                  id="location"
-                  name="location"
-                  type="text"
-                  value={formData.location}
-                  onChange={handleInputChange}
-                  placeholder="e.g., Seattle, WA"
-                  style={{ 
-                    width: '100%',
-                    padding: '0.75rem',
-                    borderRadius: '0.375rem',
-                    border: '1px solid #d1d5db'
-                  }}
-                />
-              </div>
-              
-              <div>
-                <label 
-                  htmlFor="bio" 
-                  style={{ 
-                    display: 'block', 
-                    marginBottom: '0.5rem', 
-                    fontWeight: '500' 
-                  }}
-                >
-                  Bio
-                </label>
-                <textarea
-                  id="bio"
-                  name="bio"
-                  value={formData.bio}
-                  onChange={handleInputChange}
-                  rows={4}
-                  placeholder="Tell other users about yourself"
-                  style={{ 
-                    width: '100%',
-                    padding: '0.75rem',
-                    borderRadius: '0.375rem',
-                    border: '1px solid #d1d5db',
-                    resize: 'vertical'
-                  }}
-                />
-              </div>
-            </CardBody>
-            
-            <CardFooter>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Button 
-                  type="button"
-                  variant="secondary"
-                  onClick={() => {
-                    setIsEditMode(false);
-                    setError('');
-                    setSuccess('');
-                    
-                    // Reset form data to current profile
-                    if (userProfile) {
-                      setFormData({
-                        displayName: userProfile.displayName || '',
-                        phone: userProfile.phone || '',
-                        location: userProfile.location || '',
-                        bio: userProfile.bio || ''
-                      });
-                    }
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  type="submit"
-                  disabled={loading}
-                >
-                  {loading ? 'Saving...' : 'Save Changes'}
-                </Button>
-              </div>
-            </CardFooter>
-          </form>
-        </Card>
       ) : (
-        <>
-          <Card>
-            <CardHeader>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', margin: 0 }}>
-                Profile Information
-              </h2>
-            </CardHeader>
-            
-            <CardBody>
-              <div style={{ marginBottom: '1.5rem' }}>
-                <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '0.5rem' }}>
-                  Email
-                </h3>
-                <p>{currentUser?.email || 'N/A'}</p>
-              </div>
-              
-              <div style={{ marginBottom: '1.5rem' }}>
-                <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '0.5rem' }}>
-                  Full Name
-                </h3>
-                <p>{userProfile?.displayName || 'Not set'}</p>
-              </div>
-              
-              <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '0.5rem' }}>
-                    User Type
-                  </h3>
-                  <p>{getUserTypeDisplay(userProfile?.userType)}</p>
-                </div>
-                
-                {userProfile?.verificationStatus && (
-                  <VerificationStatusBadge status={userProfile.verificationStatus} />
-                )}
-              </div>
-              
-              <div style={{ marginBottom: '1.5rem' }}>
-                <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '0.5rem' }}>
-                  Phone Number
-                </h3>
-                <p>{userProfile?.phone || 'Not set'}</p>
-              </div>
-              
-              <div style={{ marginBottom: '1.5rem' }}>
-                <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '0.5rem' }}>
-                  Location
-                </h3>
-                <p>{userProfile?.location || 'Not set'}</p>
-              </div>
-              
-              <div>
-                <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '0.5rem' }}>
-                  Bio
-                </h3>
-                <p style={{ whiteSpace: 'pre-wrap' }}>{userProfile?.bio || 'Not set'}</p>
-              </div>
-            </CardBody>
-            
-            <CardFooter>
-              <Button 
-                onClick={() => setShowVerificationForm(true)}
-                fullWidth
-              >
-                {userProfile?.verificationStatus === 'verified' 
-                  ? 'View Verification Details' 
-                  : userProfile?.verificationStatus === 'pending'
-                  ? 'Update Verification Information'
-                  : 'Verify Your Profile'}
-              </Button>
-            </CardFooter>
-          </Card>
-
-          {/* Display verification information if user is verified */}
-          {userProfile?.verificationStatus === 'verified' && !verificationLoading && verificationData && (
-            <Card style={{ marginTop: '1.5rem' }}>
-              <CardHeader>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', margin: 0 }}>
-                    Verification Status
-                  </h2>
-                  <VerificationStatusBadge status="verified" />
-                </div>
-              </CardHeader>
-              
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '2rem' }}>
+          {/* Main Profile Card */}
+          <div style={{ gridColumn: 'span 8' }}>
+            <Card>
               <CardBody>
-                {userProfile.userType === 'agent' && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                    <div>
-                      <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>Licensed Agent in</span>
-                      <p style={{ fontWeight: '500', margin: '0.25rem 0 0 0' }}>{verificationData.licenseState}</p>
-                    </div>
-                    
-                    {verificationData.zillowProfileUrl && (
-                      <div>
-                        <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>Zillow Profile</span>
-                        <p style={{ margin: '0.25rem 0 0 0' }}>
-                          <a 
-                            href={verificationData.zillowProfileUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{ color: '#2563eb', textDecoration: 'none' }}
-                          >
-                            View on Zillow
-                          </a>
-                        </p>
-                      </div>
-                    )}
-                    
-                    {verificationData.professionalAssociations?.length > 0 && (
-                      <div>
-                        <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>Professional Associations</span>
-                        <p style={{ fontWeight: '500', margin: '0.25rem 0 0 0' }}>
-                          {typeof verificationData.professionalAssociations === 'string' 
-                            ? verificationData.professionalAssociations 
-                            : verificationData.professionalAssociations.join(', ')}
-                        </p>
-                      </div>
-                    )}
+                {/* Profile Header */}
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '1.5rem',
+                  marginBottom: '2rem',
+                  paddingBottom: '2rem',
+                  borderBottom: '1px solid #e5e7eb'
+                }}>
+                  <div style={{
+                    width: '120px',
+                    height: '120px',
+                    borderRadius: '50%',
+                    backgroundColor: '#f3f4f6',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '3rem',
+                    fontWeight: '600',
+                    color: '#6b7280'
+                  }}>
+                    {formData.displayName.charAt(0).toUpperCase()}
                   </div>
-                )}
-                
-                {userProfile.userType === 'buyer' && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" style={{ width: '1.25rem', height: '1.25rem', color: '#10b981', marginRight: '0.5rem' }}>
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
-                      <span>Pre-approval Verified</span>
-                    </div>
-                    
-                    {verificationData.privacySettings?.showPreApprovalAmount && (
-                      <div>
-                        <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>Pre-approved Amount</span>
-                        <p style={{ fontWeight: '500', margin: '0.25rem 0 0 0' }}>
-                          ${verificationData.preApprovalAmount?.toLocaleString()}
-                        </p>
-                      </div>
-                    )}
-                    
-                    <div>
-                      <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>Lender</span>
-                      <p style={{ fontWeight: '500', margin: '0.25rem 0 0 0' }}>
-                        {verificationData.lenderName}
-                      </p>
-                    </div>
-                    
-                    <div>
-                      <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>Expires</span>
-                      <p style={{ fontWeight: '500', margin: '0.25rem 0 0 0' }}>
-                        {verificationData.preApprovalExpiryDate?.seconds 
-                          ? new Date(verificationData.preApprovalExpiryDate.seconds * 1000).toLocaleDateString() 
-                          : 'N/A'}
-                      </p>
+                  <div style={{ flex: 1 }}>
+                    <h2 style={{ 
+                      fontSize: '1.5rem', 
+                      fontWeight: '700',
+                      marginBottom: '0.5rem' 
+                    }}>
+                      {formData.displayName}
+                    </h2>
+                    <p style={{ color: '#6b7280', marginBottom: '0.5rem' }}>
+                      {userProfile?.email}
+                    </p>
+                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                      {isAgent && <SubscriptionBadge tier={currentTier} />}
+                      <VerificationStatusBadge status={userProfile?.verificationStatus || 'unverified'} />
                     </div>
                   </div>
-                )}
-                
-                {userProfile.userType === 'seller' && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" style={{ width: '1.25rem', height: '1.25rem', color: '#10b981', marginRight: '0.5rem' }}>
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
-                      <span>Property Ownership Verified</span>
-                    </div>
-                    
-                    <div>
-                      <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>Property Address</span>
-                      <p style={{ fontWeight: '500', margin: '0.25rem 0 0 0' }}>
-                        {verificationData.propertyAddress}
-                      </p>
-                    </div>
-                    
-                    {verificationData.propertyPhotos?.length > 0 && (
-                      <div>
-                        <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>Property Photos</span>
-                        <div style={{ 
-                          display: 'grid',
-                          gridTemplateColumns: 'repeat(3, 1fr)',
-                          gap: '0.5rem',
-                          marginTop: '0.5rem' 
-                        }}>
-                          {verificationData.propertyPhotos.slice(0, 3).map((photo, index) => (
-                            <img 
-                              key={index} 
-                              src={photo} 
-                              alt={`Property ${index + 1}`} 
-                              style={{ 
-                                width: '100%',
-                                height: '5rem',
-                                objectFit: 'cover',
-                                borderRadius: '0.25rem'
-                              }}
-                            />
-                          ))}
+                </div>
+
+                {editing ? (
+                  <form onSubmit={handleSubmit}>
+                    <div style={{ display: 'grid', gap: '1.5rem' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                        <div>
+                          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                            Display Name
+                          </label>
+                          <input
+                            type="text"
+                            name="displayName"
+                            value={formData.displayName}
+                            onChange={handleChange}
+                            style={{
+                              width: '100%',
+                              padding: '0.5rem',
+                              border: '1px solid #d1d5db',
+                              borderRadius: '0.375rem'
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                            Phone
+                          </label>
+                          <input
+                            type="tel"
+                            name="phone"
+                            value={formData.phone}
+                            onChange={handleChange}
+                            style={{
+                              width: '100%',
+                              padding: '0.5rem',
+                              border: '1px solid #d1d5db',
+                              borderRadius: '0.375rem'
+                            }}
+                          />
                         </div>
                       </div>
+
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                          Location
+                        </label>
+                        <input
+                          type="text"
+                          name="location"
+                          value={formData.location}
+                          onChange={handleChange}
+                          style={{
+                            width: '100%',
+                            padding: '0.5rem',
+                            border: '1px solid #d1d5db',
+                            borderRadius: '0.375rem'
+                          }}
+                        />
+                      </div>
+
+                      {isAgent && (
+                        <>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                            <div>
+                              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                                License Number
+                              </label>
+                              <input
+                                type="text"
+                                name="licenseNumber"
+                                value={formData.licenseNumber}
+                                onChange={handleChange}
+                                style={{
+                                  width: '100%',
+                                  padding: '0.5rem',
+                                  border: '1px solid #d1d5db',
+                                  borderRadius: '0.375rem'
+                                }}
+                              />
+                            </div>
+                            <div>
+                              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                                Brokerage Name
+                              </label>
+                              <input
+                                type="text"
+                                name="brokerageName"
+                                value={formData.brokerageName}
+                                onChange={handleChange}
+                                style={{
+                                  width: '100%',
+                                  padding: '0.5rem',
+                                  border: '1px solid #d1d5db',
+                                  borderRadius: '0.375rem'
+                                }}
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                              Years of Experience
+                            </label>
+                            <input
+                              type="text"
+                              name="experience"
+                              value={formData.experience}
+                              onChange={handleChange}
+                              placeholder="e.g., 5 years"
+                              style={{
+                                width: '100%',
+                                padding: '0.5rem',
+                                border: '1px solid #d1d5db',
+                                borderRadius: '0.375rem'
+                              }}
+                            />
+                          </div>
+
+                          <div>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                              Specialties (comma-separated)
+                            </label>
+                            <input
+                              type="text"
+                              name="specialties"
+                              value={formData.specialties}
+                              onChange={handleChange}
+                              placeholder="e.g., Luxury Homes, First-time Buyers, Investment Properties"
+                              style={{
+                                width: '100%',
+                                padding: '0.5rem',
+                                border: '1px solid #d1d5db',
+                                borderRadius: '0.375rem'
+                              }}
+                            />
+                          </div>
+
+                          <div>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                              Service Areas (comma-separated)
+                            </label>
+                            <input
+                              type="text"
+                              name="serviceAreas"
+                              value={formData.serviceAreas}
+                              onChange={handleChange}
+                              placeholder="e.g., Downtown, Westside, Suburbs"
+                              style={{
+                                width: '100%',
+                                padding: '0.5rem',
+                                border: '1px solid #d1d5db',
+                                borderRadius: '0.375rem'
+                              }}
+                            />
+                          </div>
+
+                          <div>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                              Languages (comma-separated)
+                            </label>
+                            <input
+                              type="text"
+                              name="languages"
+                              value={formData.languages}
+                              onChange={handleChange}
+                              placeholder="e.g., English, Spanish, Mandarin"
+                              style={{
+                                width: '100%',
+                                padding: '0.5rem',
+                                border: '1px solid #d1d5db',
+                                borderRadius: '0.375rem'
+                              }}
+                            />
+                          </div>
+                        </>
+                      )}
+
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                          Bio
+                        </label>
+                        <textarea
+                          name="bio"
+                          value={formData.bio}
+                          onChange={handleChange}
+                          rows={4}
+                          style={{
+                            width: '100%',
+                            padding: '0.5rem',
+                            border: '1px solid #d1d5db',
+                            borderRadius: '0.375rem'
+                          }}
+                        />
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={() => setEditing(false)}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          type="submit"
+                          disabled={saving}
+                        >
+                          {saving ? 'Saving...' : 'Save Changes'}
+                        </Button>
+                      </div>
+                    </div>
+                  </form>
+                ) : (
+                  <div style={{ display: 'grid', gap: '1.5rem' }}>
+                    <div>
+                      <h3 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '1rem' }}>
+                        Contact Information
+                      </h3>
+                      <div style={{ display: 'grid', gap: '0.75rem' }}>
+                        <div>
+                          <span style={{ fontWeight: '500', marginRight: '0.5rem' }}>Email:</span>
+                          <span style={{ color: '#6b7280' }}>{userProfile?.email}</span>
+                        </div>
+                        <div>
+                          <span style={{ fontWeight: '500', marginRight: '0.5rem' }}>Phone:</span>
+                          <span style={{ color: '#6b7280' }}>{formData.phone || 'Not provided'}</span>
+                        </div>
+                        <div>
+                          <span style={{ fontWeight: '500', marginRight: '0.5rem' }}>Location:</span>
+                          <span style={{ color: '#6b7280' }}>{formData.location || 'Not provided'}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {isAgent && (
+                      <>
+                        <div>
+                          <h3 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '1rem' }}>
+                            Professional Information
+                          </h3>
+                          <div style={{ display: 'grid', gap: '0.75rem' }}>
+                            <div>
+                              <span style={{ fontWeight: '500', marginRight: '0.5rem' }}>License:</span>
+                              <span style={{ color: '#6b7280' }}>{formData.licenseNumber || 'Not provided'}</span>
+                            </div>
+                            <div>
+                              <span style={{ fontWeight: '500', marginRight: '0.5rem' }}>Brokerage:</span>
+                              <span style={{ color: '#6b7280' }}>{formData.brokerageName || 'Not provided'}</span>
+                            </div>
+                            <div>
+                              <span style={{ fontWeight: '500', marginRight: '0.5rem' }}>Experience:</span>
+                              <span style={{ color: '#6b7280' }}>{formData.experience || 'Not provided'}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div>
+                          <h3 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '1rem' }}>
+                            Expertise
+                          </h3>
+                          <div style={{ display: 'grid', gap: '0.75rem' }}>
+                            <div>
+                              <span style={{ fontWeight: '500', marginRight: '0.5rem' }}>Specialties:</span>
+                              <div style={{ marginTop: '0.5rem' }}>
+                                {formData.specialties ? (
+                                  formData.specialties.split(',').map((specialty, index) => (
+                                    <span key={index} style={{
+                                      display: 'inline-block',
+                                      backgroundColor: '#f3f4f6',
+                                      padding: '0.25rem 0.75rem',
+                                      borderRadius: '9999px',
+                                      marginRight: '0.5rem',
+                                      marginBottom: '0.5rem',
+                                      fontSize: '0.875rem'
+                                    }}>
+                                      {specialty.trim()}
+                                    </span>
+                                  ))
+                                ) : (
+                                  <span style={{ color: '#6b7280' }}>Not provided</span>
+                                )}
+                              </div>
+                            </div>
+                            <div>
+                              <span style={{ fontWeight: '500', marginRight: '0.5rem' }}>Service Areas:</span>
+                              <div style={{ marginTop: '0.5rem' }}>
+                                {formData.serviceAreas ? (
+                                  formData.serviceAreas.split(',').map((area, index) => (
+                                    <span key={index} style={{
+                                      display: 'inline-block',
+                                      backgroundColor: '#f3f4f6',
+                                      padding: '0.25rem 0.75rem',
+                                      borderRadius: '9999px',
+                                      marginRight: '0.5rem',
+                                      marginBottom: '0.5rem',
+                                      fontSize: '0.875rem'
+                                    }}>
+                                      {area.trim()}
+                                    </span>
+                                  ))
+                                ) : (
+                                  <span style={{ color: '#6b7280' }}>Not provided</span>
+                                )}
+                              </div>
+                            </div>
+                            <div>
+                              <span style={{ fontWeight: '500', marginRight: '0.5rem' }}>Languages:</span>
+                              <div style={{ marginTop: '0.5rem' }}>
+                                {formData.languages ? (
+                                  formData.languages.split(',').map((language, index) => (
+                                    <span key={index} style={{
+                                      display: 'inline-block',
+                                      backgroundColor: '#f3f4f6',
+                                      padding: '0.25rem 0.75rem',
+                                      borderRadius: '9999px',
+                                      marginRight: '0.5rem',
+                                      marginBottom: '0.5rem',
+                                      fontSize: '0.875rem'
+                                    }}>
+                                      {language.trim()}
+                                    </span>
+                                  ))
+                                ) : (
+                                  <span style={{ color: '#6b7280' }}>Not provided</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </>
                     )}
+
+                    <div>
+                      <h3 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '1rem' }}>
+                        About
+                      </h3>
+                      <p style={{ color: '#6b7280', lineHeight: '1.6' }}>
+                        {formData.bio || 'No bio provided'}
+                      </p>
+                    </div>
                   </div>
                 )}
               </CardBody>
             </Card>
-          )}
-        </>
+          </div>
+
+          {/* Sidebar */}
+          <div style={{ gridColumn: 'span 4' }}>
+            {isAgent && (
+              <>
+                {/* Subscription Card */}
+                <Card style={{ marginBottom: '1.5rem' }}>
+                  <CardHeader>
+                    <h3 style={{ fontSize: '1.125rem', fontWeight: 'bold', margin: 0 }}>
+                      Subscription Status
+                    </h3>
+                  </CardHeader>
+                  <CardBody>
+                    <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                      <SubscriptionBadge tier={currentTier} />
+                    </div>
+                    <div style={{ 
+                      backgroundColor: '#f9fafb', 
+                      padding: '1rem', 
+                      borderRadius: '0.5rem',
+                      marginBottom: '1rem'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                        <span style={{ fontWeight: '500' }}>Monthly Tokens:</span>
+                        <span>{currentTier?.monthlyTokens || 0}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                        <span style={{ fontWeight: '500' }}>Token Discount:</span>
+                        <span>{(currentTier?.tokenDiscount * 100) || 0}%</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ fontWeight: '500' }}>Price:</span>
+                        <span>${currentTier?.price || 0}/month</span>
+                      </div>
+                    </div>
+                    <Button
+                      to="/agent/subscription"
+                      variant={currentTier?.id === 'enterprise' ? 'secondary' : 'primary'}
+                      fullWidth
+                    >
+                      {currentTier?.id === 'enterprise' ? 'View Plans' : 'Upgrade Plan'}
+                    </Button>
+                  </CardBody>
+                </Card>
+
+                {/* Performance Stats */}
+                <Card>
+                  <CardHeader>
+                    <h3 style={{ fontSize: '1.125rem', fontWeight: 'bold', margin: 0 }}>
+                      Performance Stats
+                    </h3>
+                  </CardHeader>
+                  <CardBody>
+                    <div style={{ display: 'grid', gap: '1rem' }}>
+                      <div style={{ 
+                        padding: '1rem',
+                        backgroundColor: '#f9fafb',
+                        borderRadius: '0.5rem',
+                        textAlign: 'center'
+                      }}>
+                        <div style={{ fontSize: '2rem', fontWeight: '700', color: '#2563eb' }}>
+                          {loading ? '...' : stats.successRate}%
+                        </div>
+                        <div style={{ color: '#6b7280', fontSize: '0.875rem' }}>
+                          Success Rate
+                        </div>
+                      </div>
+                      
+                      <div style={{ 
+                        display: 'grid', 
+                        gridTemplateColumns: '1fr 1fr',
+                        gap: '1rem'
+                      }}>
+                        <div style={{ 
+                          padding: '1rem',
+                          backgroundColor: '#f9fafb',
+                          borderRadius: '0.5rem',
+                          textAlign: 'center'
+                        }}>
+                          <div style={{ fontSize: '1.5rem', fontWeight: '700' }}>
+                            {loading ? '...' : stats.totalProposals}
+                          </div>
+                          <div style={{ color: '#6b7280', fontSize: '0.875rem' }}>
+                            Total Proposals
+                          </div>
+                        </div>
+                        
+                        <div style={{ 
+                          padding: '1rem',
+                          backgroundColor: '#f9fafb',
+                          borderRadius: '0.5rem',
+                          textAlign: 'center'
+                        }}>
+                          <div style={{ fontSize: '1.5rem', fontWeight: '700' }}>
+                            {loading ? '...' : stats.acceptedProposals}
+                          </div>
+                          <div style={{ color: '#6b7280', fontSize: '0.875rem' }}>
+                            Accepted
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div style={{ 
+                        padding: '1rem',
+                        backgroundColor: '#f9fafb',
+                        borderRadius: '0.5rem',
+                        textAlign: 'center'
+                      }}>
+                        <div style={{ fontSize: '1.5rem', fontWeight: '700' }}>
+                          {loading ? '...' : stats.totalTokensUsed}
+                        </div>
+                        <div style={{ color: '#6b7280', fontSize: '0.875rem' }}>
+                          Tokens Used
+                        </div>
+                      </div>
+                    </div>
+                  </CardBody>
+                </Card>
+              </>
+            )}
+
+            {/* Account Information and Verification */}
+            <Card style={{ marginTop: '1.5rem' }}>
+              <CardHeader>
+                <h3 style={{ fontSize: '1.125rem', fontWeight: 'bold', margin: 0 }}>
+                  Account Information
+                </h3>
+              </CardHeader>
+              <CardBody>
+                <div style={{ display: 'grid', gap: '1rem' }}>
+                  <div>
+                    <span style={{ fontWeight: '500' }}>Account Type:</span>
+                    <div style={{ 
+                      marginTop: '0.25rem',
+                      display: 'inline-block',
+                      padding: '0.25rem 0.75rem',
+                      backgroundColor: '#f3f4f6',
+                      borderRadius: '0.375rem',
+                      textTransform: 'capitalize',
+                      marginLeft: '0.5rem'
+                    }}>
+                      {userProfile?.userType}
+                    </div>
+                  </div>
+                  <div>
+                    <span style={{ fontWeight: '500' }}>Member Since:</span>
+                    <div style={{ color: '#6b7280', marginTop: '0.25rem' }}>
+                      {userProfile?.createdAt?.toDate().toLocaleDateString()}
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => setShowVerificationForm(true)}
+                    fullWidth
+                    variant={userProfile?.verificationStatus === 'verified' ? 'secondary' : 'primary'}
+                  >
+                    {userProfile?.verificationStatus === 'verified' 
+                      ? 'View Verification' 
+                      : userProfile?.verificationStatus === 'pending'
+                      ? 'Update Verification'
+                      : 'Verify Profile'}
+                  </Button>
+                </div>
+              </CardBody>
+            </Card>
+          </div>
+        </div>
       )}
     </div>
   );

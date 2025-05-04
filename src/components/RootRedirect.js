@@ -3,6 +3,7 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import HomePage from '../pages/HomePage';
 
 const RootRedirect = () => {
   const { currentUser, userProfile, loading } = useAuth();
@@ -18,8 +19,9 @@ const RootRedirect = () => {
     </div>;
   }
   
+  // If not logged in, show the homepage instead of redirecting to signin
   if (!currentUser) {
-    return <Navigate to="/signin" replace />;
+    return <HomePage />;
   }
   
   const isAdmin = userProfile?.isAdmin === true;
@@ -36,7 +38,8 @@ const RootRedirect = () => {
     case 'agent':
       return <Navigate to="/agent/dashboard" replace />;
     default:
-      return <Navigate to="/signin" replace />;
+      // If user is logged in but has no role, still show homepage
+      return <HomePage />;
   }
 };
 

@@ -5,11 +5,12 @@ import { useAuth } from '../../contexts/AuthContext';
 import TokenDashboard from '../../components/agents/TokenManagement/TokenDashboard';
 import { Card, CardHeader, CardBody } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
-import { collection, query, where, getDocs, count } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../services/firebase/config';
+import { subscriptionTiers } from '../../config/subscriptions';
 
 const AgentDashboardPage = () => {
-  const { currentUser, userProfile } = useAuth();
+  const { currentUser, userProfile, getUserSubscriptionTier } = useAuth();
   const [stats, setStats] = useState({
     proposals: 0,
     listings: 0,
@@ -62,6 +63,9 @@ const AgentDashboardPage = () => {
 
     fetchStats();
   }, [currentUser]);
+
+  // Get the current subscription tier
+  const currentTier = getUserSubscriptionTier(userProfile);
   
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1rem' }}>
@@ -74,9 +78,14 @@ const AgentDashboardPage = () => {
         <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>
           Agent Dashboard
         </h1>
-        <Button to="/agent/buy-tokens">
-          Buy More Tokens
-        </Button>
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          <Button to="/agent/subscription" variant="secondary">
+            Manage Subscription
+          </Button>
+          <Button to="/agent/buy-tokens">
+            Buy More Tokens
+          </Button>
+        </div>
       </div>
       
       <div style={{ 
@@ -89,8 +98,14 @@ const AgentDashboardPage = () => {
         <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
           Welcome, {userProfile?.displayName || 'Agent'}!
         </h2>
-        <p style={{ margin: 0 }}>
+        <p style={{ margin: '0 0 0.5rem 0' }}>
           Your dashboard gives you access to all buyer and seller listings, allowing you to submit proposals and manage clients.
+        </p>
+        <p style={{ margin: 0, fontWeight: '500' }}>
+          Current Plan: <strong>{currentTier?.name || 'Starter'}</strong>
+          {currentTier?.id !== 'starter' && (
+            <span> - {currentTier?.monthlyTokens} tokens included monthly</span>
+          )}
         </p>
       </div>
       
@@ -228,6 +243,121 @@ const AgentDashboardPage = () => {
         
         <div>
           <TokenDashboard />
+          
+          <Card style={{ marginTop: '2rem' }}>
+            <CardHeader>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', margin: 0 }}>
+                Your Subscription
+              </h3>
+            </CardHeader>
+            <CardBody>
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center',
+                marginBottom: '1.5rem',
+                paddingBottom: '1.5rem',
+                borderBottom: '1px solid #e5e7eb'
+              }}>
+                <div>
+                  <h4 style={{ 
+                    fontSize: '1.5rem', 
+                    fontWeight: '700',
+                    color: '#111827',
+                    marginBottom: '0.25rem'
+                  }}>
+                    {currentTier?.name || 'Starter'} Plan
+                  </h4>
+                  <p style={{ 
+                    color: '#6b7280',
+                    fontSize: '0.875rem',
+                    margin: 0
+                  }}>
+                    {currentTier?.monthlyTokens > 0 
+                      ? `${currentTier.monthlyTokens} tokens included monthly`
+                      : 'Pay as you go pricing'
+                    }
+                  </p>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ 
+                    fontSize: '1.5rem', 
+                    fontWeight: '700',
+                    color: '#2563eb'
+                  }}>
+                    ${currentTier?.price || 0}
+                  </div>
+                  <div style={{ 
+                    color: '#6b7280',
+                    fontSize: '0.875rem'
+                  }}>
+                    per month
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '1.5rem' }}>
+                <h5 style={{ 
+                  fontWeight: '600',
+                  marginBottom: '0.75rem',
+                  color: '#374151'
+                }}>
+                  Current Benefits:
+                </h5>
+                <ul style={{ 
+                  margin: 0, 
+                  paddingLeft: '1.25rem', 
+                  fontSize: '0.875rem',
+                  color: '#4b5563'
+                }}>
+                  {currentTier?.features.slice(0, 3).map((feature, index) => (
+                    <li key={index} style={{ marginBottom: '0.5rem' }}>
+                      {feature}
+                    </li>
+                  ))}
+                  {currentTier?.features.length > 3 && (
+                    <li style={{ color: '#6b7280', fontStyle: 'italic' }}>
+                      And {currentTier.features.length - 3} more...
+                    </li>
+                  )}
+                </ul>
+              </div>
+
+              {currentTier?.id === 'starter' && (
+                <div style={{
+                  backgroundColor: '#eff6ff',
+                  border: '1px solid #bfdbfe',
+                  borderRadius: '0.5rem',
+                  padding: '1rem',
+                  marginBottom: '1.5rem'
+                }}>
+                  <p style={{ 
+                    fontSize: '0.875rem',
+                    margin: '0 0 0.5rem 0',
+                    color: '#1e40af',
+                    fontWeight: '500'
+                  }}>
+                    Upgrade to Professional
+                  </p>
+                  <p style={{ 
+                    fontSize: '0.875rem',
+                    margin: 0,
+                    color: '#3b82f6'
+                  }}>
+                    Get 10 tokens monthly, featured profile, and save 20% on additional tokens!
+                  </p>
+                </div>
+              )}
+
+              <Button 
+                to="/agent/subscription" 
+                variant={currentTier?.id === 'enterprise' ? 'secondary' : 'primary'}
+                fullWidth
+              >
+                {currentTier?.id === 'enterprise' ? 'View Plan Details' : 'Upgrade Plan'}
+              </Button>
+            </CardBody>
+          </Card>
           
           <Card style={{ marginTop: '2rem' }}>
             <CardHeader>

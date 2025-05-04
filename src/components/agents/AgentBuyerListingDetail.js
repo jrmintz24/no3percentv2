@@ -5,14 +5,16 @@ import { db } from '../../services/firebase/config';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTokens } from '../../hooks/useTokens';
 import { spendTokenForBid, addTokens } from '../../services/firebase/tokens';
+import { calculateTokenCost, getHighestPriorityBid } from '../../services/firebase/tokenPricing';
 import { Card, CardHeader, CardBody } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import ServiceSelector from '../services/ServiceSelector';
 import { buyerServices } from '../../config/services';
+import { subscriptionTiers, tokenPackages, getTokenPackagePrice } from '../../config/subscriptions';
 
 const AgentBuyerListingDetail = () => {
   const { listingId } = useParams();
-  const { currentUser, userProfile } = useAuth();
+  const { currentUser, userProfile, getUserSubscriptionTier } = useAuth();
   const { tokens, loading: tokensLoading } = useTokens();
   const navigate = useNavigate();
   
@@ -34,6 +36,14 @@ const AgentBuyerListingDetail = () => {
   const [offerRebate, setOfferRebate] = useState(false);
   const [rebateAmount, setRebateAmount] = useState('');
   
+  // Dynamic token pricing states
+  const [tokenCost, setTokenCost] = useState(1);
+  const [costFactors, setCostFactors] = useState(null);
+  
+  // Priority boost states
+  const [boostAmount, setBoostAmount] = useState(0);
+  const [highestBid, setHighestBid] = useState(0);
+  
   // Token purchase states
   const [showTokenPurchase, setShowTokenPurchase] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState(null);
@@ -44,12 +54,8 @@ const AgentBuyerListingDetail = () => {
   // Add ref for bid form
   const bidFormRef = useRef(null);
   
-  // Token packages
-  const tokenPackages = [
-    { id: 'basic', name: 'Basic', tokens: 5, price: 25 },
-    { id: 'standard', name: 'Standard', tokens: 20, price: 80, popular: true },
-    { id: 'premium', name: 'Premium', tokens: 50, price: 150 }
-  ];
+  // Get user subscription tier
+  const userTier = getUserSubscriptionTier(userProfile);
   
   // Add useEffect to scroll when bidOpen changes
   useEffect(() => {
@@ -103,6 +109,31 @@ const AgentBuyerListingDetail = () => {
     }
   }, [listingId, currentUser]);
 
+  // Add useEffect for dynamic token pricing and highest bid
+  useEffect(() => {
+    const fetchPricingInfo = async () => {
+      if (listing) {
+        // Get token cost
+        const { cost, factors } = await calculateTokenCost(
+          listingId, 
+          'buyer', 
+          listing.verificationStatus === 'verified',
+          db
+        );
+        setTokenCost(cost);
+        setCostFactors(factors);
+        
+        // Get highest bid
+        const highest = await getHighestPriorityBid(listingId, db);
+        setHighestBid(highest);
+      }
+    };
+    
+    if (listing) {
+      fetchPricingInfo();
+    }
+  }, [listing, listingId]);
+
   const handleTokenPurchase = async () => {
     if (!selectedPackage) {
       setPurchaseError('Please select a token package');
@@ -113,7 +144,7 @@ const AgentBuyerListingDetail = () => {
       setPurchaseLoading(true);
       setPurchaseError('');
       
-      const selectedPkg = tokenPackages.find(pkg => pkg.id === selectedPackage);
+      const selectedPkg = Object.values(tokenPackages).find(pkg => pkg.id === selectedPackage);
       
       // In a real application, you would integrate with a payment gateway here
       // For now, we'll just simulate a successful payment and add tokens
@@ -188,15 +219,28 @@ const AgentBuyerListingDetail = () => {
       return;
     }
     
+    const totalTokensNeeded = tokenCost + boostAmount;
+    
+    if (tokens < totalTokensNeeded) {
+      setBidError(`Not enough tokens. You need ${totalTokensNeeded} tokens.`);
+      return;
+    }
+    
     try {
       setBidLoading(true);
       setBidError('');
       
-      // Use a token for this bid
-      const success = await spendTokenForBid(currentUser.uid, listingId);
+      // Use dynamic token cost for this bid (including boost)
+      const result = await spendTokenForBid(
+        currentUser.uid, 
+        listingId,
+        'buyer',
+        listing.verificationStatus === 'verified',
+        totalTokensNeeded
+      );
       
-      if (!success) {
-        setBidError('Not enough tokens to place a bid');
+      if (!result.success) {
+        setBidError(result.error || 'Failed to place bid');
         return;
       }
       
@@ -205,7 +249,7 @@ const AgentBuyerListingDetail = () => {
         .filter(service => selectedServices.includes(service.id))
         .map(service => service.name);
       
-      // Create the proposal document
+      // Create the proposal document with priority information
       await addDoc(collection(db, 'proposals'), {
         listingId,
         listingType: 'buyer',
@@ -215,10 +259,14 @@ const AgentBuyerListingDetail = () => {
         feeStructure,
         ...(feeStructure === 'percentage' ? { commissionRate } : { flatFee }),
         services: selectedServiceNames,
-        packageInfo: packageInfo, // Add package information
+        packageInfo: packageInfo,
         offerRebate: offerRebate,
         rebateAmount: offerRebate ? rebateAmount : null,
         additionalServices: additionalServices.trim() || null,
+        // Priority boost information
+        tokenCost: tokenCost,
+        boostAmount: boostAmount,
+        totalTokensSpent: totalTokensNeeded,
         status: 'Pending',
         createdAt: serverTimestamp()
       });
@@ -231,6 +279,7 @@ const AgentBuyerListingDetail = () => {
       setPackageInfo(null);
       setOfferRebate(false);
       setRebateAmount('');
+      setBoostAmount(0);
       
       // Show a success message or redirect
       alert('Your proposal has been submitted successfully!');
@@ -311,7 +360,7 @@ const AgentBuyerListingDetail = () => {
         <Button to="/agent/listings" variant="secondary">Back to Listings</Button>
         
         {!bidOpen && !alreadyBid && (
-          tokens < 1 ? (
+          tokens < tokenCost ? (
             <Button 
               onClick={() => setShowTokenPurchase(true)}
               style={{
@@ -319,13 +368,13 @@ const AgentBuyerListingDetail = () => {
                 color: 'white',
               }}
             >
-              Need More Tokens to Bid
+              Need More Tokens to Bid ({tokenCost} required)
             </Button>
           ) : (
             <Button 
               onClick={() => setBidOpen(true)}
             >
-              Submit Proposal (1 Token)
+              Submit Proposal ({tokenCost} Token{tokenCost !== 1 ? 's' : ''})
             </Button>
           )
         )}
@@ -418,8 +467,13 @@ const AgentBuyerListingDetail = () => {
                 You currently have <strong>{tokens} token{tokens !== 1 ? 's' : ''}</strong>.
               </p>
               <p style={{ color: '#6b7280', margin: 0 }}>
-                Each token allows you to submit one proposal to a buyer or seller.
+                This listing requires {tokenCost} token{tokenCost !== 1 ? 's' : ''} to submit a proposal.
               </p>
+              {userTier.tokenDiscount > 0 && (
+                <p style={{ color: '#059669', fontSize: '0.875rem', marginTop: '0.5rem' }}>
+                  Your {userTier.name} subscription gives you {userTier.tokenDiscount * 100}% off token purchases!
+                </p>
+              )}
             </div>
 
             <div style={{ 
@@ -428,62 +482,70 @@ const AgentBuyerListingDetail = () => {
               gap: '1rem',
               marginBottom: '1.5rem'
             }}>
-              {tokenPackages.map((pkg) => (
-                <div 
-                  key={pkg.id}
-                  style={{ 
-                    border: selectedPackage === pkg.id ? '2px solid #2563eb' : '1px solid #e5e7eb',
-                    borderRadius: '0.5rem',
-                    padding: '1rem',
-                    position: 'relative',
-                    backgroundColor: 'white',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onClick={() => setSelectedPackage(pkg.id)}
-                >
-                  {pkg.popular && (
-                    <div style={{ 
-                      position: 'absolute',
-                      top: '-12px',
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      backgroundColor: '#2563eb',
-                      color: 'white',
-                      padding: '0.25rem 0.75rem',
-                      borderRadius: '9999px',
-                      fontSize: '0.75rem',
-                      fontWeight: '500'
-                    }}>
-                      Most Popular
+              {Object.values(tokenPackages).map((pkg) => {
+                const pricing = getTokenPackagePrice(pkg.id, userTier.id);
+                return (
+                  <div 
+                    key={pkg.id}
+                    style={{ 
+                      border: selectedPackage === pkg.id ? '2px solid #2563eb' : '1px solid #e5e7eb',
+                      borderRadius: '0.5rem',
+                      padding: '1rem',
+                      position: 'relative',
+                      backgroundColor: 'white',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onClick={() => setSelectedPackage(pkg.id)}
+                  >
+                    {pkg.popular && (
+                      <div style={{ 
+                        position: 'absolute',
+                        top: '-12px',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        backgroundColor: '#2563eb',
+                        color: 'white',
+                        padding: '0.25rem 0.75rem',
+                        borderRadius: '9999px',
+                        fontSize: '0.75rem',
+                        fontWeight: '500'
+                      }}>
+                        Most Popular
+                      </div>
+                    )}
+                    
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '0.5rem', textAlign: 'center' }}>
+                      {pkg.name}
+                    </h3>
+                    
+                    <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#2563eb', textAlign: 'center', marginBottom: '0.5rem' }}>
+                      ${pricing.discountedPrice}
+                      {pricing.discount > 0 && (
+                        <div style={{ fontSize: '0.875rem', color: '#059669', textDecoration: 'line-through' }}>
+                          ${pricing.originalPrice}
+                        </div>
+                      )}
                     </div>
-                  )}
-                  
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '0.5rem', textAlign: 'center' }}>
-                    {pkg.name}
-                  </h3>
-                  
-                  <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#2563eb', textAlign: 'center', marginBottom: '0.5rem' }}>
-                    ${pkg.price}
+                    
+                    <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
+                      <span style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{pkg.tokens}</span> Tokens
+                    </div>
+                    
+                    <div style={{ display: 'flex', justifyContent: 'center' }}>
+                      <input 
+                        type="radio" 
+                        id={`pkg-${pkg.id}`} 
+                        name="tokenPackage" 
+                        checked={selectedPackage === pkg.id}
+                        onChange={() => setSelectedPackage(pkg.id)}
+                        style={{ marginRight: '0.5rem' }}
+                      />
+                      <label htmlFor={`pkg-${pkg.id}`}>Select</label>
+                    </div>
                   </div>
-                  
-                  <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
-                    <span style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{pkg.tokens}</span> Tokens
-                  </div>
-                  
-                  <div style={{ display: 'flex', justifyContent: 'center' }}>
-                    <input 
-                      type="radio" 
-                      id={`pkg-${pkg.id}`} 
-                      name="tokenPackage" 
-                      checked={selectedPackage === pkg.id}
-                      onChange={() => setSelectedPackage(pkg.id)}
-                      style={{ marginRight: '0.5rem' }}
-                    />
-                    <label htmlFor={`pkg-${pkg.id}`}>Select</label>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
@@ -511,14 +573,38 @@ const AgentBuyerListingDetail = () => {
             {listing.title || 'Property Search Requirements'}
           </h1>
           <div style={{ 
-            backgroundColor: '#e0f2fe', 
-            color: '#0369a1', 
-            padding: '0.5rem 1rem', 
-            borderRadius: '9999px', 
-            fontSize: '0.875rem',
-            fontWeight: '500'
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
           }}>
-            Buyer Listing
+            <div style={{ 
+              backgroundColor: '#e0f2fe', 
+              color: '#0369a1', 
+              padding: '0.5rem 1rem', 
+              borderRadius: '9999px', 
+              fontSize: '0.875rem',
+              fontWeight: '500'
+            }}>
+              Buyer Listing
+            </div>
+            {listing.verificationStatus === 'verified' && (
+              <div style={{ 
+                backgroundColor: '#dcfce7', 
+                color: '#166534', 
+                padding: '0.5rem 1rem', 
+                borderRadius: '9999px', 
+                fontSize: '0.875rem',
+                fontWeight: '500',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem'
+              }}>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" style={{ width: '1rem', height: '1rem' }}>
+                  <path fillRule="evenodd" d="M16.403 12.652a3 3 0 000-5.304 3 3 0 00-3.75-3.751 3 3 0 00-5.305 0 3 3 0 00-3.751 3.75 3 3 0 000 5.305 3 3 0 003.75 3.751 3 3 0 005.305 0 3 3 0 003.751-3.75zm-2.546-4.46a.75.75 0 00-1.214-.883l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
+                </svg>
+                Verified
+              </div>
+            )}
           </div>
         </CardHeader>
         
@@ -699,7 +785,16 @@ const AgentBuyerListingDetail = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <p style={{ margin: 0, fontSize: '0.875rem' }}>
-                  This proposal will cost 1 token. You currently have {tokens} token{tokens !== 1 ? 's' : ''}.
+                  This proposal will cost {tokenCost + boostAmount} token{(tokenCost + boostAmount) !== 1 ? 's' : ''}. 
+                  You currently have {tokens} token{tokens !== 1 ? 's' : ''}.
+                  {costFactors && (
+                    <span style={{ display: 'block', marginTop: '0.5rem', fontSize: '0.75rem' }}>
+                      Base cost: {tokenCost} token{tokenCost !== 1 ? 's' : ''} 
+                      {listing.verificationStatus === 'verified' ? ' (Verified listing 1.5x) • ' : ' • '}
+                      {costFactors.bidCount} existing bid{costFactors.bidCount !== 1 ? 's' : ''}
+                      {costFactors.demandMultiplier > 1 ? ` (${costFactors.demandMultiplier}x demand)` : ''}
+                    </span>
+                  )}
                 </p>
               </div>
               
@@ -842,6 +937,60 @@ const AgentBuyerListingDetail = () => {
                   </div>
                 )}
                 
+                {/* Priority Boost Section */}
+                <div style={{ 
+                  marginBottom: '1.5rem',
+                  padding: '1rem',
+                  backgroundColor: '#fefce8',
+                  borderRadius: '0.5rem',
+                  border: '1px solid #fef9c3'
+                }}>
+                  <h3 style={{ fontWeight: '600', marginBottom: '0.5rem' }}>
+                    ⭐ Priority Boost (Optional)
+                  </h3>
+                  
+                  <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '1rem' }}>
+                    Add extra tokens to appear higher in the client's proposal list. 
+                    Current highest priority: {highestBid} tokens
+                  </p>
+                  
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <label style={{ display: 'flex', alignItems: 'center' }}>
+                      Additional tokens:
+                      <input
+                        type="number"
+                        min="0"
+                        max={tokens - tokenCost}
+                        value={boostAmount}
+                        onChange={(e) => setBoostAmount(Math.max(0, parseInt(e.target.value) || 0))}
+                        style={{
+                          marginLeft: '0.5rem',
+                          padding: '0.5rem',
+                          border: '1px solid #d1d5db',
+                          borderRadius: '0.375rem',
+                          width: '100px'
+                        }}
+                      />
+                    </label>
+                    
+                    <span style={{ color: '#6b7280' }}>
+                      Total cost: {tokenCost + boostAmount} tokens
+                    </span>
+                  </div>
+                  
+                  {boostAmount > 0 && (
+                    <p style={{ 
+                      marginTop: '0.5rem', 
+                      fontSize: '0.875rem', 
+                      color: boostAmount + tokenCost > highestBid ? '#059669' : '#6b7280'
+                    }}>
+                      {boostAmount + tokenCost > highestBid 
+                        ? '🌟 Your proposal will appear first!' 
+                        : 'Your proposal will appear below higher bids'}
+                    </p>
+                  )}
+                </div>
+                
                 {/* Info message if buyer requires rebate */}
                 {listing.paymentPreference?.requireRebate && (
                   <div style={{
@@ -972,7 +1121,7 @@ const AgentBuyerListingDetail = () => {
                 <div style={{ display: 'flex', gap: '1rem' }}>
                   <Button 
                     type="submit"
-                    disabled={bidLoading || tokens < 1}
+                    disabled={bidLoading || tokens < (tokenCost + boostAmount)}
                   >
                     {bidLoading ? 'Submitting...' : 'Submit Proposal'}
                   </Button>
@@ -985,6 +1134,7 @@ const AgentBuyerListingDetail = () => {
                       setCommissionRate('');
                       setFlatFee('');
                       setBidError('');
+                      setBoostAmount(0);
                     }}
                     disabled={bidLoading}
                   >

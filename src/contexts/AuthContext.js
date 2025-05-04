@@ -1,3 +1,5 @@
+// src/contexts/AuthContext.js
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   onAuthStateChanged, 
@@ -9,6 +11,7 @@ import {
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../services/firebase/config';
+import { subscriptionTiers } from '../config/subscriptions';
 
 const AuthContext = createContext();
 
@@ -26,19 +29,30 @@ export function AuthProvider({ children }) {
     try {
       // Create the user in Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      
+
       // Update the display name
       await updateProfile(userCredential.user, { displayName });
-      
-      // Create the user document in Firestore
+
+      // Create the user document in Firestore with subscription info
       await setDoc(doc(db, 'users', userCredential.user.uid), {
         displayName,
         email,
         userType,
-        verificationStatus: 'unverified', // Default verification status
+        verificationStatus: 'unverified',
+        // Add subscription information for agents
+        ...(userType === 'agent' ? {
+          subscription: {
+            tier: 'starter',
+            startDate: serverTimestamp(),
+            nextBillingDate: null, // No billing for starter
+            status: 'active'
+          },
+          tokens: subscriptionTiers.starter.welcomeTokens, // Give welcome token
+          tokensUsed: 0
+        } : {}),
         createdAt: serverTimestamp()
       });
-      
+
       return userCredential.user;
     } catch (error) {
       throw error;
@@ -83,23 +97,29 @@ export function AuthProvider({ children }) {
   // Update user profile
   async function updateUserProfile(data) {
     if (!currentUser) return;
-    
+
     const userRef = doc(db, 'users', currentUser.uid);
-    
+
     try {
       await setDoc(userRef, {
         ...data,
         updatedAt: serverTimestamp()
       }, { merge: true });
-      
+
       // Refresh user profile
       await fetchUserProfile(currentUser);
-      
+
       return true;
     } catch (error) {
       console.error('Error updating profile:', error);
       throw error;
     }
+  }
+
+  // Get user subscription tier helper
+  function getUserSubscriptionTier(userProfile) {
+    if (!userProfile?.subscription) return subscriptionTiers.starter;
+    return subscriptionTiers[userProfile.subscription.tier] || subscriptionTiers.starter;
   }
 
   // Listen for auth state changes
@@ -121,7 +141,8 @@ export function AuthProvider({ children }) {
     logout,
     resetPassword,
     updateUserProfile,
-    loading
+    loading,
+    getUserSubscriptionTier
   };
 
   return (

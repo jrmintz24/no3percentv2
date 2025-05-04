@@ -210,14 +210,14 @@ const Header = () => {
                 {userProfile?.userType === 'buyer' && (
                   <>
                     <Link 
-                      to="/buyer/my-listings" 
+                      to="/buyer/create-listing" 
                       style={{ 
                         color: '#4b5563',
                         textDecoration: 'none',
                         fontWeight: '500'
                       }}
                     >
-                      My Listings
+                      Create Listing
                     </Link>
                     <Link 
                       to="/buyer/proposals" 
@@ -245,14 +245,14 @@ const Header = () => {
                 {userProfile?.userType === 'seller' && (
                   <>
                     <Link 
-                      to="/seller/my-listings" 
+                      to="/seller/create-listing" 
                       style={{ 
                         color: '#4b5563',
                         textDecoration: 'none',
                         fontWeight: '500'
                       }}
                     >
-                      My Listings
+                      Create Listing
                     </Link>
                     <Link 
                       to="/seller/proposals" 
@@ -500,7 +500,7 @@ const Header = () => {
                 {userProfile?.userType === 'buyer' && (
                   <>
                     <Link 
-                      to="/buyer/my-listings" 
+                      to="/buyer/create-listing" 
                       style={{ 
                         color: '#4b5563',
                         textDecoration: 'none',
@@ -508,7 +508,7 @@ const Header = () => {
                       }}
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      My Listings
+                      Create Listing
                     </Link>
                     <Link 
                       to="/buyer/proposals" 
@@ -538,7 +538,7 @@ const Header = () => {
                 {userProfile?.userType === 'seller' && (
                   <>
                     <Link 
-                      to="/seller/my-listings" 
+                      to="/seller/create-listing" 
                       style={{ 
                         color: '#4b5563',
                         textDecoration: 'none',
@@ -546,7 +546,7 @@ const Header = () => {
                       }}
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      My Listings
+                      Create Listing
                     </Link>
                     <Link 
                       to="/seller/proposals" 

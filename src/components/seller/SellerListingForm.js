@@ -8,6 +8,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Card, CardHeader, CardBody, CardFooter } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import ServiceSelector from '../services/ServiceSelector';
+import MessagingPreference from '../shared/MessagingPreference';
 import { sellerServices } from '../../config/services';
 
 const SellerListingForm = () => {
@@ -31,7 +32,8 @@ const SellerListingForm = () => {
     availableForShowing: true,
     occupancyStatus: 'owner',
     preferredClosingDate: '',
-    additionalNotes: ''
+    additionalNotes: '',
+    messagingEnabled: false // Add messaging preference
   });
 
   const [currentFeature, setCurrentFeature] = useState('');
@@ -100,6 +102,13 @@ const SellerListingForm = () => {
     }));
   };
 
+  const handleMessagingPreferenceChange = (enabled) => {
+    setFormData(prev => ({
+      ...prev,
+      messagingEnabled: enabled
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -112,6 +121,8 @@ const SellerListingForm = () => {
         userId: currentUser.uid,
         userEmail: currentUser.email,
         userName: userProfile?.displayName || 'Anonymous',
+        verificationStatus: userProfile?.verificationStatus || 'unverified', // Include verification status
+        messagingEnabled: formData.messagingEnabled, // Include messaging preference
         status: 'active',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
@@ -447,6 +458,13 @@ const SellerListingForm = () => {
                 basePropertyValue={Number(formData.price) || 500000}
               />
             </div>
+
+            {/* Messaging Preferences - NEW SECTION */}
+            <MessagingPreference
+              messagingEnabled={formData.messagingEnabled}
+              onChange={handleMessagingPreferenceChange}
+              userType="seller"
+            />
 
             {/* Additional Information */}
             <div style={{ marginBottom: '2rem' }}>

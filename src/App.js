@@ -23,6 +23,7 @@ import AgentProposals from './components/agents/AgentProposals';
 import ProposalDetail from './components/agents/ProposalDetail';
 import ListingSearch from './components/agents/ListingSearch';
 import AgentClientsPage from './components/agents/AgentClientsPage';
+import SubscriptionManager from './components/agents/SubscriptionManager';
 
 // Buyer Pages
 import BuyerDashboardPage from './pages/BuyerPages/BuyerDashboardPage';
@@ -103,6 +104,7 @@ function App() {
                       <Route path="messages/:channelId" element={<MessageChannel />} />
                       <Route path="availability" element={<AgentAvailabilityCalendar />} />
                       <Route path="appointments" element={<AppointmentsDashboard />} />
+                      <Route path="subscription" element={<SubscriptionManager />} />
                     </Routes>
                   </ProtectedRoute>
                 } 
