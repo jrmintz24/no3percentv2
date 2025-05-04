@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Card, CardHeader, CardBody, CardFooter } from '../components/common/Card';
 import { Button } from '../components/common/Button';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../services/firebase/config';
 
 const SignInPage = () => {
   const navigate = useNavigate();
@@ -15,14 +17,32 @@ const SignInPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
-  const { login, currentUser } = useAuth();
+  const { login, currentUser, userProfile } = useAuth();
   
   // Redirect if already logged in
   useEffect(() => {
-    if (currentUser) {
-      navigate('/');
+    if (currentUser && userProfile) {
+      const redirectPath = getRoleBasedRoute(userProfile);
+      navigate(redirectPath);
     }
-  }, [currentUser, navigate]);
+  }, [currentUser, userProfile, navigate]);
+  
+  const getRoleBasedRoute = (profile) => {
+    if (profile?.isAdmin) {
+      return '/admin/dashboard';
+    }
+    
+    switch (profile?.userType) {
+      case 'buyer':
+        return '/buyer/dashboard';
+      case 'seller':
+        return '/seller/dashboard';
+      case 'agent':
+        return '/agent/dashboard';
+      default:
+        return '/';
+    }
+  };
   
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -31,9 +51,21 @@ const SignInPage = () => {
       setError('');
       setLoading(true);
       
-      await login(email, password);
+      // Sign in the user
+      const userCredential = await login(email, password);
       
-      // Let the auth state change trigger the redirect
+      // Get the user document from Firestore to determine role
+      const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
+      
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        const redirectPath = getRoleBasedRoute(userData);
+        navigate(redirectPath);
+      } else {
+        // If no user document exists, redirect to home
+        navigate('/');
+      }
+      
     } catch (err) {
       console.error('Error during sign in:', err);
       setError('Failed to sign in: ' + err.message);

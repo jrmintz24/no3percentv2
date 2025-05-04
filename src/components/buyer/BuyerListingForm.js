@@ -1,3 +1,5 @@
+// src/components/buyer/BuyerListingForm.js
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
@@ -13,33 +15,24 @@ const BuyerListingForm = () => {
   const navigate = useNavigate();
   
   const [formData, setFormData] = useState({
-    title: '',
-    location: '',
     priceRange: { min: '', max: '' },
-    propertyType: '',
+    locations: [],
+    propertyTypes: [],
     bedrooms: '',
     bathrooms: '',
-    squareFootage: { min: '', max: '' },
-    description: '',
+    minSquareFootage: '',
     mustHaveFeatures: [],
-    niceToHaveFeatures: [],
-    dealBreakers: [],
-    preferredTimeline: '',
-    financingType: '',
-    preApproved: false,
-    firstTimebuyer: false,
-    workingWithOtherAgents: false,
-    additionalNotes: '',
-    services: {
-      mustHave: [],
-      niceToHave: [],
-      notInterested: []
-    }
+    services: [],
+    packageInfo: null,
+    paymentPreference: null,
+    preferredMoveInDate: '',
+    financingType: 'conventional',
+    preApprovalAmount: '',
+    additionalNotes: ''
   });
 
+  const [currentLocation, setCurrentLocation] = useState('');
   const [currentFeature, setCurrentFeature] = useState('');
-  const [currentNiceToHave, setCurrentNiceToHave] = useState('');
-  const [currentDealBreaker, setCurrentDealBreaker] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -53,29 +46,23 @@ const BuyerListingForm = () => {
   ];
 
   const financingOptions = [
-    'Conventional',
-    'FHA',
-    'VA',
-    'Cash',
-    'Other'
-  ];
-
-  const timelineOptions = [
-    'ASAP',
-    '1-3 months',
-    '3-6 months',
-    '6-12 months',
-    'Over 12 months',
-    'Flexible'
+    { value: 'conventional', label: 'Conventional Loan' },
+    { value: 'fha', label: 'FHA Loan' },
+    { value: 'va', label: 'VA Loan' },
+    { value: 'cash', label: 'Cash' },
+    { value: 'other', label: 'Other' }
   ];
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     
     if (type === 'checkbox') {
+      const currentTypes = formData.propertyTypes;
       setFormData(prev => ({
         ...prev,
-        [name]: checked
+        propertyTypes: checked 
+          ? [...currentTypes, value]
+          : currentTypes.filter(type => type !== value)
       }));
     } else if (name.includes('.')) {
       const [parent, child] = name.split('.');
@@ -94,54 +81,58 @@ const BuyerListingForm = () => {
     }
   };
 
-  const handleAddFeature = (type) => {
-    let value, setter;
-    
-    switch(type) {
-      case 'mustHave':
-        value = currentFeature;
-        setter = setCurrentFeature;
-        break;
-      case 'niceToHave':
-        value = currentNiceToHave;
-        setter = setCurrentNiceToHave;
-        break;
-      case 'dealBreaker':
-        value = currentDealBreaker;
-        setter = setCurrentDealBreaker;
-        break;
-      default:
-        return;
-    }
-    
-    if (value.trim()) {
+  const handleAddLocation = () => {
+    if (currentLocation.trim() && !formData.locations.includes(currentLocation.trim())) {
       setFormData(prev => ({
         ...prev,
-        [type === 'dealBreaker' ? 'dealBreakers' : `${type}Features`]: [
-          ...prev[type === 'dealBreaker' ? 'dealBreakers' : `${type}Features`],
-          value.trim()
-        ]
+        locations: [...prev.locations, currentLocation.trim()]
       }));
-      setter('');
+      setCurrentLocation('');
     }
   };
 
-  const handleRemoveFeature = (type, index) => {
+  const handleRemoveLocation = (index) => {
     setFormData(prev => ({
       ...prev,
-      [type === 'dealBreaker' ? 'dealBreakers' : `${type}Features`]: prev[
-        type === 'dealBreaker' ? 'dealBreakers' : `${type}Features`
-      ].filter((_, i) => i !== index)
+      locations: prev.locations.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleAddFeature = () => {
+    if (currentFeature.trim()) {
+      setFormData(prev => ({
+        ...prev,
+        mustHaveFeatures: [...prev.mustHaveFeatures, currentFeature.trim()]
+      }));
+      setCurrentFeature('');
+    }
+  };
+
+  const handleRemoveFeature = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      mustHaveFeatures: prev.mustHaveFeatures.filter((_, i) => i !== index)
     }));
   };
 
   const handleServiceSelection = (selectedServices) => {
     setFormData(prev => ({
       ...prev,
-      services: {
-        ...prev.services,
-        mustHave: selectedServices
-      }
+      services: selectedServices
+    }));
+  };
+
+  const handlePackageChange = (packageInfo) => {
+    setFormData(prev => ({
+      ...prev,
+      packageInfo: packageInfo
+    }));
+  };
+
+  const handlePaymentPreferenceChange = (preference) => {
+    setFormData(prev => ({
+      ...prev,
+      paymentPreference: preference
     }));
   };
 
@@ -151,12 +142,12 @@ const BuyerListingForm = () => {
     setError('');
 
     try {
-      // Create the listing
       const listingData = {
         ...formData,
         userId: currentUser.uid,
         userEmail: currentUser.email,
         userName: userProfile?.displayName || 'Anonymous',
+        paymentPreference: formData.paymentPreference, // Ensure payment preference including rebate requirement is saved
         status: 'active',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
@@ -181,7 +172,7 @@ const BuyerListingForm = () => {
             Create Your Buyer Profile
           </h1>
           <p style={{ color: '#6b7280' }}>
-            Tell agents exactly what you're looking for so they can provide tailored proposals.
+            Tell us what you're looking for and the services you need. Agents will compete for your business.
           </p>
         </CardHeader>
 
@@ -199,220 +190,86 @@ const BuyerListingForm = () => {
               </div>
             )}
 
-            {/* Basic Information */}
+            {/* Budget Information */}
             <div style={{ marginBottom: '2rem' }}>
               <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>
-                Basic Information
-              </h2>
-              
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label htmlFor="title" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
-                  Listing Title
-                </label>
-                <input
-                  type="text"
-                  id="title"
-                  name="title"
-                  value={formData.title}
-                  onChange={handleInputChange}
-                  required
-                  placeholder="e.g., 'Looking for 3-bedroom home in Downtown'"
-                  style={{
-                    width: '100%',
-                    padding: '0.5rem',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '0.375rem'
-                  }}
-                />
-              </div>
-
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label htmlFor="location" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
-                  Preferred Location(s)
-                </label>
-                <input
-                  type="text"
-                  id="location"
-                  name="location"
-                  value={formData.location}
-                  onChange={handleInputChange}
-                  required
-                  placeholder="e.g., 'Downtown, Westside, or specific zip codes'"
-                  style={{
-                    width: '100%',
-                    padding: '0.5rem',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '0.375rem'
-                  }}
-                />
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
-                <div>
-                  <label htmlFor="priceRange.min" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
-                    Min Price
-                  </label>
-                  <input
-                    type="number"
-                    id="priceRange.min"
-                    name="priceRange.min"
-                    value={formData.priceRange.min}
-                    onChange={handleInputChange}
-                    placeholder="Minimum price"
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '0.375rem'
-                    }}
-                  />
-                </div>
-                <div>
-                  <label htmlFor="priceRange.max" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
-                    Max Price
-                  </label>
-                  <input
-                    type="number"
-                    id="priceRange.max"
-                    name="priceRange.max"
-                    value={formData.priceRange.max}
-                    onChange={handleInputChange}
-                    placeholder="Maximum price"
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '0.375rem'
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label htmlFor="propertyType" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
-                  Property Type
-                </label>
-                <select
-                  id="propertyType"
-                  name="propertyType"
-                  value={formData.propertyType}
-                  onChange={handleInputChange}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '0.5rem',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '0.375rem'
-                  }}
-                >
-                  <option value="">Select property type</option>
-                  {propertyTypes.map(type => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Property Details */}
-            <div style={{ marginBottom: '2rem' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>
-                Property Details
+                Budget & Financing
               </h2>
               
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
                 <div>
-                  <label htmlFor="bedrooms" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
-                    Bedrooms
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                    Price Range
                   </label>
-                  <input
-                    type="number"
-                    id="bedrooms"
-                    name="bedrooms"
-                    value={formData.bedrooms}
-                    onChange={handleInputChange}
-                    min="0"
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '0.375rem'
-                    }}
-                  />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <input
+                      type="number"
+                      name="priceRange.min"
+                      value={formData.priceRange.min}
+                      onChange={handleInputChange}
+                      placeholder="Min"
+                      required
+                      style={{
+                        flex: 1,
+                        padding: '0.5rem',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '0.375rem'
+                      }}
+                    />
+                    <span>to</span>
+                    <input
+                      type="number"
+                      name="priceRange.max"
+                      value={formData.priceRange.max}
+                      onChange={handleInputChange}
+                      placeholder="Max"
+                      required
+                      style={{
+                        flex: 1,
+                        padding: '0.5rem',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '0.375rem'
+                      }}
+                    />
+                  </div>
                 </div>
+                
                 <div>
-                  <label htmlFor="bathrooms" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
-                    Bathrooms
+                  <label htmlFor="financingType" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                    Financing Type
                   </label>
-                  <input
-                    type="number"
-                    id="bathrooms"
-                    name="bathrooms"
-                    value={formData.bathrooms}
+                  <select
+                    id="financingType"
+                    name="financingType"
+                    value={formData.financingType}
                     onChange={handleInputChange}
-                    min="0"
-                    step="0.5"
                     style={{
                       width: '100%',
                       padding: '0.5rem',
                       border: '1px solid #d1d5db',
                       borderRadius: '0.375rem'
                     }}
-                  />
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
-                <div>
-                  <label htmlFor="squareFootage.min" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
-                    Min Square Footage
-                  </label>
-                  <input
-                    type="number"
-                    id="squareFootage.min"
-                    name="squareFootage.min"
-                    value={formData.squareFootage.min}
-                    onChange={handleInputChange}
-                    placeholder="Minimum sq ft"
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '0.375rem'
-                    }}
-                  />
-                </div>
-                <div>
-                  <label htmlFor="squareFootage.max" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
-                    Max Square Footage
-                  </label>
-                  <input
-                    type="number"
-                    id="squareFootage.max"
-                    name="squareFootage.max"
-                    value={formData.squareFootage.max}
-                    onChange={handleInputChange}
-                    placeholder="Maximum sq ft"
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '0.375rem'
-                    }}
-                  />
+                  >
+                    {financingOptions.map(option => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
               <div style={{ marginBottom: '1.5rem' }}>
-                <label htmlFor="description" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
-                  Additional Description
+                <label htmlFor="preApprovalAmount" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                  Pre-Approval Amount (if applicable)
                 </label>
-                <textarea
-                  id="description"
-                  name="description"
-                  value={formData.description}
+                <input
+                  type="number"
+                  id="preApprovalAmount"
+                  name="preApprovalAmount"
+                  value={formData.preApprovalAmount}
                   onChange={handleInputChange}
-                  rows={4}
-                  placeholder="Describe your ideal property, lifestyle preferences, or any other important details..."
+                  placeholder="Enter pre-approval amount"
                   style={{
                     width: '100%',
                     padding: '0.5rem',
@@ -423,23 +280,22 @@ const BuyerListingForm = () => {
               </div>
             </div>
 
-            {/* Features and Preferences */}
+            {/* Property Preferences */}
             <div style={{ marginBottom: '2rem' }}>
               <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>
-                Features and Preferences
+                Property Preferences
               </h2>
               
-              {/* Must-Have Features */}
               <div style={{ marginBottom: '1.5rem' }}>
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
-                  Must-Have Features
+                  Preferred Locations
                 </label>
                 <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
                   <input
                     type="text"
-                    value={currentFeature}
-                    onChange={(e) => setCurrentFeature(e.target.value)}
-                    placeholder="Add a must-have feature"
+                    value={currentLocation}
+                    onChange={(e) => setCurrentLocation(e.target.value)}
+                    placeholder="Enter a city, neighborhood, or ZIP code"
                     style={{
                       flex: '1',
                       padding: '0.5rem',
@@ -449,14 +305,14 @@ const BuyerListingForm = () => {
                   />
                   <Button
                     type="button"
-                    onClick={() => handleAddFeature('mustHave')}
+                    onClick={handleAddLocation}
                     variant="secondary"
                   >
                     Add
                   </Button>
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                  {formData.mustHaveFeatures.map((feature, index) => (
+                  {formData.locations.map((location, index) => (
                     <span
                       key={index}
                       style={{
@@ -470,10 +326,10 @@ const BuyerListingForm = () => {
                         gap: '0.5rem'
                       }}
                     >
-                      {feature}
+                      {location}
                       <button
                         type="button"
-                        onClick={() => handleRemoveFeature('mustHave', index)}
+                        onClick={() => handleRemoveLocation(index)}
                         style={{
                           background: 'none',
                           border: 'none',
@@ -491,17 +347,98 @@ const BuyerListingForm = () => {
                 </div>
               </div>
 
-              {/* Nice-to-Have Features */}
               <div style={{ marginBottom: '1.5rem' }}>
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
-                  Nice-to-Have Features
+                  Property Types
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem' }}>
+                  {propertyTypes.map(type => (
+                    <label key={type} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <input
+                        type="checkbox"
+                        value={type}
+                        checked={formData.propertyTypes.includes(type)}
+                        onChange={handleInputChange}
+                      />
+                      {type}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
+                <div>
+                  <label htmlFor="bedrooms" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                    Minimum Bedrooms
+                  </label>
+                  <input
+                    type="number"
+                    id="bedrooms"
+                    name="bedrooms"
+                    value={formData.bedrooms}
+                    onChange={handleInputChange}
+                    min="0"
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '0.375rem'
+                    }}
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="bathrooms" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                    Minimum Bathrooms
+                  </label>
+                  <input
+                    type="number"
+                    id="bathrooms"
+                    name="bathrooms"
+                    value={formData.bathrooms}
+                    onChange={handleInputChange}
+                    min="0"
+                    step="0.5"
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '0.375rem'
+                    }}
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="minSquareFootage" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                    Minimum Sq. Ft.
+                  </label>
+                  <input
+                    type="number"
+                    id="minSquareFootage"
+                    name="minSquareFootage"
+                    value={formData.minSquareFootage}
+                    onChange={handleInputChange}
+                    min="0"
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '0.375rem'
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                  Must-Have Features
                 </label>
                 <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
                   <input
                     type="text"
-                    value={currentNiceToHave}
-                    onChange={(e) => setCurrentNiceToHave(e.target.value)}
-                    placeholder="Add a nice-to-have feature"
+                    value={currentFeature}
+                    onChange={(e) => setCurrentFeature(e.target.value)}
+                    placeholder="e.g., Pool, Garage, Updated Kitchen"
                     style={{
                       flex: '1',
                       padding: '0.5rem',
@@ -511,14 +448,14 @@ const BuyerListingForm = () => {
                   />
                   <Button
                     type="button"
-                    onClick={() => handleAddFeature('niceToHave')}
+                    onClick={handleAddFeature}
                     variant="secondary"
                   >
                     Add
                   </Button>
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                  {formData.niceToHaveFeatures.map((feature, index) => (
+                  {formData.mustHaveFeatures.map((feature, index) => (
                     <span
                       key={index}
                       style={{
@@ -535,7 +472,7 @@ const BuyerListingForm = () => {
                       {feature}
                       <button
                         type="button"
-                        onClick={() => handleRemoveFeature('niceToHave', index)}
+                        onClick={() => handleRemoveFeature(index)}
                         style={{
                           background: 'none',
                           border: 'none',
@@ -552,176 +489,50 @@ const BuyerListingForm = () => {
                   ))}
                 </div>
               </div>
-
-              {/* Deal Breakers */}
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
-                  Deal Breakers
-                </label>
-                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                  <input
-                    type="text"
-                    value={currentDealBreaker}
-                    onChange={(e) => setCurrentDealBreaker(e.target.value)}
-                    placeholder="Add a deal breaker"
-                    style={{
-                      flex: '1',
-                      padding: '0.5rem',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '0.375rem'
-                    }}
-                  />
-                  <Button
-                    type="button"
-                    onClick={() => handleAddFeature('dealBreaker')}
-                    variant="secondary"
-                  >
-                    Add
-                  </Button>
-                </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                  {formData.dealBreakers.map((feature, index) => (
-                    <span
-                      key={index}
-                      style={{
-                        backgroundColor: '#fee2e2',
-                        color: '#991b1b',
-                        padding: '0.25rem 0.75rem',
-                        borderRadius: '9999px',
-                        fontSize: '0.875rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem'
-                      }}
-                    >
-                      {feature}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveFeature('dealBreaker', index)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: '#991b1b',
-                          cursor: 'pointer',
-                          padding: '0',
-                          fontSize: '1rem',
-                          lineHeight: '1'
-                        }}
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              </div>
             </div>
 
-            {/* Services Selection */}
+            {/* Services Selection with Packages */}
             <div style={{ marginBottom: '2rem' }}>
               <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>
-                What services are you looking for?
+                Select Your Service Package
               </h2>
               
               <ServiceSelector
                 services={buyerServices}
-                selectedServices={formData.services.mustHave}
+                selectedServices={formData.services}
                 onSelectionChange={handleServiceSelection}
                 userType="buyer"
+                showCategories={true}
+                showPackages={true}
+                onPackageChange={handlePackageChange}
+                onPaymentPreferenceChange={handlePaymentPreferenceChange}
+                basePropertyValue={Number(formData.priceRange.max) || 500000}
               />
             </div>
 
-            {/* Buying Details */}
+            {/* Additional Information */}
             <div style={{ marginBottom: '2rem' }}>
               <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>
-                Buying Details
+                Additional Information
               </h2>
               
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
-                <div>
-                  <label htmlFor="preferredTimeline" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
-                    Preferred Timeline
-                  </label>
-                  <select
-                    id="preferredTimeline"
-                    name="preferredTimeline"
-                    value={formData.preferredTimeline}
-                    onChange={handleInputChange}
-                    required
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '0.375rem'
-                    }}
-                  >
-                    <option value="">Select timeline</option>
-                    {timelineOptions.map(option => (
-                      <option key={option} value={option}>{option}</option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div>
-                  <label htmlFor="financingType" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
-                    Financing Type
-                  </label>
-                  <select
-                    id="financingType"
-                    name="financingType"
-                    value={formData.financingType}
-                    onChange={handleInputChange}
-                    required
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '0.375rem'
-                    }}
-                  >
-                    <option value="">Select financing</option>
-                    {financingOptions.map(option => (
-                      <option key={option} value={option}>{option}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center' }}>
-                  <input
-                    type="checkbox"
-                    id="preApproved"
-                    name="preApproved"
-                    checked={formData.preApproved}
-                    onChange={handleInputChange}
-                    style={{ marginRight: '0.5rem' }}
-                  />
-                  <label htmlFor="preApproved">Pre-approved</label>
-                </div>
-                
-                <div style={{ display: 'flex', alignItems: 'center' }}>
-                  <input
-                    type="checkbox"
-                    id="firstTimebuyer"
-                    name="firstTimebuyer"
-                    checked={formData.firstTimebuyer}
-                    onChange={handleInputChange}
-                    style={{ marginRight: '0.5rem' }}
-                  />
-                  <label htmlFor="firstTimebuyer">First-time buyer</label>
-                </div>
-                
-                <div style={{ display: 'flex', alignItems: 'center' }}>
-                  <input
-                    type="checkbox"
-                    id="workingWithOtherAgents"
-                    name="workingWithOtherAgents"
-                    checked={formData.workingWithOtherAgents}
-                    onChange={handleInputChange}
-                    style={{ marginRight: '0.5rem' }}
-                  />
-                  <label htmlFor="workingWithOtherAgents">Working with other agents</label>
-                </div>
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label htmlFor="preferredMoveInDate" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                  Preferred Move-in Date
+                </label>
+                <input
+                  type="date"
+                  id="preferredMoveInDate"
+                  name="preferredMoveInDate"
+                  value={formData.preferredMoveInDate}
+                  onChange={handleInputChange}
+                  style={{
+                    width: '100%',
+                    padding: '0.5rem',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '0.375rem'
+                  }}
+                />
               </div>
 
               <div>
@@ -734,7 +545,7 @@ const BuyerListingForm = () => {
                   value={formData.additionalNotes}
                   onChange={handleInputChange}
                   rows={4}
-                  placeholder="Any other information you'd like agents to know..."
+                  placeholder="Any other preferences or requirements..."
                   style={{
                     width: '100%',
                     padding: '0.5rem',
@@ -759,7 +570,7 @@ const BuyerListingForm = () => {
                 type="submit"
                 disabled={loading}
               >
-                {loading ? 'Creating Listing...' : 'Create Listing'}
+                {loading ? 'Creating Profile...' : 'Create Profile'}
               </Button>
             </div>
           </CardFooter>

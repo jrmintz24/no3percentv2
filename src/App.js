@@ -47,6 +47,7 @@ import UserProfile from './components/user/UserProfile';
 import ProposalResponse from './components/shared/ProposalResponse';
 import MessagesList from './components/shared/MessagesList';
 import MessageChannel from './components/shared/MessageChannel';
+import RootRedirect from './components/RootRedirect';
 
 // Admin Pages
 import VerificationRequests from './pages/AdminPages/VerificationRequests';
@@ -59,7 +60,9 @@ function App() {
           <Header />
           <main>
             <Routes>
-              <Route path="/" element={<HomePage />} />
+              {/* Root redirect based on user role */}
+              <Route path="/" element={<RootRedirect />} />
+              
               <Route path="/signin" element={<SignInPage />} />
               <Route path="/signup" element={<SignUpPage />} />
               <Route path="/agents" element={<AgentLandingPage />} />
@@ -73,6 +76,14 @@ function App() {
               <Route path="/services/sellers" element={<SellerServicesPage />} />
               
               {/* Agent Routes */}
+              <Route 
+                path="/agent/dashboard" 
+                element={
+                  <ProtectedRoute requiredRole="agent">
+                    <AgentDashboardPage />
+                  </ProtectedRoute>
+                } 
+              />
               <Route 
                 path="/agent/*" 
                 element={
@@ -99,6 +110,14 @@ function App() {
               
               {/* Buyer Routes */}
               <Route 
+                path="/buyer/dashboard" 
+                element={
+                  <ProtectedRoute requiredRole="buyer">
+                    <BuyerDashboardPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
                 path="/buyer/*" 
                 element={
                   <ProtectedRoute requiredRole="buyer">
@@ -120,6 +139,14 @@ function App() {
               
               {/* Seller Routes */}
               <Route 
+                path="/seller/dashboard" 
+                element={
+                  <ProtectedRoute requiredRole="seller">
+                    <SellerDashboardPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
                 path="/seller/*" 
                 element={
                   <ProtectedRoute requiredRole="seller">
@@ -139,6 +166,14 @@ function App() {
               />
               
               {/* Admin Routes */}
+              <Route 
+                path="/admin/dashboard" 
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <VerificationRequests />
+                  </ProtectedRoute>
+                } 
+              />
               <Route 
                 path="/admin/*" 
                 element={

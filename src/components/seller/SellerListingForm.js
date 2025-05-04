@@ -1,3 +1,5 @@
+// src/components/seller/SellerListingForm.js
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
@@ -24,6 +26,7 @@ const SellerListingForm = () => {
     description: '',
     features: [],
     services: [],
+    packageInfo: null,  // Added for package information
     photos: [],
     availableForShowing: true,
     occupancyStatus: 'owner',
@@ -87,6 +90,13 @@ const SellerListingForm = () => {
     setFormData(prev => ({
       ...prev,
       services: selectedServices
+    }));
+  };
+
+  const handlePackageChange = (packageInfo) => {
+    setFormData(prev => ({
+      ...prev,
+      packageInfo: packageInfo
     }));
   };
 
@@ -420,10 +430,10 @@ const SellerListingForm = () => {
               </div>
             </div>
 
-            {/* Services Selection */}
+            {/* Services Selection with Packages */}
             <div style={{ marginBottom: '2rem' }}>
               <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>
-                Select the services you need
+                Select Your Service Package
               </h2>
               
               <ServiceSelector
@@ -431,6 +441,10 @@ const SellerListingForm = () => {
                 selectedServices={formData.services}
                 onSelectionChange={handleServiceSelection}
                 userType="seller"
+                showCategories={true}
+                showPackages={true}
+                onPackageChange={handlePackageChange}
+                basePropertyValue={Number(formData.price) || 500000}
               />
             </div>
 

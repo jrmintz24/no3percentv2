@@ -25,10 +25,14 @@ const AgentBuyerListingDetail = () => {
   const [commissionRate, setCommissionRate] = useState('');
   const [flatFee, setFlatFee] = useState('');
   const [selectedServices, setSelectedServices] = useState([]);
+  const [packageInfo, setPackageInfo] = useState(null);
+  const [paymentPreference, setPaymentPreference] = useState(null);
   const [additionalServices, setAdditionalServices] = useState('');
   const [bidLoading, setBidLoading] = useState(false);
   const [bidError, setBidError] = useState('');
   const [alreadyBid, setAlreadyBid] = useState(false);
+  const [offerRebate, setOfferRebate] = useState(false);
+  const [rebateAmount, setRebateAmount] = useState('');
   
   // Token purchase states
   const [showTokenPurchase, setShowTokenPurchase] = useState(false);
@@ -54,7 +58,13 @@ const AgentBuyerListingDetail = () => {
         const docSnap = await getDoc(docRef);
         
         if (docSnap.exists()) {
-          setListing({ id: docSnap.id, ...docSnap.data() });
+          const listingData = { id: docSnap.id, ...docSnap.data() };
+          setListing(listingData);
+          
+          // Set initial values based on listing preferences
+          if (listingData.paymentPreference) {
+            setFeeStructure(listingData.paymentPreference.type === 'flat_fee' ? 'flat' : 'percentage');
+          }
           
           // Check if user has already bid on this listing
           const tokenUsageRef = doc(db, 'tokenUsage', `${currentUser.uid}_${listingId}`);
@@ -115,6 +125,30 @@ const AgentBuyerListingDetail = () => {
     }
   };
   
+  const handleServiceSelection = (services) => {
+    setSelectedServices(services);
+  };
+  
+  const handlePackageChange = (info) => {
+    setPackageInfo(info);
+    // Update commission based on package if needed
+    if (info.packageId !== 'custom') {
+      setFeeStructure('percentage');
+      // You might want to set a default commission rate based on the package
+      const packageRates = {
+        'showing_only': '0.75',
+        'basic': '1.75',
+        'full': '2.75',
+        'custom': ''
+      };
+      setCommissionRate(packageRates[info.packageId] || '');
+    }
+  };
+  
+  const handlePaymentPreferenceChange = (preference) => {
+    setPaymentPreference(preference);
+  };
+  
   const handleSubmitBid = async (e) => {
     e.preventDefault();
     
@@ -165,6 +199,9 @@ const AgentBuyerListingDetail = () => {
         feeStructure,
         ...(feeStructure === 'percentage' ? { commissionRate } : { flatFee }),
         services: selectedServiceNames,
+        packageInfo: packageInfo, // Add package information
+        offerRebate: offerRebate,
+        rebateAmount: offerRebate ? rebateAmount : null,
         additionalServices: additionalServices.trim() || null,
         status: 'Pending',
         createdAt: serverTimestamp()
@@ -175,6 +212,9 @@ const AgentBuyerListingDetail = () => {
       setBidMessage('');
       setCommissionRate('');
       setFlatFee('');
+      setPackageInfo(null);
+      setOfferRebate(false);
+      setRebateAmount('');
       
       // Show a success message or redirect
       alert('Your proposal has been submitted successfully!');
@@ -241,6 +281,8 @@ const AgentBuyerListingDetail = () => {
       </div>
     );
   }
+  
+  const listingPrice = listing.priceRange?.max || listing.budget || 500000;
   
   return (
     <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '2rem 1rem' }}>
@@ -488,7 +530,7 @@ const AgentBuyerListingDetail = () => {
                 
                 <p style={{ margin: '0 0 0.5rem 0', fontWeight: '500' }}>Budget:</p>
                 <p style={{ margin: '0 0 1rem 0' }}>
-                  {listing.budget ? `$${listing.budget.toLocaleString()}` : 'Not specified'}
+                  {listing.budget ? `$${listing.budget.toLocaleString()}` : listing.priceRange ? `$${listing.priceRange.min?.toLocaleString()} - $${listing.priceRange.max?.toLocaleString()}` : 'Not specified'}
                 </p>
                 
                 <p style={{ margin: '0 0 0.5rem 0', fontWeight: '500' }}>Timeline:</p>
@@ -593,6 +635,26 @@ const AgentBuyerListingDetail = () => {
             <p>{listing.additionalInfo || 'No additional information provided'}</p>
           </div>
           
+          {/* Payment Preference Section */}
+          {listing.paymentPreference && (
+            <div style={{ marginBottom: '2rem' }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>
+                Payment Preferences
+              </h2>
+              
+              <div style={{ backgroundColor: '#f9fafb', padding: '1rem', borderRadius: '0.5rem' }}>
+                <p style={{ margin: '0 0 0.5rem 0' }}>
+                  <strong>Preferred Payment Type:</strong> {listing.paymentPreference.type === 'flat_fee' ? 'Flat Fee' : 'Commission Percentage'}
+                </p>
+                {listing.paymentPreference.requireRebate && (
+                  <p style={{ margin: '0', color: '#2563eb' }}>
+                    <strong>Note:</strong> Buyer requires rebate if seller pays commission
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+          
           {bidOpen && (
             <div style={{ 
               marginTop: '2rem',
@@ -636,6 +698,30 @@ const AgentBuyerListingDetail = () => {
               )}
               
               <form onSubmit={handleSubmitBid}>
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <label 
+                    style={{ 
+                      display: 'block', 
+                      marginBottom: '0.5rem', 
+                      fontWeight: '500' 
+                    }}
+                  >
+                    Services You Will Provide:
+                  </label>
+                  
+                  <ServiceSelector
+                    services={buyerServices}
+                    selectedServices={selectedServices}
+                    onSelectionChange={handleServiceSelection}
+                    userType="buyer"
+                    showCategories={false}
+                    showPackages={true}
+                    onPackageChange={handlePackageChange}
+                    onPaymentPreferenceChange={handlePaymentPreferenceChange}
+                    basePropertyValue={listingPrice}
+                  />
+                </div>
+                
                 <div style={{ marginBottom: '1.5rem' }}>
                   <label 
                     style={{ 
@@ -737,24 +823,76 @@ const AgentBuyerListingDetail = () => {
                   </div>
                 )}
                 
+                {/* Info message if buyer requires rebate */}
+                {listing.paymentPreference?.requireRebate && (
+                  <div style={{
+                    backgroundColor: '#fef3c7',
+                    border: '1px solid #fcd34d',
+                    borderRadius: '0.5rem',
+                    padding: '1rem',
+                    marginBottom: '1.5rem'
+                  }}>
+                    <p style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      color: '#92400e',
+                      fontWeight: '500',
+                      margin: 0
+                    }}>
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ height: '1.25rem', width: '1.25rem' }}>
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                      This buyer requires agents to offer a rebate if the seller pays commission.
+                    </p>
+                  </div>
+                )}
+                
+                {/* Rebate Offer - for agents responding to buyer listings */}
                 <div style={{ marginBottom: '1.5rem' }}>
-                  <label 
-                    style={{ 
-                      display: 'block', 
-                      marginBottom: '0.5rem', 
-                      fontWeight: '500' 
-                    }}
-                  >
-                    Services You Will Provide:
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <input
+                      type="checkbox"
+                      checked={offerRebate}
+                      onChange={(e) => setOfferRebate(e.target.checked)}
+                    />
+                    Offer rebate if seller pays commission
                   </label>
                   
-                  <ServiceSelector
-                    services={buyerServices}
-                    selectedServices={selectedServices}
-                    onSelectionChange={setSelectedServices}
-                    userType="buyer"
-                    showCategories={false} // Don't show categories in the bid form
-                  />
+                  {offerRebate && (
+                    <div style={{ marginTop: '1rem' }}>
+                      <label 
+                        htmlFor="rebateAmount" 
+                        style={{ 
+                          display: 'block', 
+                          marginBottom: '0.5rem', 
+                          fontWeight: '500' 
+                        }}
+                      >
+                        Rebate Amount (% of commission or maximum dollar amount):
+                      </label>
+                      <input
+                        id="rebateAmount"
+                        type="text"
+                        value={rebateAmount}
+                        onChange={(e) => setRebateAmount(e.target.value)}
+                        style={{ 
+                          width: '100%',
+                          padding: '0.75rem',
+                          borderRadius: '0.375rem',
+                          border: '1px solid #d1d5db'
+                        }}
+                        placeholder="e.g., 50% or up to $5,000"
+                      />
+                      <p style={{
+                        fontSize: '0.875rem',
+                        color: '#6b7280',
+                        marginTop: '0.5rem'
+                      }}>
+                        Specify either a percentage of your commission or a maximum dollar amount you're willing to rebate.
+                      </p>
+                    </div>
+                  )}
                 </div>
                 
                 <div style={{ marginBottom: '1.5rem' }}>

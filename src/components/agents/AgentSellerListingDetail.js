@@ -7,6 +7,8 @@ import { useTokens } from '../../hooks/useTokens';
 import { spendTokenForBid } from '../../services/firebase/tokens';
 import { Card, CardHeader, CardBody } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
+import ServiceSelector from '../services/ServiceSelector';
+import { sellerServices } from '../../config/services';
 
 const AgentSellerListingDetail = () => {
   const { listingId } = useParams();
@@ -23,25 +25,11 @@ const AgentSellerListingDetail = () => {
   const [commissionRate, setCommissionRate] = useState('');
   const [flatFee, setFlatFee] = useState('');
   const [selectedServices, setSelectedServices] = useState([]);
+  const [packageInfo, setPackageInfo] = useState(null);
   const [additionalServices, setAdditionalServices] = useState('');
   const [bidLoading, setBidLoading] = useState(false);
   const [bidError, setBidError] = useState('');
   const [alreadyBid, setAlreadyBid] = useState(false);
-  
-  // Available agent services
-  const availableServices = [
-    { id: 'mls', name: 'MLS Listing', defaultIncluded: true },
-    { id: 'photos', name: 'Professional Photography', defaultIncluded: true },
-    { id: 'staging', name: 'Home Staging Consultation', defaultIncluded: false },
-    { id: 'marketing', name: 'Digital Marketing Campaign', defaultIncluded: false },
-    { id: 'openHouse', name: 'Open House Events', defaultIncluded: true },
-    { id: 'negotiation', name: 'Negotiation Representation', defaultIncluded: true },
-    { id: 'contractReview', name: 'Contract Review & Support', defaultIncluded: true },
-    { id: 'inspection', name: 'Inspection Coordination', defaultIncluded: true },
-    { id: 'virtual', name: 'Virtual Tour Creation', defaultIncluded: false },
-    { id: 'pricing', name: 'Comparative Market Analysis', defaultIncluded: true },
-    { id: 'closing', name: 'Closing Coordination', defaultIncluded: true },
-  ];
   
   useEffect(() => {
     const fetchListing = async () => {
@@ -54,11 +42,6 @@ const AgentSellerListingDetail = () => {
         
         if (docSnap.exists()) {
           setListing({ id: docSnap.id, ...docSnap.data() });
-          
-          // Initialize selected services with default included ones
-          setSelectedServices(availableServices
-            .filter(service => service.defaultIncluded)
-            .map(service => service.id));
           
           // Check if user has already bid on this listing
           const tokenUsageRef = doc(db, 'tokenUsage', `${currentUser.uid}_${listingId}`);
@@ -81,14 +64,23 @@ const AgentSellerListingDetail = () => {
     }
   }, [listingId, currentUser]);
   
-  const handleServiceToggle = (serviceId) => {
-    setSelectedServices(prevSelected => {
-      if (prevSelected.includes(serviceId)) {
-        return prevSelected.filter(id => id !== serviceId);
-      } else {
-        return [...prevSelected, serviceId];
-      }
-    });
+  const handleServiceSelection = (services) => {
+    setSelectedServices(services);
+  };
+  
+  const handlePackageChange = (info) => {
+    setPackageInfo(info);
+    // Update commission based on package if needed
+    if (info.packageId !== 'custom') {
+      setFeeStructure('percentage');
+      // You might want to set a default commission rate based on the package
+      const packageRates = {
+        'full': '3.5',
+        'limited': '2.5',
+        'custom': ''
+      };
+      setCommissionRate(packageRates[info.packageId] || '');
+    }
   };
   
   const handleSubmitBid = async (e) => {
@@ -127,7 +119,7 @@ const AgentSellerListingDetail = () => {
       }
       
       // Get the names of selected services
-      const selectedServiceNames = availableServices
+      const selectedServiceNames = sellerServices
         .filter(service => selectedServices.includes(service.id))
         .map(service => service.name);
       
@@ -141,6 +133,7 @@ const AgentSellerListingDetail = () => {
         feeStructure,
         ...(feeStructure === 'percentage' ? { commissionRate } : { flatFee }),
         services: selectedServiceNames,
+        packageInfo: packageInfo, // Add package information
         additionalServices: additionalServices.trim() || null,
         status: 'Pending',
         createdAt: serverTimestamp()
@@ -151,6 +144,7 @@ const AgentSellerListingDetail = () => {
       setBidMessage('');
       setCommissionRate('');
       setFlatFee('');
+      setPackageInfo(null);
       
       // Show a success message or redirect
       alert('Your proposal has been submitted successfully!');
@@ -420,6 +414,29 @@ const AgentSellerListingDetail = () => {
                       fontWeight: '500' 
                     }}
                   >
+                    Services You Will Provide:
+                  </label>
+                  
+                  <ServiceSelector
+                    services={sellerServices}
+                    selectedServices={selectedServices}
+                    onSelectionChange={handleServiceSelection}
+                    userType="seller"
+                    showCategories={false}
+                    showPackages={true}
+                    onPackageChange={handlePackageChange}
+                    basePropertyValue={listing.price || 500000}
+                  />
+                </div>
+                
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <label 
+                    style={{ 
+                      display: 'block', 
+                      marginBottom: '0.5rem', 
+                      fontWeight: '500' 
+                    }}
+                  >
                     Fee Structure:
                   </label>
                   <div style={{ display: 'flex', gap: '1rem' }}>
@@ -512,46 +529,6 @@ const AgentSellerListingDetail = () => {
                     />
                   </div>
                 )}
-                
-                <div style={{ marginBottom: '1.5rem' }}>
-                  <label 
-                    style={{ 
-                      display: 'block', 
-                      marginBottom: '0.5rem', 
-                      fontWeight: '500' 
-                    }}
-                  >
-                    Services You Will Provide:
-                  </label>
-                  <div style={{ 
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-                    gap: '0.5rem',
-                    marginBottom: '1rem'
-                  }}>
-                    {availableServices.map(service => (
-                      <label 
-                        key={service.id}
-                        style={{ 
-                          display: 'flex',
-                          alignItems: 'center',
-                          padding: '0.5rem',
-                          backgroundColor: selectedServices.includes(service.id) ? '#e0f2fe' : 'transparent',
-                          borderRadius: '0.375rem',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={selectedServices.includes(service.id)}
-                          onChange={() => handleServiceToggle(service.id)}
-                          style={{ marginRight: '0.5rem' }}
-                        />
-                        {service.name}
-                      </label>
-                    ))}
-                  </div>
-                </div>
                 
                 <div style={{ marginBottom: '1.5rem' }}>
                   <label 
