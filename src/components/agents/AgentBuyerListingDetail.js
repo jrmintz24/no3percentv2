@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../services/firebase/config';
@@ -41,12 +41,28 @@ const AgentBuyerListingDetail = () => {
   const [purchaseError, setPurchaseError] = useState('');
   const [purchaseSuccess, setPurchaseSuccess] = useState('');
   
+  // Add ref for bid form
+  const bidFormRef = useRef(null);
+  
   // Token packages
   const tokenPackages = [
     { id: 'basic', name: 'Basic', tokens: 5, price: 25 },
     { id: 'standard', name: 'Standard', tokens: 20, price: 80, popular: true },
     { id: 'premium', name: 'Premium', tokens: 50, price: 150 }
   ];
+  
+  // Add useEffect to scroll when bidOpen changes
+  useEffect(() => {
+    if (bidOpen && bidFormRef.current) {
+      // Add a small delay to ensure the form is rendered
+      setTimeout(() => {
+        bidFormRef.current.scrollIntoView({ 
+          behavior: 'smooth',
+          block: 'start'
+        });
+      }, 100);
+    }
+  }, [bidOpen]);
   
   useEffect(() => {
     const fetchListing = async () => {
@@ -656,13 +672,16 @@ const AgentBuyerListingDetail = () => {
           )}
           
           {bidOpen && (
-            <div style={{ 
-              marginTop: '2rem',
-              padding: '1.5rem',
-              borderRadius: '0.5rem',
-              backgroundColor: '#f9fafb',
-              border: '1px solid #e5e7eb'
-            }}>
+            <div 
+              ref={bidFormRef}
+              style={{ 
+                marginTop: '2rem',
+                padding: '1.5rem',
+                borderRadius: '0.5rem',
+                backgroundColor: '#f9fafb',
+                border: '1px solid #e5e7eb'
+              }}
+            >
               <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>
                 Submit Your Proposal
               </h2>
