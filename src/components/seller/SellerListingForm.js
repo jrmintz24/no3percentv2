@@ -106,10 +106,11 @@ const SellerListingForm = () => {
     }));
   };
 
-  const handlePackageChange = (packageInfo) => {
+  const handlePackageChange = (packageData) => {
     setFormData(prev => ({
       ...prev,
-      packageInfo: packageInfo
+      packageInfo: packageData,
+      services: packageData.allServices
     }));
   };
 
@@ -581,10 +582,9 @@ const SellerListingForm = () => {
                 selectedServices={formData.services}
                 onSelectionChange={handleServiceSelection}
                 userType="seller"
-                showCategories={true}
-                showPackages={true}
                 onPackageChange={handlePackageChange}
                 basePropertyValue={Number(formData.price) || 500000}
+                isMobile={isMobile}
               />
             </div>
 

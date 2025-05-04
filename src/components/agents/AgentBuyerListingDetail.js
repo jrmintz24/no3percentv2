@@ -184,6 +184,7 @@ const AgentBuyerListingDetail = () => {
       
       // Set commission rate based on the new package structure
       const packageRates = {
+        'showingOnly': '1.0',
         'essential': '1.25',
         'full': '2.25',
         'premium': '2.75',

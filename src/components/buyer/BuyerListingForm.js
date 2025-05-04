@@ -133,10 +133,11 @@ const BuyerListingForm = () => {
     }));
   };
 
-  const handlePackageChange = (packageInfo) => {
+  const handlePackageChange = (packageData) => {
     setFormData(prev => ({
       ...prev,
-      packageInfo: packageInfo
+      packageInfo: packageData,
+      services: packageData.allServices
     }));
   };
 
@@ -647,11 +648,9 @@ const BuyerListingForm = () => {
                 selectedServices={formData.services}
                 onSelectionChange={handleServiceSelection}
                 userType="buyer"
-                showCategories={true}
-                showPackages={true}
                 onPackageChange={handlePackageChange}
-                onPaymentPreferenceChange={handlePaymentPreferenceChange}
                 basePropertyValue={Number(formData.priceRange.max) || 500000}
+                isMobile={isMobile}
               />
             </div>
 
