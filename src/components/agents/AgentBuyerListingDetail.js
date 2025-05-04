@@ -181,11 +181,12 @@ const AgentBuyerListingDetail = () => {
     // Update commission based on package if needed
     if (info.packageId !== 'custom') {
       setFeeStructure('percentage');
-      // You might want to set a default commission rate based on the package
+      
+      // Set commission rate based on the new package structure
       const packageRates = {
-        'showing_only': '0.75',
-        'basic': '1.75',
-        'full': '2.75',
+        'essential': '1.25',
+        'full': '2.25',
+        'premium': '2.75',
         'custom': ''
       };
       setCommissionRate(packageRates[info.packageId] || '');

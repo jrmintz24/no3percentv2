@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import ServiceCard from './ServiceCard';
-import { serviceCategories } from '../../config/services';
+import { serviceCategories, servicePackages } from '../../config/services';
 
 const ServiceSelector = ({ 
   services, 
@@ -13,78 +13,84 @@ const ServiceSelector = ({
   showPackages = false,
   onPackageChange = null,
   basePropertyValue = 500000,
-  onPaymentPreferenceChange = null, // New prop for payment preferences
+  onPaymentPreferenceChange = null,
 }) => {
   const [activeCategory, setActiveCategory] = useState(
     serviceCategories[userType][0].id
   );
   const [selectedPackage, setSelectedPackage] = useState('custom');
   const [paymentPreference, setPaymentPreference] = useState({
-    type: 'commission', // 'commission' or 'flat_fee'
+    type: 'commission',
     requireRebate: false,
     flatFeeAmount: '',
     commissionPercentage: '3'
   });
   
-  // Define service packages for sellers
-  const sellerPackages = {
-    full: {
-      name: 'Full Service Package',
-      commission: '3-4%',
-      commissionRate: 0.035,
-      services: ['full-service', 'professional-photography', 'virtual-staging', 'open-houses', 'marketing-materials', 'social-media', 'email-marketing', 'contract-negotiation', 'transaction-coordination'],
-      color: '#10b981',
-      icon: '🌟',
-      description: 'Complete end-to-end selling service with all premium features'
-    },
-    limited: {
-      name: 'Limited Service Package', 
-      commission: '2-3%',
-      commissionRate: 0.025,
-      services: ['limited-service', 'mls-listing', 'yard-sign', 'professional-photography'],
+  // Define service packages using the imported servicePackages
+  const packages = userType === 'seller' ? {
+    essential: {
+      name: servicePackages.seller.essential.name,
+      commission: '1-1.5%',
+      commissionRate: 0.0125,
+      services: servicePackages.seller.essential.services,
       color: '#0891b2',
       icon: '📋',
-      description: 'Essential services to get your property listed and visible'
-    },
-    custom: {
-      name: 'À La Carte Services',
-      commission: 'Pay per service',
-      commissionRate: 0,
-      services: [],
-      color: '#9333ea',
-      icon: '🛠️',
-      description: 'Choose exactly what you need, pay only for what you use'
-    }
-  };
-
-  // Define service packages for buyers
-  const buyerPackages = {
-    showing_only: {
-      name: 'Showing Only Package',
-      commission: '0.5-1%',
-      commissionRate: 0.0075,
-      services: ['property-showings'],
-      color: '#6366f1',
-      icon: '👁️',
-      description: 'Property tours only - perfect for experienced buyers'
-    },
-    basic: {
-      name: 'Basic Buyer Package',
-      commission: '1.5-2%',
-      commissionRate: 0.0175,
-      services: ['property-search', 'property-showings', 'contract-review', 'closing-coordination'],
-      color: '#0891b2',
-      icon: '🏠',
-      description: 'Essential services for first-time buyers'
+      description: servicePackages.seller.essential.description
     },
     full: {
-      name: 'Full Service Package',
+      name: servicePackages.seller.full.name,
       commission: '2.5-3%',
       commissionRate: 0.0275,
-      services: ['property-search', 'property-showings', 'market-analysis', 'negotiation', 'contract-review', 'inspection-coordination', 'closing-coordination', 'mortgage-assistance'],
+      services: servicePackages.seller.full.services,
       color: '#10b981',
       icon: '🌟',
-      description: 'Complete buyer representation with all services included'
+      description: servicePackages.seller.full.description
+    },
+    premium: {
+      name: servicePackages.seller.premium.name,
+      commission: '3-4%',
+      commissionRate: 0.035,
+      services: servicePackages.seller.premium.services,
+      color: '#7c3aed',
+      icon: '🏆',
+      description: servicePackages.seller.premium.description
+    },
+    custom: {
+      name: 'À La Carte Services',
+      commission: 'Pay per service',
+      commissionRate: 0,
+      services: [],
+      color: '#9333ea',
+      icon: '🛠️',
+      description: 'Choose exactly what you need, pay only for what you use'
+    }
+  } : {
+    essential: {
+      name: servicePackages.buyer.essential.name,
+      commission: '1-1.5%',
+      commissionRate: 0.0125,
+      services: servicePackages.buyer.essential.services,
+      color: '#0891b2',
+      icon: '📋',
+      description: servicePackages.buyer.essential.description
+    },
+    full: {
+      name: servicePackages.buyer.full.name,
+      commission: '2-2.5%',
+      commissionRate: 0.0225,
+      services: servicePackages.buyer.full.services,
+      color: '#10b981',
+      icon: '🌟',
+      description: servicePackages.buyer.full.description
+    },
+    premium: {
+      name: servicePackages.buyer.premium.name,
+      commission: '2.5-3%',
+      commissionRate: 0.0275,
+      services: servicePackages.buyer.premium.services,
+      color: '#7c3aed',
+      icon: '🏆',
+      description: servicePackages.buyer.premium.description
     },
     custom: {
       name: 'À La Carte Services',
@@ -96,8 +102,6 @@ const ServiceSelector = ({
       description: 'Choose exactly what you need, pay only for what you use'
     }
   };
-
-  const packages = userType === 'seller' ? sellerPackages : buyerPackages;
 
   // Handle payment preference changes
   const handlePaymentTypeChange = (type) => {
@@ -249,7 +253,7 @@ const ServiceSelector = ({
                   position: 'relative'
                 }}
               >
-                {(userType === 'seller' && key === 'full') || (userType === 'buyer' && key === 'full') && (
+                {key === 'full' && (
                   <div style={{
                     position: 'absolute',
                     top: '-0.75rem',
@@ -534,38 +538,84 @@ const ServiceSelector = ({
         </>
       )}
       
-      {/* Existing category selection */}
+      {/* Category selection with Modern Tab Style */}
       {showCategories && (
         <div style={{
-          display: 'flex',
-          gap: '1rem',
+          backgroundColor: 'white',
+          borderBottom: '1px solid #e5e7eb',
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
           marginBottom: '2rem',
-          overflowX: 'auto',
-          paddingBottom: '0.5rem'
         }}>
-          {serviceCategories[userType].map(category => (
-            <button
-              key={category.id}
-              onClick={() => setActiveCategory(category.id)}
-              style={{
-                padding: '0.5rem 1rem',
-                borderRadius: '9999px',
-                border: 'none',
-                backgroundColor: activeCategory === category.id ? '#3b82f6' : '#f3f4f6',
-                color: activeCategory === category.id ? 'white' : '#374151',
-                cursor: 'pointer',
-                fontWeight: '500',
-                fontSize: '0.875rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              <span>{category.icon}</span>
-              {category.name}
-            </button>
-          ))}
+          <div style={{
+            display: 'flex',
+            gap: '24px',
+            overflowX: 'auto',
+            padding: '0 16px',
+            WebkitScrollbar: 'display: none',
+            msOverflowStyle: 'none',
+            scrollbarWidth: 'none',
+          }}>
+            {serviceCategories[userType].map(category => {
+              const isActive = activeCategory === category.id;
+              return (
+                <button
+                  key={category.id}
+                  onClick={() => setActiveCategory(category.id)}
+                  type="button"
+                  style={{
+                    // Reset browser default button styles
+                    WebkitAppearance: 'none',
+                    MozAppearance: 'none',
+                    appearance: 'none',
+                    background: 'none',
+                    border: 'none',
+                    margin: 0,
+                    padding: 0,
+                    font: 'inherit',
+                    color: 'inherit',
+                    cursor: 'pointer',
+                    
+                    // Apply our tab styles
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    paddingTop: '16px',
+                    paddingBottom: '16px',
+                    paddingLeft: '4px',
+                    paddingRight: '4px',
+                    color: isActive ? '#3b82f6' : '#6b7280',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    borderBottom: '3px solid',
+                    borderBottomColor: isActive ? '#3b82f6' : 'transparent',
+                    transition: 'all 0.2s ease',
+                    whiteSpace: 'nowrap',
+                    backgroundColor: 'transparent',
+                    outline: 'none',
+                    boxShadow: 'none',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.color = '#374151';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.color = '#6b7280';
+                    }
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.outline = 'none';
+                  }}
+                >
+                  <span>{category.icon}</span>
+                  {category.name}
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
       

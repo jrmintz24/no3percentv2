@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '../components/common/Button';
 import ServiceCard from '../components/services/ServiceCard';
-import { sellerServices, serviceCategories } from '../config/services';
+import { sellerServices, serviceCategories, servicePackages } from '../config/services';
 
 const SellerServicesPage = () => {
   const [activeCategory, setActiveCategory] = useState('complete');
@@ -13,45 +13,8 @@ const SellerServicesPage = () => {
     service => service.category === activeCategory
   );
 
-  // Define the same packages as in ServiceSelector
-  const packages = {
-    full: {
-      name: 'Full Service Package',
-      services: [
-        'Full Listing Service',
-        'Professional Photography', 
-        'Virtual Staging', 
-        'Open House Events', 
-        'Premium Marketing Materials', 
-        'Social Media Marketing', 
-        'Email Marketing Campaign', 
-        'Contract Negotiation', 
-        'Transaction Coordination'
-      ],
-      icon: '🌟',
-      color: '#10b981',
-      description: 'Complete end-to-end selling service with all premium features'
-    },
-    limited: {
-      name: 'Limited Service Package',
-      services: [
-        'Limited Service Listing',
-        'MLS Listing Only', 
-        'Yard Sign & Lockbox', 
-        'Professional Photography'
-      ],
-      icon: '📋',
-      color: '#0891b2',
-      description: 'Essential services to get your property listed and visible'
-    },
-    custom: {
-      name: 'À La Carte Services',
-      services: [],
-      icon: '🛠️',
-      color: '#9333ea',
-      description: 'Choose exactly what you need, pay only for what you use'
-    }
-  };
+  // Use packages directly from the imported servicePackages
+  const packages = servicePackages.seller;
   
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1rem' }}>
@@ -105,7 +68,7 @@ const SellerServicesPage = () => {
                 backgroundColor: 'white',
                 borderRadius: '1rem',
                 padding: '2rem',
-                border: key === 'full' ? `2px solid ${pkg.color}` : '1px solid #e5e7eb',
+                border: key === 'full' ? `2px solid #10b981` : '1px solid #e5e7eb',
                 position: 'relative'
               }}
             >
@@ -115,7 +78,7 @@ const SellerServicesPage = () => {
                   top: '-12px',
                   left: '50%',
                   transform: 'translateX(-50%)',
-                  backgroundColor: pkg.color,
+                  backgroundColor: '#10b981',
                   color: 'white',
                   padding: '0.25rem 1rem',
                   borderRadius: '9999px',
@@ -127,11 +90,10 @@ const SellerServicesPage = () => {
               )}
               
               <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>{pkg.icon}</div>
                 <h3 style={{
                   fontSize: '1.5rem',
                   fontWeight: '700',
-                  color: pkg.color,
+                  color: '#111827',
                   marginBottom: '0.5rem'
                 }}>
                   {pkg.name}
@@ -150,19 +112,31 @@ const SellerServicesPage = () => {
                   padding: 0,
                   marginBottom: '1.5rem'
                 }}>
-                  {pkg.services.map(service => (
-                    <li key={service} style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      marginBottom: '0.5rem',
-                      color: '#374151',
-                      fontSize: '0.875rem'
+                  {pkg.services.slice(0, 8).map(serviceId => {
+                    const service = sellerServices.find(s => s.id === serviceId);
+                    return service ? (
+                      <li key={serviceId} style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        marginBottom: '0.5rem',
+                        color: '#374151',
+                        fontSize: '0.875rem'
+                      }}>
+                        <span style={{ color: '#10b981' }}>✓</span>
+                        {service.name}
+                      </li>
+                    ) : null;
+                  })}
+                  {pkg.services.length > 8 && (
+                    <li style={{
+                      color: '#6b7280',
+                      fontSize: '0.875rem',
+                      fontStyle: 'italic'
                     }}>
-                      <span style={{ color: pkg.color }}>✓</span>
-                      {service}
+                      + {pkg.services.length - 8} more services
                     </li>
-                  ))}
+                  )}
                 </ul>
               ) : (
                 <div style={{
@@ -286,7 +260,7 @@ const SellerServicesPage = () => {
             {
               icon: '📝',
               title: 'Choose Your Package',
-              description: 'Select from Full Service, Limited Service, or build your own À La Carte package'
+              description: 'Select from Full Service, Essential Service, or build your own À La Carte package'
             },
             {
               icon: '💰',

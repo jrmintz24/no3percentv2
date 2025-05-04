@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '../components/common/Button';
 import ServiceCard from '../components/services/ServiceCard';
-import { buyerServices, serviceCategories } from '../config/services';
+import { buyerServices, serviceCategories, servicePackages } from '../config/services';
 
 const BuyerServicesPage = () => {
   const [activeCategory, setActiveCategory] = useState('search');
@@ -13,51 +13,8 @@ const BuyerServicesPage = () => {
     service => service.category === activeCategory
   );
 
-  // Define the same packages as in ServiceSelector
-  const packages = {
-    showing_only: {
-      name: 'Showing Only Package',
-      services: ['Property Showings'],
-      icon: '👁️',
-      color: '#6366f1',
-      description: 'Property tours only - perfect for experienced buyers'
-    },
-    basic: {
-      name: 'Basic Buyer Package',
-      services: [
-        'Property Search Assistance', 
-        'Property Showings', 
-        'Contract Review & Support', 
-        'Closing Coordination'
-      ],
-      icon: '🏠',
-      color: '#0891b2',
-      description: 'Essential services for first-time buyers'
-    },
-    full: {
-      name: 'Full Service Package',
-      services: [
-        'Property Search Assistance', 
-        'Property Showings', 
-        'Comparative Market Analysis', 
-        'Negotiation Representation', 
-        'Contract Review & Support', 
-        'Inspection Coordination', 
-        'Closing Coordination', 
-        'Mortgage Lender Recommendations'
-      ],
-      icon: '🌟',
-      color: '#10b981',
-      description: 'Complete buyer representation with all services included'
-    },
-    custom: {
-      name: 'À La Carte Services',
-      services: [],
-      icon: '🛠️',
-      color: '#9333ea',
-      description: 'Choose exactly what you need, pay only for what you use'
-    }
-  };
+  // Use packages directly from the imported servicePackages
+  const packages = servicePackages.buyer;
   
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1rem' }}>
@@ -111,7 +68,7 @@ const BuyerServicesPage = () => {
                 backgroundColor: 'white',
                 borderRadius: '1rem',
                 padding: '2rem',
-                border: key === 'full' ? `2px solid ${pkg.color}` : '1px solid #e5e7eb',
+                border: key === 'full' ? `2px solid #10b981` : '1px solid #e5e7eb',
                 position: 'relative'
               }}
             >
@@ -121,7 +78,7 @@ const BuyerServicesPage = () => {
                   top: '-12px',
                   left: '50%',
                   transform: 'translateX(-50%)',
-                  backgroundColor: pkg.color,
+                  backgroundColor: '#10b981',
                   color: 'white',
                   padding: '0.25rem 1rem',
                   borderRadius: '9999px',
@@ -133,11 +90,10 @@ const BuyerServicesPage = () => {
               )}
               
               <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>{pkg.icon}</div>
                 <h3 style={{
                   fontSize: '1.5rem',
                   fontWeight: '700',
-                  color: pkg.color,
+                  color: '#111827',
                   marginBottom: '0.5rem'
                 }}>
                   {pkg.name}
@@ -156,19 +112,31 @@ const BuyerServicesPage = () => {
                   padding: 0,
                   marginBottom: '1.5rem'
                 }}>
-                  {pkg.services.map(service => (
-                    <li key={service} style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      marginBottom: '0.5rem',
-                      color: '#374151',
-                      fontSize: '0.875rem'
+                  {pkg.services.slice(0, 8).map(serviceId => {
+                    const service = buyerServices.find(s => s.id === serviceId);
+                    return service ? (
+                      <li key={serviceId} style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        marginBottom: '0.5rem',
+                        color: '#374151',
+                        fontSize: '0.875rem'
+                      }}>
+                        <span style={{ color: '#10b981' }}>✓</span>
+                        {service.name}
+                      </li>
+                    ) : null;
+                  })}
+                  {pkg.services.length > 8 && (
+                    <li style={{
+                      color: '#6b7280',
+                      fontSize: '0.875rem',
+                      fontStyle: 'italic'
                     }}>
-                      <span style={{ color: pkg.color }}>✓</span>
-                      {service}
+                      + {pkg.services.length - 8} more services
                     </li>
-                  ))}
+                  )}
                 </ul>
               ) : (
                 <div style={{
@@ -353,7 +321,7 @@ const BuyerServicesPage = () => {
             },
             {
               question: 'What if I only need minimal assistance?',
-              answer: 'Our "Showing Only" package is perfect for experienced buyers who just need access to properties. You can also build a custom package with only the services you need.'
+              answer: 'Our "Essential Services" package is perfect for straightforward transactions. You can also build a custom package with only the services you need.'
             },
             {
               question: 'What are rebates and how do they work?',
