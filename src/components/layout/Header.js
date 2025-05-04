@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -6,6 +6,17 @@ const Header = () => {
   const { currentUser, userProfile, logout } = useAuth();
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  
+  // Handle resize
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   
   const handleLogout = async () => {
     try {
@@ -30,7 +41,8 @@ const Header = () => {
         margin: '0 auto',
         display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: 'center',
+        padding: '0 1rem'
       }}>
         <div>
           <Link 
@@ -48,7 +60,7 @@ const Header = () => {
           </Link>
         </div>
         
-        <div className="hidden md:block">
+        {!isMobile && (
           <nav style={{ 
             display: 'flex', 
             gap: '2rem',
@@ -62,10 +74,7 @@ const Header = () => {
                     color: '#4b5563',
                     textDecoration: 'none',
                     fontWeight: '500',
-                    transition: 'color 0.2s ease',
-                    ':hover': {
-                      color: '#2563eb'
-                    }
+                    transition: 'color 0.2s ease'
                   }}
                 >
                   For Buyers
@@ -76,10 +85,7 @@ const Header = () => {
                     color: '#4b5563',
                     textDecoration: 'none',
                     fontWeight: '500',
-                    transition: 'color 0.2s ease',
-                    ':hover': {
-                      color: '#2563eb'
-                    }
+                    transition: 'color 0.2s ease'
                   }}
                 >
                   For Sellers
@@ -90,10 +96,7 @@ const Header = () => {
                     color: '#4b5563',
                     textDecoration: 'none',
                     fontWeight: '500',
-                    transition: 'color 0.2s ease',
-                    ':hover': {
-                      color: '#2563eb'
-                    }
+                    transition: 'color 0.2s ease'
                   }}
                 >
                   For Agents
@@ -104,10 +107,7 @@ const Header = () => {
                     color: '#4b5563',
                     textDecoration: 'none',
                     fontWeight: '500',
-                    transition: 'color 0.2s ease',
-                    ':hover': {
-                      color: '#2563eb'
-                    }
+                    transition: 'color 0.2s ease'
                   }}
                 >
                   Services
@@ -118,10 +118,7 @@ const Header = () => {
                     color: '#4b5563',
                     textDecoration: 'none',
                     fontWeight: '500',
-                    transition: 'color 0.2s ease',
-                    ':hover': {
-                      color: '#2563eb'
-                    }
+                    transition: 'color 0.2s ease'
                   }}
                 >
                   FAQ
@@ -133,10 +130,7 @@ const Header = () => {
                     color: '#4b5563',
                     textDecoration: 'none',
                     fontWeight: '500',
-                    transition: 'color 0.2s ease',
-                    ':hover': {
-                      color: '#2563eb'
-                    }
+                    transition: 'color 0.2s ease'
                   }}
                 >
                   Sign In
@@ -150,10 +144,7 @@ const Header = () => {
                     borderRadius: '0.5rem',
                     textDecoration: 'none',
                     fontWeight: '600',
-                    transition: 'background-color 0.2s ease',
-                    ':hover': {
-                      backgroundColor: '#1d4ed8'
-                    }
+                    transition: 'background-color 0.2s ease'
                   }}
                 >
                   Get Started
@@ -319,10 +310,10 @@ const Header = () => {
               </>
             )}
           </nav>
-        </div>
+        )}
         
         {/* Mobile menu button */}
-        <div className="md:hidden">
+        {isMobile && (
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             style={{ 
@@ -336,16 +327,17 @@ const Header = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-        </div>
+        )}
       </div>
       
       {/* Mobile menu */}
-      {isMenuOpen && (
+      {isMobile && isMenuOpen && (
         <div 
-          className="md:hidden"
           style={{ 
             padding: '1rem', 
-            borderTop: '1px solid #e5e7eb' 
+            borderTop: '1px solid #e5e7eb',
+            maxHeight: 'calc(100vh - 80px)',
+            overflow: 'auto' 
           }}
         >
           <nav style={{ 

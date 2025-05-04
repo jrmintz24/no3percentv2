@@ -1,16 +1,29 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/common/Button';
 
 const HomePage = () => {
   const { currentUser, userProfile } = useAuth();
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [isTablet, setIsTablet] = useState(window.innerWidth < 1024);
+  
+  // Handle resize
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+      setIsTablet(window.innerWidth < 1024);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   return (
-    <div>
+    <div style={{ overflowX: 'hidden' }}>
       {/* Hero Section */}
       <section style={{ 
-        padding: '8rem 1rem',
+        padding: isMobile ? '6rem 1rem' : '8rem 1rem',
         background: 'linear-gradient(180deg, #0f172a 0%, #1e293b 100%)',
         textAlign: 'center',
         color: 'white',
@@ -26,7 +39,7 @@ const HomePage = () => {
           zIndex: 2
         }}>
           <div style={{
-            fontSize: '2.5rem',
+            fontSize: isMobile ? '2rem' : '2.5rem',
             fontWeight: '800',
             letterSpacing: '-0.02em'
           }}>
@@ -35,37 +48,39 @@ const HomePage = () => {
           </div>
         </div>
 
-        {/* Agent CTA in top right corner */}
-        <div style={{
-          position: 'absolute',
-          top: '2rem',
-          right: '2rem',
-          zIndex: 2
-        }}>
-          <Link to="/agents">
-            <Button style={{
-              backgroundColor: 'rgba(59, 130, 246, 0.1)',
-              color: '#60a5fa',
-              padding: '0.5rem 1rem',
-              fontSize: '0.875rem',
-              borderRadius: '0.5rem',
-              border: '1px solid rgba(59, 130, 246, 0.3)',
-              backdropFilter: 'blur(10px)',
-              transition: 'all 0.2s ease'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.2)';
-              e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.5)';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
-              e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.3)';
-            }}
-            >
-              Are you an agent?
-            </Button>
-          </Link>
-        </div>
+        {/* Agent CTA in top right corner - Hide on mobile */}
+        {!isMobile && (
+          <div style={{
+            position: 'absolute',
+            top: '2rem',
+            right: '2rem',
+            zIndex: 2
+          }}>
+            <Link to="/agents">
+              <Button style={{
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                color: '#60a5fa',
+                padding: '0.5rem 1rem',
+                fontSize: '0.875rem',
+                borderRadius: '0.5rem',
+                border: '1px solid rgba(59, 130, 246, 0.3)',
+                backdropFilter: 'blur(10px)',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.2)';
+                e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.5)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
+                e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+              }}
+              >
+                Are you an agent?
+              </Button>
+            </Link>
+          </div>
+        )}
 
         <div style={{
           position: 'absolute',
@@ -77,9 +92,9 @@ const HomePage = () => {
           pointerEvents: 'none'
         }} />
         
-        <div style={{ maxWidth: '1000px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
+        <div style={{ maxWidth: '1000px', margin: '0 auto', position: 'relative', zIndex: 1, padding: '0 1rem' }}>
           <h1 style={{ 
-            fontSize: '4.5rem',
+            fontSize: isMobile ? '2.5rem' : '4.5rem',
             fontWeight: '800',
             marginBottom: '1.5rem',
             lineHeight: '1',
@@ -93,7 +108,7 @@ const HomePage = () => {
           </h1>
           
           <p style={{ 
-            fontSize: '1.25rem',
+            fontSize: isMobile ? '1rem' : '1.25rem',
             maxWidth: '650px',
             margin: '0 auto 3rem',
             color: '#cbd5e1',
@@ -105,29 +120,38 @@ const HomePage = () => {
           </p>
           
           {!currentUser ? (
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-              <Link to="/signup">
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: isMobile ? 'column' : 'row',
+              gap: '1rem', 
+              justifyContent: 'center',
+              maxWidth: '400px',
+              margin: '0 auto'
+            }}>
+              <Link to="/signup" style={{ width: isMobile ? '100%' : 'auto' }}>
                 <Button size="large" style={{
                   backgroundColor: '#3b82f6',
                   color: 'white',
-                  padding: '1rem 3rem',
+                  padding: isMobile ? '1rem' : '1rem 3rem',
                   fontSize: '1.125rem',
                   borderRadius: '0.625rem',
                   boxShadow: '0 4px 14px 0 rgba(59, 130, 246, 0.25)',
-                  border: 'none'
+                  border: 'none',
+                  width: isMobile ? '100%' : 'auto'
                 }}>
                   Take Control
                 </Button>
               </Link>
-              <Link to="/signin">
+              <Link to="/signin" style={{ width: isMobile ? '100%' : 'auto' }}>
                 <Button variant="secondary" size="large" style={{
                   backgroundColor: 'rgba(255, 255, 255, 0.03)',
                   color: 'white',
                   border: '1px solid rgba(255, 255, 255, 0.15)',
-                  padding: '1rem 2rem',
+                  padding: isMobile ? '1rem' : '1rem 2rem',
                   fontSize: '1.125rem',
                   borderRadius: '0.625rem',
-                  backdropFilter: 'blur(10px)'
+                  backdropFilter: 'blur(10px)',
+                  width: isMobile ? '100%' : 'auto'
                 }}>
                   Sign In
                 </Button>
@@ -152,15 +176,15 @@ const HomePage = () => {
 
       {/* Social Proof Section */}
       <section style={{ 
-        padding: '3rem 1rem',
+        padding: isMobile ? '2rem 1rem' : '3rem 1rem',
         backgroundColor: '#ffffff',
         borderBottom: '1px solid #f1f5f9'
       }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
           <div style={{ 
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-            gap: '2rem',
+            gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
+            gap: isMobile ? '1rem' : '2rem',
             textAlign: 'center'
           }}>
             {[
@@ -170,10 +194,20 @@ const HomePage = () => {
               { value: '24 hrs', label: 'Average proposal time' }
             ].map((stat, index) => (
               <div key={index}>
-                <div style={{ fontSize: '2.25rem', fontWeight: '700', color: '#0f172a', marginBottom: '0.25rem' }}>
+                <div style={{ 
+                  fontSize: isMobile ? '1.5rem' : '2.25rem', 
+                  fontWeight: '700', 
+                  color: '#0f172a', 
+                  marginBottom: '0.25rem' 
+                }}>
                   {stat.value}
                 </div>
-                <div style={{ color: '#64748b', fontSize: '0.9375rem' }}>{stat.label}</div>
+                <div style={{ 
+                  color: '#64748b', 
+                  fontSize: isMobile ? '0.8rem' : '0.9375rem' 
+                }}>
+                  {stat.label}
+                </div>
               </div>
             ))}
           </div>
@@ -181,23 +215,23 @@ const HomePage = () => {
       </section>
 
       {/* Value Proposition Section - FURTHER ENHANCED */}
-      <section style={{ padding: '6rem 1rem', backgroundColor: '#fafafa' }}>
+      <section style={{ padding: isMobile ? '3rem 1rem' : '6rem 1rem', backgroundColor: '#fafafa' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
+          <div style={{ textAlign: 'center', marginBottom: isMobile ? '2rem' : '3.5rem' }}>
             <div style={{
               display: 'inline-block',
               backgroundColor: '#e0f2fe',
               borderRadius: '2rem',
               padding: '0.625rem 1.75rem',
               marginBottom: '1.25rem',
-              fontSize: '1rem',
+              fontSize: isMobile ? '0.875rem' : '1rem',
               fontWeight: '600',
               color: '#0369a1'
             }}>
               Why we're different
             </div>
             <h2 style={{ 
-              fontSize: '2.75rem',
+              fontSize: isMobile ? '2rem' : '2.75rem',
               fontWeight: '800',
               color: '#0f172a',
               letterSpacing: '-0.025em'
@@ -208,8 +242,8 @@ const HomePage = () => {
           
           <div style={{ 
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-            gap: '2rem'
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(320px, 1fr))',
+            gap: isMobile ? '1.5rem' : '2rem'
           }}>
             {[
               {
@@ -233,7 +267,7 @@ const HomePage = () => {
             ].map((item, index) => (
               <div key={index} style={{ 
                 textAlign: 'center', 
-                padding: '2.5rem 2rem',
+                padding: isMobile ? '1.5rem' : '2.5rem 2rem',
                 borderRadius: '1rem',
                 backgroundColor: 'white',
                 boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
@@ -242,10 +276,14 @@ const HomePage = () => {
                 transition: 'transform 0.2s ease',
               }}
               onMouseOver={(e) => {
-                e.currentTarget.style.transform = 'translateY(-4px)';
+                if (!isMobile) {
+                  e.currentTarget.style.transform = 'translateY(-4px)';
+                }
               }}
               onMouseOut={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
+                if (!isMobile) {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }
               }}
               >
                 <div style={{ 
@@ -261,10 +299,20 @@ const HomePage = () => {
                 }}>
                   {item.icon}
                 </div>
-                <h3 style={{ fontSize: '1.375rem', fontWeight: '700', marginBottom: '0.875rem', color: '#0f172a' }}>
+                <h3 style={{ 
+                  fontSize: isMobile ? '1.125rem' : '1.375rem', 
+                  fontWeight: '700', 
+                  marginBottom: '0.875rem', 
+                  color: '#0f172a' 
+                }}>
                   {item.title}
                 </h3>
-                <p style={{ color: '#475569', lineHeight: '1.6', fontSize: '0.9375rem', marginBottom: '1.5rem' }}>
+                <p style={{ 
+                  color: '#475569', 
+                  lineHeight: '1.6', 
+                  fontSize: isMobile ? '0.875rem' : '0.9375rem', 
+                  marginBottom: '1.5rem' 
+                }}>
                   {item.desc}
                 </p>
                 <div style={{
@@ -285,23 +333,23 @@ const HomePage = () => {
       </section>
       
       {/* How It Works Section - Fixed alignment */}
-      <section style={{ padding: '6rem 1rem', backgroundColor: 'white' }}>
+      <section style={{ padding: isMobile ? '3rem 1rem' : '6rem 1rem', backgroundColor: 'white' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
+          <div style={{ textAlign: 'center', marginBottom: isMobile ? '2rem' : '3.5rem' }}>
             <div style={{
               display: 'inline-block',
               backgroundColor: '#dcfce7',
               borderRadius: '2rem',
               padding: '0.625rem 1.75rem',
               marginBottom: '1.25rem',
-              fontSize: '1rem',
+              fontSize: isMobile ? '0.875rem' : '1rem',
               fontWeight: '600',
               color: '#166534'
             }}>
               How it works
             </div>
             <h2 style={{ 
-              fontSize: '2.75rem',
+              fontSize: isMobile ? '2rem' : '2.75rem',
               fontWeight: '800',
               color: '#0f172a',
               letterSpacing: '-0.025em'
@@ -312,17 +360,16 @@ const HomePage = () => {
           
           <div style={{ 
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(480px, 1fr))',
-            gap: '2rem',
+            gridTemplateColumns: isMobile ? '1fr' : isTablet ? '1fr' : 'repeat(2, 1fr)',
+            gap: isMobile ? '1.5rem' : '2rem',
             maxWidth: '1100px',
-            margin: '0 auto',
-            justifyContent: 'center'
+            margin: '0 auto'
           }}>
             {/* For Buyers */}
             <div style={{ 
               backgroundColor: 'white',
               borderRadius: '1.5rem',
-              padding: '2.5rem',
+              padding: isMobile ? '1.5rem' : '2.5rem',
               boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
               border: '1px solid #e2e8f0'
             }}>
@@ -343,7 +390,7 @@ const HomePage = () => {
               </div>
               
               <h3 style={{ 
-                fontSize: '1.75rem', 
+                fontSize: isMobile ? '1.5rem' : '1.75rem', 
                 fontWeight: '700', 
                 marginBottom: '2rem',
                 color: '#0f172a'
@@ -392,15 +439,20 @@ const HomePage = () => {
                         fontWeight: '600', 
                         marginBottom: '0.5rem', 
                         color: '#0f172a', 
-                        fontSize: '1.125rem',
+                        fontSize: isMobile ? '1rem' : '1.125rem',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '0.5rem'
+                        gap: '0.5rem',
+                        flexWrap: 'wrap'
                       }}>
                         {item.title}
                         <span style={{ fontSize: '1rem' }}>{item.icon}</span>
                       </h4>
-                      <p style={{ color: '#475569', lineHeight: '1.6', fontSize: '0.9375rem' }}>
+                      <p style={{ 
+                        color: '#475569', 
+                        lineHeight: '1.6', 
+                        fontSize: isMobile ? '0.875rem' : '0.9375rem' 
+                      }}>
                         {item.desc}
                       </p>
                     </div>
@@ -417,7 +469,7 @@ const HomePage = () => {
                   borderRadius: '0.625rem',
                   fontWeight: '600',
                   marginTop: '2rem',
-                  fontSize: '1.0625rem'
+                  fontSize: isMobile ? '1rem' : '1.0625rem'
                 }}>
                   Start Your Home Search
                 </Button>
@@ -428,7 +480,7 @@ const HomePage = () => {
             <div style={{ 
               backgroundColor: 'white',
               borderRadius: '1.5rem',
-              padding: '2.5rem',
+              padding: isMobile ? '1.5rem' : '2.5rem',
               boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
               border: '1px solid #e2e8f0'
             }}>
@@ -449,7 +501,7 @@ const HomePage = () => {
               </div>
               
               <h3 style={{ 
-                fontSize: '1.75rem', 
+                fontSize: isMobile ? '1.5rem' : '1.75rem', 
                 fontWeight: '700', 
                 marginBottom: '2rem',
                 color: '#0f172a'
@@ -498,15 +550,20 @@ const HomePage = () => {
                         fontWeight: '600', 
                         marginBottom: '0.5rem', 
                         color: '#0f172a', 
-                        fontSize: '1.125rem',
+                        fontSize: isMobile ? '1rem' : '1.125rem',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '0.5rem'
+                        gap: '0.5rem',
+                        flexWrap: 'wrap'
                       }}>
                         {item.title}
                         <span style={{ fontSize: '1rem' }}>{item.icon}</span>
                       </h4>
-                      <p style={{ color: '#475569', lineHeight: '1.6', fontSize: '0.9375rem' }}>
+                      <p style={{ 
+                        color: '#475569', 
+                        lineHeight: '1.6', 
+                        fontSize: isMobile ? '0.875rem' : '0.9375rem' 
+                      }}>
                         {item.desc}
                       </p>
                     </div>
@@ -523,7 +580,7 @@ const HomePage = () => {
                   borderRadius: '0.625rem',
                   fontWeight: '600',
                   marginTop: '2rem',
-                  fontSize: '1.0625rem'
+                  fontSize: isMobile ? '1rem' : '1.0625rem'
                 }}>
                   List Your Property
                 </Button>
@@ -534,23 +591,23 @@ const HomePage = () => {
       </section>
       
       {/* Why Choose Us Section */}
-      <section style={{ padding: '6rem 1rem', backgroundColor: '#fafafa' }}>
+      <section style={{ padding: isMobile ? '3rem 1rem' : '6rem 1rem', backgroundColor: '#fafafa' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
+          <div style={{ textAlign: 'center', marginBottom: isMobile ? '2rem' : '3.5rem' }}>
             <div style={{
               display: 'inline-block',
               backgroundColor: '#fef3c7',
               borderRadius: '2rem',
               padding: '0.625rem 1.75rem',
               marginBottom: '1.25rem',
-              fontSize: '1rem',
+              fontSize: isMobile ? '0.875rem' : '1rem',
               fontWeight: '600',
               color: '#92400e'
             }}>
               The good stuff
             </div>
             <h2 style={{ 
-              fontSize: '2.75rem',
+              fontSize: isMobile ? '2rem' : '2.75rem',
               fontWeight: '800',
               color: '#0f172a',
               letterSpacing: '-0.025em'
@@ -561,7 +618,7 @@ const HomePage = () => {
           
           <div style={{ 
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(280px, 1fr))',
             gap: '1.5rem'
           }}>
             {[
@@ -614,7 +671,11 @@ const HomePage = () => {
                 }}>
                   {item.title}
                 </h3>
-                <p style={{ color: '#475569', lineHeight: '1.5', fontSize: '0.9375rem' }}>
+                <p style={{ 
+                  color: '#475569', 
+                  lineHeight: '1.5', 
+                  fontSize: isMobile ? '0.875rem' : '0.9375rem' 
+                }}>
                   {item.desc}
                 </p>
               </div>
@@ -625,7 +686,7 @@ const HomePage = () => {
       
       {/* CTA Section */}
       <section style={{ 
-        padding: '8rem 1rem',
+        padding: isMobile ? '4rem 1rem' : '8rem 1rem',
         background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)',
         color: 'white',
         textAlign: 'center',
@@ -642,9 +703,9 @@ const HomePage = () => {
           pointerEvents: 'none'
         }} />
         
-        <div style={{ maxWidth: '700px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
+        <div style={{ maxWidth: '700px', margin: '0 auto', position: 'relative', zIndex: 1, padding: '0 1rem' }}>
           <h2 style={{ 
-            fontSize: '3rem',
+            fontSize: isMobile ? '2rem' : '3rem',
             fontWeight: '800',
             marginBottom: '1.5rem',
             lineHeight: '1.1',
@@ -653,7 +714,7 @@ const HomePage = () => {
             Ready to Take Control of<br />Your Real Estate Journey?
           </h2>
           <p style={{ 
-            fontSize: '1.25rem',
+            fontSize: isMobile ? '1rem' : '1.25rem',
             marginBottom: '2.5rem',
             opacity: '0.9',
             lineHeight: '1.6'
@@ -667,7 +728,7 @@ const HomePage = () => {
               <Button size="large" style={{ 
                 backgroundColor: 'white',
                 color: '#1e3a8a',
-                padding: '1rem 3rem',
+                padding: isMobile ? '1rem 2rem' : '1rem 3rem',
                 fontSize: '1.125rem',
                 borderRadius: '0.625rem',
                 fontWeight: '700',
@@ -681,7 +742,7 @@ const HomePage = () => {
               <Button size="large" style={{ 
                 backgroundColor: 'white',
                 color: '#1e3a8a',
-                padding: '1rem 3rem',
+                padding: isMobile ? '1rem 2rem' : '1rem 3rem',
                 fontSize: '1.125rem',
                 borderRadius: '0.625rem',
                 fontWeight: '700',
@@ -696,15 +757,15 @@ const HomePage = () => {
       
       {/* Footer - Updated FAQ links */}
       <footer style={{ 
-        padding: '4rem 1rem 2rem',
+        padding: isMobile ? '2rem 1rem' : '4rem 1rem 2rem',
         backgroundColor: '#0f172a',
         color: '#94a3b8'
       }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           <div style={{ 
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: '3rem',
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(250px, 1fr))',
+            gap: isMobile ? '2rem' : '3rem',
             marginBottom: '3rem'
           }}>
             <div>
@@ -826,9 +887,9 @@ const HomePage = () => {
             borderTop: '1px solid #1e293b',
             paddingTop: '2rem',
             display: 'flex',
+            flexDirection: isMobile ? 'column' : 'row',
             justifyContent: 'space-between',
             alignItems: 'center',
-            flexWrap: 'wrap',
             gap: '1.5rem'
           }}>
             <div style={{ color: '#64748b', fontSize: '0.875rem' }}>

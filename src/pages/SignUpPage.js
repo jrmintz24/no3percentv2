@@ -23,8 +23,19 @@ const SignUpPage = () => {
   // UI state
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   
   const { signup, currentUser } = useAuth();
+  
+  // Handle resize
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   
   // Redirect if already logged in
   useEffect(() => {
@@ -89,12 +100,12 @@ const SignUpPage = () => {
     <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb' }}>
       <div style={{ 
         display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
+        gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
         minHeight: '100vh'
       }}>
         {/* Left side - Form */}
         <div style={{ 
-          padding: '2rem',
+          padding: isMobile ? '1.5rem' : '2rem',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -116,7 +127,7 @@ const SignUpPage = () => {
                 RealEstateMatch
               </Link>
               <h1 style={{ 
-                fontSize: '2rem', 
+                fontSize: isMobile ? '1.75rem' : '2rem', 
                 fontWeight: '800', 
                 marginBottom: '0.5rem',
                 color: '#0f172a'
@@ -125,7 +136,7 @@ const SignUpPage = () => {
               </h1>
               <p style={{ 
                 color: '#64748b', 
-                fontSize: '1.125rem',
+                fontSize: isMobile ? '1rem' : '1.125rem',
                 marginBottom: '2rem'
               }}>
                 Join thousands saving money on real estate
@@ -193,11 +204,12 @@ const SignUpPage = () => {
                         alignItems: 'center',
                         justifyContent: 'center',
                         marginRight: '1rem',
-                        fontSize: '1.5rem'
+                        fontSize: '1.5rem',
+                        flexShrink: 0
                       }}>
                         {option.icon}
                       </div>
-                      <div style={{ flex: 1 }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ 
                           fontWeight: '600',
                           color: '#111827',
@@ -207,7 +219,8 @@ const SignUpPage = () => {
                         </div>
                         <div style={{ 
                           fontSize: '0.875rem',
-                          color: '#6b7280'
+                          color: '#6b7280',
+                          wordBreak: 'break-word'
                         }}>
                           {option.description}
                         </div>
@@ -220,7 +233,9 @@ const SignUpPage = () => {
                         backgroundColor: userType === option.value ? '#3b82f6' : 'white',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center'
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                        marginLeft: '0.5rem'
                       }}>
                         {userType === option.value && (
                           <div style={{ 
@@ -262,12 +277,7 @@ const SignUpPage = () => {
                     borderRadius: '0.5rem',
                     border: '1px solid #d1d5db',
                     fontSize: '1rem',
-                    outline: 'none',
-                    transition: 'border-color 0.15s ease',
-                    ':focus': {
-                      borderColor: '#3b82f6',
-                      boxShadow: '0 0 0 3px rgba(59, 130, 246, 0.1)'
-                    }
+                    boxSizing: 'border-box'
                   }}
                 />
               </div>
@@ -297,7 +307,8 @@ const SignUpPage = () => {
                     padding: '0.875rem',
                     borderRadius: '0.5rem',
                     border: '1px solid #d1d5db',
-                    fontSize: '1rem'
+                    fontSize: '1rem',
+                    boxSizing: 'border-box'
                   }}
                 />
               </div>
@@ -327,7 +338,8 @@ const SignUpPage = () => {
                     padding: '0.875rem',
                     borderRadius: '0.5rem',
                     border: '1px solid #d1d5db',
-                    fontSize: '1rem'
+                    fontSize: '1rem',
+                    boxSizing: 'border-box'
                   }}
                 />
               </div>
@@ -357,7 +369,8 @@ const SignUpPage = () => {
                     padding: '0.875rem',
                     borderRadius: '0.5rem',
                     border: '1px solid #d1d5db',
-                    fontSize: '1rem'
+                    fontSize: '1rem',
+                    boxSizing: 'border-box'
                   }}
                 />
               </div>
@@ -395,66 +408,168 @@ const SignUpPage = () => {
           </div>
         </div>
         
-        {/* Right side - Benefits */}
-        <div style={{ 
-          background: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
-          padding: '2rem',
-          color: 'white',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          position: 'relative',
-          overflow: 'hidden'
-        }}>
-          <div style={{
-            position: 'absolute',
-            top: '0',
-            left: '0',
-            right: '0',
-            bottom: '0',
-            background: 'radial-gradient(circle at 30% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%)',
-            pointerEvents: 'none'
-          }} />
-          
-          <div style={{ position: 'relative', zIndex: 1, maxWidth: '500px' }}>
+        {/* Right side - Benefits - Hide on mobile */}
+        {!isMobile && (
+          <div style={{ 
+            background: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
+            padding: '2rem',
+            color: 'white',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            <div style={{
+              position: 'absolute',
+              top: '0',
+              left: '0',
+              right: '0',
+              bottom: '0',
+              background: 'radial-gradient(circle at 30% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%)',
+              pointerEvents: 'none'
+            }} />
+            
+            <div style={{ position: 'relative', zIndex: 1, maxWidth: '500px' }}>
+              <h2 style={{ 
+                fontSize: '2.5rem', 
+                fontWeight: '800', 
+                marginBottom: '1.5rem',
+                lineHeight: '1.2'
+              }}>
+                Join the Future of Real Estate
+              </h2>
+              
+              <p style={{ 
+                fontSize: '1.25rem', 
+                marginBottom: '3rem',
+                opacity: '0.9',
+                lineHeight: '1.6'
+              }}>
+                Experience a transparent, competitive marketplace where you control every aspect of your real estate journey.
+              </p>
+              
+              <div style={{ marginBottom: '3rem' }}>
+                {userTypeOptions.map((option) => (
+                  <div 
+                    key={option.value}
+                    style={{ 
+                      marginBottom: '2rem',
+                      opacity: userType === option.value ? '1' : '0.6',
+                      transition: 'opacity 0.3s ease'
+                    }}
+                  >
+                    <h3 style={{ 
+                      fontSize: '1.25rem', 
+                      fontWeight: '700', 
+                      marginBottom: '0.75rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem'
+                    }}>
+                      <span style={{ fontSize: '1.5rem' }}>{option.icon}</span>
+                      {option.label} Benefits
+                    </h3>
+                    <ul style={{ 
+                      listStyle: 'none', 
+                      padding: 0,
+                      margin: 0 
+                    }}>
+                      {option.benefits.map((benefit, index) => (
+                        <li 
+                          key={index}
+                          style={{ 
+                            marginBottom: '0.5rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            fontSize: '1rem'
+                          }}
+                        >
+                          <span style={{ color: '#93c5fd' }}>✓</span>
+                          {benefit}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+              
+              <div style={{ 
+                borderTop: '1px solid rgba(255, 255, 255, 0.2)',
+                paddingTop: '2rem'
+              }}>
+                <div style={{ 
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(3, 1fr)',
+                  gap: '1rem',
+                  textAlign: 'center'
+                }}>
+                  <div>
+                    <div style={{ fontSize: '1.75rem', fontWeight: '700', marginBottom: '0.25rem' }}>
+                      10,000+
+                    </div>
+                    <div style={{ fontSize: '0.875rem', opacity: '0.8' }}>
+                      Happy Users
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '1.75rem', fontWeight: '700', marginBottom: '0.25rem' }}>
+                      $2.5M+
+                    </div>
+                    <div style={{ fontSize: '0.875rem', opacity: '0.8' }}>
+                      Saved
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '1.75rem', fontWeight: '700', marginBottom: '0.25rem' }}>
+                      4.9/5
+                    </div>
+                    <div style={{ fontSize: '0.875rem', opacity: '0.8' }}>
+                      Rating
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Mobile Benefits - Show on mobile */}
+        {isMobile && (
+          <div style={{ 
+            background: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
+            padding: '2rem 1.5rem',
+            color: 'white'
+          }}>
             <h2 style={{ 
-              fontSize: '2.5rem', 
+              fontSize: '1.75rem', 
               fontWeight: '800', 
-              marginBottom: '1.5rem',
-              lineHeight: '1.2'
+              marginBottom: '1rem',
+              textAlign: 'center'
             }}>
-              Join the Future of Real Estate
+              Why Join?
             </h2>
             
-            <p style={{ 
-              fontSize: '1.25rem', 
-              marginBottom: '3rem',
-              opacity: '0.9',
-              lineHeight: '1.6'
+            <div style={{ 
+              display: 'grid',
+              gridTemplateColumns: '1fr',
+              gap: '1.5rem',
+              marginBottom: '2rem'
             }}>
-              Experience a transparent, competitive marketplace where you control every aspect of your real estate journey.
-            </p>
-            
-            <div style={{ marginBottom: '3rem' }}>
               {userTypeOptions.map((option) => (
                 <div 
                   key={option.value}
                   style={{ 
-                    marginBottom: '2rem',
-                    opacity: userType === option.value ? '1' : '0.6',
-                    transition: 'opacity 0.3s ease'
+                    opacity: userType === option.value ? '1' : '0.7'
                   }}
                 >
                   <h3 style={{ 
-                    fontSize: '1.25rem', 
-                    fontWeight: '700', 
-                    marginBottom: '0.75rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem'
+                    fontSize: '1.125rem', 
+                    fontWeight: '600', 
+                    marginBottom: '0.5rem'
                   }}>
-                    <span style={{ fontSize: '1.5rem' }}>{option.icon}</span>
-                    {option.label} Benefits
+                    {option.icon} {option.label}
                   </h3>
                   <ul style={{ 
                     listStyle: 'none', 
@@ -465,14 +580,14 @@ const SignUpPage = () => {
                       <li 
                         key={index}
                         style={{ 
-                          marginBottom: '0.5rem',
+                          fontSize: '0.875rem',
+                          marginBottom: '0.25rem',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '0.5rem',
-                          fontSize: '1rem'
+                          gap: '0.5rem'
                         }}
                       >
-                        <span style={{ color: '#93c5fd' }}>✓</span>
+                        <span>✓</span>
                         {benefit}
                       </li>
                     ))}
@@ -482,43 +597,28 @@ const SignUpPage = () => {
             </div>
             
             <div style={{ 
-              borderTop: '1px solid rgba(255, 255, 255, 0.2)',
-              paddingTop: '2rem'
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: '0.5rem',
+              textAlign: 'center',
+              paddingTop: '1rem',
+              borderTop: '1px solid rgba(255, 255, 255, 0.2)'
             }}>
-              <div style={{ 
-                display: 'grid',
-                gridTemplateColumns: 'repeat(3, 1fr)',
-                gap: '1rem',
-                textAlign: 'center'
-              }}>
-                <div>
-                  <div style={{ fontSize: '1.75rem', fontWeight: '700', marginBottom: '0.25rem' }}>
-                    10,000+
-                  </div>
-                  <div style={{ fontSize: '0.875rem', opacity: '0.8' }}>
-                    Happy Users
-                  </div>
-                </div>
-                <div>
-                  <div style={{ fontSize: '1.75rem', fontWeight: '700', marginBottom: '0.25rem' }}>
-                    $2.5M+
-                  </div>
-                  <div style={{ fontSize: '0.875rem', opacity: '0.8' }}>
-                    Saved
-                  </div>
-                </div>
-                <div>
-                  <div style={{ fontSize: '1.75rem', fontWeight: '700', marginBottom: '0.25rem' }}>
-                    4.9/5
-                  </div>
-                  <div style={{ fontSize: '0.875rem', opacity: '0.8' }}>
-                    Rating
-                  </div>
-                </div>
+              <div>
+                <div style={{ fontSize: '1.25rem', fontWeight: '700' }}>10K+</div>
+                <div style={{ fontSize: '0.75rem', opacity: '0.8' }}>Users</div>
+              </div>
+              <div>
+                <div style={{ fontSize: '1.25rem', fontWeight: '700' }}>$2.5M+</div>
+                <div style={{ fontSize: '0.75rem', opacity: '0.8' }}>Saved</div>
+              </div>
+              <div>
+                <div style={{ fontSize: '1.25rem', fontWeight: '700' }}>4.9/5</div>
+                <div style={{ fontSize: '0.75rem', opacity: '0.8' }}>Rating</div>
               </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
