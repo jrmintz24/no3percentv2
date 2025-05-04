@@ -11,12 +11,23 @@ const SellerListingDetail = () => {
   const { listingId } = useParams();
   const { currentUser } = useAuth();
   const navigate = useNavigate();
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   
   const [listing, setListing] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [proposals, setProposals] = useState([]);
   
+  // Handle resize
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   useEffect(() => {
     const fetchListing = async () => {
       try {
@@ -88,7 +99,7 @@ const SellerListingDetail = () => {
       <div style={{ 
         maxWidth: '800px', 
         margin: '0 auto', 
-        padding: '2rem 1rem' 
+        padding: isMobile ? '1rem' : '2rem 1rem' 
       }}>
         <div style={{ 
           backgroundColor: '#fee2e2', 
@@ -109,7 +120,7 @@ const SellerListingDetail = () => {
       <div style={{ 
         maxWidth: '800px', 
         margin: '0 auto', 
-        padding: '2rem 1rem' 
+        padding: isMobile ? '1rem' : '2rem 1rem' 
       }}>
         <div style={{ 
           backgroundColor: '#fee2e2', 
@@ -129,21 +140,45 @@ const SellerListingDetail = () => {
   const isOwner = listing.userId === currentUser.uid;
   
   return (
-    <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '2rem 1rem' }}>
+    <div style={{ 
+      maxWidth: '1000px', 
+      margin: '0 auto', 
+      padding: isMobile ? '1rem' : '2rem 1rem' 
+    }}>
       <div style={{ 
         display: 'flex', 
+        flexDirection: isMobile ? 'column' : 'row',
         justifyContent: 'space-between', 
-        alignItems: 'center',
+        alignItems: isMobile ? 'stretch' : 'center',
+        gap: '1rem',
         marginBottom: '2rem'
       }}>
-        <Button to="/seller" variant="secondary">Back to Dashboard</Button>
+        <Button 
+          to="/seller" 
+          variant="secondary"
+          style={isMobile ? { width: '100%' } : {}}
+        >
+          Back to Dashboard
+        </Button>
         
         {isOwner && (
-          <div style={{ display: 'flex', gap: '1rem' }}>
-            <Button to={`/seller/edit-listing/${listingId}`} variant="secondary">
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: isMobile ? 'column' : 'row',
+            gap: '1rem' 
+          }}>
+            <Button 
+              to={`/seller/edit-listing/${listingId}`} 
+              variant="secondary"
+              style={isMobile ? { width: '100%' } : {}}
+            >
               Edit Listing
             </Button>
-            <Button onClick={handleDelete} variant="danger">
+            <Button 
+              onClick={handleDelete} 
+              variant="danger"
+              style={isMobile ? { width: '100%' } : {}}
+            >
               Delete Listing
             </Button>
           </div>
@@ -151,8 +186,18 @@ const SellerListingDetail = () => {
       </div>
       
       <Card>
-        <CardHeader>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>
+        <CardHeader style={{ 
+          display: 'flex', 
+          flexDirection: isMobile ? 'column' : 'row',
+          justifyContent: 'space-between',
+          alignItems: isMobile ? 'flex-start' : 'center',
+          gap: '1rem'
+        }}>
+          <h1 style={{ 
+            fontSize: isMobile ? '1.25rem' : '1.5rem', 
+            fontWeight: 'bold', 
+            margin: 0 
+          }}>
             {listing.propertyName || 'Property Listing'}
           </h1>
           <div style={{ 
@@ -161,41 +206,112 @@ const SellerListingDetail = () => {
             padding: '0.5rem 1rem', 
             borderRadius: '9999px', 
             fontSize: '0.875rem',
-            fontWeight: '500'
+            fontWeight: '500',
+            alignSelf: isMobile ? 'flex-start' : 'center'
           }}>
             {listing.status || 'Active'}
           </div>
         </CardHeader>
         
-        <CardBody>
+        <CardBody style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
           <div style={{ marginBottom: '2rem' }}>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>
+            <h2 style={{ 
+              fontSize: isMobile ? '1.125rem' : '1.25rem', 
+              fontWeight: 'bold', 
+              marginBottom: '1rem' 
+            }}>
               Property Details
             </h2>
             
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', 
+              gap: '1rem' 
+            }}>
               <div>
-                <p style={{ margin: '0 0 0.5rem 0', fontWeight: '500' }}>Address:</p>
-                <p style={{ margin: '0 0 1rem 0' }}>{listing.address || 'Not specified'}</p>
+                <p style={{ 
+                  margin: '0 0 0.5rem 0', 
+                  fontWeight: '500',
+                  fontSize: isMobile ? '0.875rem' : '1rem'
+                }}>
+                  Address:
+                </p>
+                <p style={{ 
+                  margin: '0 0 1rem 0',
+                  fontSize: isMobile ? '0.875rem' : '1rem'
+                }}>
+                  {listing.address || 'Not specified'}
+                </p>
                 
-                <p style={{ margin: '0 0 0.5rem 0', fontWeight: '500' }}>Property Type:</p>
-                <p style={{ margin: '0 0 1rem 0' }}>{listing.propertyType || 'Not specified'}</p>
+                <p style={{ 
+                  margin: '0 0 0.5rem 0', 
+                  fontWeight: '500',
+                  fontSize: isMobile ? '0.875rem' : '1rem'
+                }}>
+                  Property Type:
+                </p>
+                <p style={{ 
+                  margin: '0 0 1rem 0',
+                  fontSize: isMobile ? '0.875rem' : '1rem'
+                }}>
+                  {listing.propertyType || 'Not specified'}
+                </p>
                 
-                <p style={{ margin: '0 0 0.5rem 0', fontWeight: '500' }}>Bedrooms:</p>
-                <p style={{ margin: '0 0 1rem 0' }}>{listing.bedrooms || 'Not specified'}</p>
+                <p style={{ 
+                  margin: '0 0 0.5rem 0', 
+                  fontWeight: '500',
+                  fontSize: isMobile ? '0.875rem' : '1rem'
+                }}>
+                  Bedrooms:
+                </p>
+                <p style={{ 
+                  margin: '0 0 1rem 0',
+                  fontSize: isMobile ? '0.875rem' : '1rem'
+                }}>
+                  {listing.bedrooms || 'Not specified'}
+                </p>
               </div>
               
               <div>
-                <p style={{ margin: '0 0 0.5rem 0', fontWeight: '500' }}>Bathrooms:</p>
-                <p style={{ margin: '0 0 1rem 0' }}>{listing.bathrooms || 'Not specified'}</p>
+                <p style={{ 
+                  margin: '0 0 0.5rem 0', 
+                  fontWeight: '500',
+                  fontSize: isMobile ? '0.875rem' : '1rem'
+                }}>
+                  Bathrooms:
+                </p>
+                <p style={{ 
+                  margin: '0 0 1rem 0',
+                  fontSize: isMobile ? '0.875rem' : '1rem'
+                }}>
+                  {listing.bathrooms || 'Not specified'}
+                </p>
                 
-                <p style={{ margin: '0 0 0.5rem 0', fontWeight: '500' }}>Asking Price:</p>
-                <p style={{ margin: '0 0 1rem 0' }}>
+                <p style={{ 
+                  margin: '0 0 0.5rem 0', 
+                  fontWeight: '500',
+                  fontSize: isMobile ? '0.875rem' : '1rem'
+                }}>
+                  Asking Price:
+                </p>
+                <p style={{ 
+                  margin: '0 0 1rem 0',
+                  fontSize: isMobile ? '0.875rem' : '1rem'
+                }}>
                   {listing.price ? `$${listing.price.toLocaleString()}` : 'Not specified'}
                 </p>
                 
-                <p style={{ margin: '0 0 0.5rem 0', fontWeight: '500' }}>Square Footage:</p>
-                <p style={{ margin: '0 0 1rem 0' }}>
+                <p style={{ 
+                  margin: '0 0 0.5rem 0', 
+                  fontWeight: '500',
+                  fontSize: isMobile ? '0.875rem' : '1rem'
+                }}>
+                  Square Footage:
+                </p>
+                <p style={{ 
+                  margin: '0 0 1rem 0',
+                  fontSize: isMobile ? '0.875rem' : '1rem'
+                }}>
                   {listing.squareFootage ? `${listing.squareFootage.toLocaleString()} sq ft` : 'Not specified'}
                 </p>
               </div>
@@ -203,53 +319,93 @@ const SellerListingDetail = () => {
           </div>
           
           <div style={{ marginBottom: '2rem' }}>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>
+            <h2 style={{ 
+              fontSize: isMobile ? '1.125rem' : '1.25rem', 
+              fontWeight: 'bold', 
+              marginBottom: '1rem' 
+            }}>
               Property Description
             </h2>
-            <p>{listing.description || 'No description provided'}</p>
+            <p style={{ 
+              fontSize: isMobile ? '0.875rem' : '1rem',
+              lineHeight: '1.6'
+            }}>
+              {listing.description || 'No description provided'}
+            </p>
           </div>
           
           <div style={{ marginBottom: '2rem' }}>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>
+            <h2 style={{ 
+              fontSize: isMobile ? '1.125rem' : '1.25rem', 
+              fontWeight: 'bold', 
+              marginBottom: '1rem' 
+            }}>
               Agent Services Required
             </h2>
             
             <div style={{ marginBottom: '1.5rem' }}>
-              <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '0.5rem' }}>
+              <h3 style={{ 
+                fontSize: isMobile ? '0.9375rem' : '1rem', 
+                fontWeight: '600', 
+                marginBottom: '0.5rem' 
+              }}>
                 Must-Have Services:
               </h3>
               {listing.services?.mustHave && listing.services.mustHave.length > 0 ? (
-                <ul style={{ paddingLeft: '1.5rem' }}>
+                <ul style={{ 
+                  paddingLeft: '1.5rem',
+                  fontSize: isMobile ? '0.875rem' : '1rem' 
+                }}>
                   {listing.services.mustHave.map((service, index) => (
                     <li key={index}>{service}</li>
                   ))}
                 </ul>
               ) : (
-                <p>No must-have services specified</p>
+                <p style={{ fontSize: isMobile ? '0.875rem' : '1rem' }}>
+                  No must-have services specified
+                </p>
               )}
             </div>
             
             <div>
-              <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '0.5rem' }}>
+              <h3 style={{ 
+                fontSize: isMobile ? '0.9375rem' : '1rem', 
+                fontWeight: '600', 
+                marginBottom: '0.5rem' 
+              }}>
                 Nice-to-Have Services:
               </h3>
               {listing.services?.niceToHave && listing.services.niceToHave.length > 0 ? (
-                <ul style={{ paddingLeft: '1.5rem' }}>
+                <ul style={{ 
+                  paddingLeft: '1.5rem',
+                  fontSize: isMobile ? '0.875rem' : '1rem' 
+                }}>
                   {listing.services.niceToHave.map((service, index) => (
                     <li key={index}>{service}</li>
                   ))}
                 </ul>
               ) : (
-                <p>No nice-to-have services specified</p>
+                <p style={{ fontSize: isMobile ? '0.875rem' : '1rem' }}>
+                  No nice-to-have services specified
+                </p>
               )}
             </div>
           </div>
           
           <div>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>
+            <h2 style={{ 
+              fontSize: isMobile ? '1.125rem' : '1.25rem', 
+              fontWeight: 'bold', 
+              marginBottom: '1rem' 
+            }}>
               Additional Information
             </h2>
-            <p>{listing.additionalInfo || 'No additional information provided'}</p>
+            <p style={{ 
+              fontSize: isMobile ? '0.875rem' : '1rem',
+              lineHeight: '1.6'
+            }}>
+              {listing.additionalInfo || 'No additional information provided'}
+            </p>
           </div>
         </CardBody>
       </Card>
@@ -257,19 +413,23 @@ const SellerListingDetail = () => {
       <div style={{ marginTop: '2rem' }}>
         <Card>
           <CardHeader>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', margin: 0 }}>
+            <h2 style={{ 
+              fontSize: isMobile ? '1.125rem' : '1.25rem', 
+              fontWeight: 'bold', 
+              margin: 0 
+            }}>
               Agent Proposals ({proposals.length})
             </h2>
           </CardHeader>
           
-          <CardBody>
+          <CardBody style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
             {proposals.length > 0 ? (
               <div style={{ display: 'grid', gap: '1rem' }}>
                 {proposals.map((proposal) => (
                   <div 
                     key={proposal.id}
                     style={{ 
-                      padding: '1rem', 
+                      padding: isMobile ? '0.875rem' : '1rem', 
                       borderRadius: '0.5rem', 
                       border: '1px solid #e5e7eb',
                       backgroundColor: '#f9fafb'
@@ -277,22 +437,39 @@ const SellerListingDetail = () => {
                   >
                     <div style={{ 
                       display: 'flex', 
+                      flexDirection: isMobile ? 'column' : 'row',
                       justifyContent: 'space-between', 
-                      marginBottom: '0.5rem' 
+                      marginBottom: '0.5rem',
+                      gap: isMobile ? '0.5rem' : '0'
                     }}>
-                      <h3 style={{ fontSize: '1rem', fontWeight: 'bold', margin: 0 }}>
+                      <h3 style={{ 
+                        fontSize: isMobile ? '0.9375rem' : '1rem', 
+                        fontWeight: 'bold', 
+                        margin: 0 
+                      }}>
                         {proposal.agentName || 'Anonymous Agent'}
                       </h3>
-                      <p style={{ margin: 0, color: '#6b7280', fontSize: '0.875rem' }}>
+                      <p style={{ 
+                        margin: 0, 
+                        color: '#6b7280', 
+                        fontSize: isMobile ? '0.8125rem' : '0.875rem' 
+                      }}>
                         Submitted: {proposal.createdAt?.toDate().toLocaleDateString() || 'Unknown date'}
                       </p>
                     </div>
                     
-                    <p style={{ marginBottom: '1rem' }}>
+                    <p style={{ 
+                      marginBottom: '1rem',
+                      fontSize: isMobile ? '0.875rem' : '1rem'
+                    }}>
                       {proposal.message || 'No message provided'}
                     </p>
                     
-                    <Button to={`/seller/proposals/${proposal.id}`} size="small">
+                    <Button 
+                      to={`/seller/proposals/${proposal.id}`} 
+                      size="small"
+                      style={isMobile ? { width: '100%' } : {}}
+                    >
                       View Details
                     </Button>
                   </div>
@@ -301,11 +478,16 @@ const SellerListingDetail = () => {
             ) : (
               <div style={{ 
                 textAlign: 'center', 
-                padding: '2rem', 
+                padding: isMobile ? '1.5rem' : '2rem', 
                 color: '#6b7280' 
               }}>
-                <p>No proposals yet</p>
-                <p style={{ fontSize: '0.875rem', marginTop: '0.5rem' }}>
+                <p style={{ fontSize: isMobile ? '0.875rem' : '1rem' }}>
+                  No proposals yet
+                </p>
+                <p style={{ 
+                  fontSize: isMobile ? '0.8125rem' : '0.875rem', 
+                  marginTop: '0.5rem' 
+                }}>
                   Agents will submit proposals as they become interested in your listing
                 </p>
               </div>

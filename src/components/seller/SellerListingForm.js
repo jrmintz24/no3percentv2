@@ -1,6 +1,6 @@
 // src/components/seller/SellerListingForm.js
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../services/firebase/config';
@@ -14,6 +14,7 @@ import { sellerServices } from '../../config/services';
 const SellerListingForm = () => {
   const { currentUser, userProfile } = useAuth();
   const navigate = useNavigate();
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -27,18 +28,28 @@ const SellerListingForm = () => {
     description: '',
     features: [],
     services: [],
-    packageInfo: null,  // Added for package information
+    packageInfo: null,
     photos: [],
     availableForShowing: true,
     occupancyStatus: 'owner',
     preferredClosingDate: '',
     additionalNotes: '',
-    messagingEnabled: false // Add messaging preference
+    messagingEnabled: false
   });
 
   const [currentFeature, setCurrentFeature] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Handle resize
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const propertyTypes = [
     'Single Family Home',
@@ -115,14 +126,13 @@ const SellerListingForm = () => {
     setError('');
 
     try {
-      // Create the listing
       const listingData = {
         ...formData,
         userId: currentUser.uid,
         userEmail: currentUser.email,
         userName: userProfile?.displayName || 'Anonymous',
-        verificationStatus: userProfile?.verificationStatus || 'unverified', // Include verification status
-        messagingEnabled: formData.messagingEnabled, // Include messaging preference
+        verificationStatus: userProfile?.verificationStatus || 'unverified',
+        messagingEnabled: formData.messagingEnabled,
         status: 'active',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
@@ -140,26 +150,38 @@ const SellerListingForm = () => {
   };
 
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem 1rem' }}>
+    <div style={{ 
+      maxWidth: '800px', 
+      margin: '0 auto', 
+      padding: isMobile ? '1rem' : '2rem 1rem' 
+    }}>
       <Card>
-        <CardHeader>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+        <CardHeader style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
+          <h1 style={{ 
+            fontSize: isMobile ? '1.25rem' : '1.5rem', 
+            fontWeight: 'bold', 
+            marginBottom: '0.5rem' 
+          }}>
             List Your Property
           </h1>
-          <p style={{ color: '#6b7280' }}>
+          <p style={{ 
+            color: '#6b7280',
+            fontSize: isMobile ? '0.875rem' : '1rem'
+          }}>
             Create your listing and let agents compete for your business with their best offers.
           </p>
         </CardHeader>
 
         <form onSubmit={handleSubmit}>
-          <CardBody>
+          <CardBody style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
             {error && (
               <div style={{
                 backgroundColor: '#fee2e2',
                 color: '#dc2626',
                 padding: '1rem',
                 borderRadius: '0.5rem',
-                marginBottom: '1.5rem'
+                marginBottom: '1.5rem',
+                fontSize: isMobile ? '0.875rem' : '1rem'
               }}>
                 {error}
               </div>
@@ -167,12 +189,21 @@ const SellerListingForm = () => {
 
             {/* Basic Information */}
             <div style={{ marginBottom: '2rem' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>
+              <h2 style={{ 
+                fontSize: isMobile ? '1.125rem' : '1.25rem', 
+                fontWeight: 'bold', 
+                marginBottom: '1.5rem' 
+              }}>
                 Property Information
               </h2>
               
               <div style={{ marginBottom: '1.5rem' }}>
-                <label htmlFor="title" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                <label htmlFor="title" style={{ 
+                  display: 'block', 
+                  marginBottom: '0.5rem', 
+                  fontWeight: '500',
+                  fontSize: isMobile ? '0.875rem' : '1rem'
+                }}>
                   Listing Title
                 </label>
                 <input
@@ -187,13 +218,20 @@ const SellerListingForm = () => {
                     width: '100%',
                     padding: '0.5rem',
                     border: '1px solid #d1d5db',
-                    borderRadius: '0.375rem'
+                    borderRadius: '0.375rem',
+                    fontSize: isMobile ? '0.875rem' : '1rem',
+                    boxSizing: 'border-box'
                   }}
                 />
               </div>
 
               <div style={{ marginBottom: '1.5rem' }}>
-                <label htmlFor="address" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                <label htmlFor="address" style={{ 
+                  display: 'block', 
+                  marginBottom: '0.5rem', 
+                  fontWeight: '500',
+                  fontSize: isMobile ? '0.875rem' : '1rem'
+                }}>
                   Property Address
                 </label>
                 <input
@@ -208,14 +246,26 @@ const SellerListingForm = () => {
                     width: '100%',
                     padding: '0.5rem',
                     border: '1px solid #d1d5db',
-                    borderRadius: '0.375rem'
+                    borderRadius: '0.375rem',
+                    fontSize: isMobile ? '0.875rem' : '1rem',
+                    boxSizing: 'border-box'
                   }}
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', 
+                gap: '1rem', 
+                marginBottom: '1.5rem' 
+              }}>
                 <div>
-                  <label htmlFor="price" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                  <label htmlFor="price" style={{ 
+                    display: 'block', 
+                    marginBottom: '0.5rem', 
+                    fontWeight: '500',
+                    fontSize: isMobile ? '0.875rem' : '1rem'
+                  }}>
                     Asking Price
                   </label>
                   <input
@@ -230,12 +280,19 @@ const SellerListingForm = () => {
                       width: '100%',
                       padding: '0.5rem',
                       border: '1px solid #d1d5db',
-                      borderRadius: '0.375rem'
+                      borderRadius: '0.375rem',
+                      fontSize: isMobile ? '0.875rem' : '1rem',
+                      boxSizing: 'border-box'
                     }}
                   />
                 </div>
                 <div>
-                  <label htmlFor="propertyType" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                  <label htmlFor="propertyType" style={{ 
+                    display: 'block', 
+                    marginBottom: '0.5rem', 
+                    fontWeight: '500',
+                    fontSize: isMobile ? '0.875rem' : '1rem'
+                  }}>
                     Property Type
                   </label>
                   <select
@@ -248,7 +305,9 @@ const SellerListingForm = () => {
                       width: '100%',
                       padding: '0.5rem',
                       border: '1px solid #d1d5db',
-                      borderRadius: '0.375rem'
+                      borderRadius: '0.375rem',
+                      fontSize: isMobile ? '0.875rem' : '1rem',
+                      boxSizing: 'border-box'
                     }}
                   >
                     <option value="">Select property type</option>
@@ -262,13 +321,27 @@ const SellerListingForm = () => {
 
             {/* Property Details */}
             <div style={{ marginBottom: '2rem' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>
+              <h2 style={{ 
+                fontSize: isMobile ? '1.125rem' : '1.25rem', 
+                fontWeight: 'bold', 
+                marginBottom: '1.5rem' 
+              }}>
                 Property Details
               </h2>
               
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', 
+                gap: '1rem', 
+                marginBottom: '1.5rem' 
+              }}>
                 <div>
-                  <label htmlFor="bedrooms" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                  <label htmlFor="bedrooms" style={{ 
+                    display: 'block', 
+                    marginBottom: '0.5rem', 
+                    fontWeight: '500',
+                    fontSize: isMobile ? '0.875rem' : '1rem'
+                  }}>
                     Bedrooms
                   </label>
                   <input
@@ -283,12 +356,19 @@ const SellerListingForm = () => {
                       width: '100%',
                       padding: '0.5rem',
                       border: '1px solid #d1d5db',
-                      borderRadius: '0.375rem'
+                      borderRadius: '0.375rem',
+                      fontSize: isMobile ? '0.875rem' : '1rem',
+                      boxSizing: 'border-box'
                     }}
                   />
                 </div>
                 <div>
-                  <label htmlFor="bathrooms" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                  <label htmlFor="bathrooms" style={{ 
+                    display: 'block', 
+                    marginBottom: '0.5rem', 
+                    fontWeight: '500',
+                    fontSize: isMobile ? '0.875rem' : '1rem'
+                  }}>
                     Bathrooms
                   </label>
                   <input
@@ -304,12 +384,19 @@ const SellerListingForm = () => {
                       width: '100%',
                       padding: '0.5rem',
                       border: '1px solid #d1d5db',
-                      borderRadius: '0.375rem'
+                      borderRadius: '0.375rem',
+                      fontSize: isMobile ? '0.875rem' : '1rem',
+                      boxSizing: 'border-box'
                     }}
                   />
                 </div>
                 <div>
-                  <label htmlFor="squareFootage" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                  <label htmlFor="squareFootage" style={{ 
+                    display: 'block', 
+                    marginBottom: '0.5rem', 
+                    fontWeight: '500',
+                    fontSize: isMobile ? '0.875rem' : '1rem'
+                  }}>
                     Square Footage
                   </label>
                   <input
@@ -324,12 +411,19 @@ const SellerListingForm = () => {
                       width: '100%',
                       padding: '0.5rem',
                       border: '1px solid #d1d5db',
-                      borderRadius: '0.375rem'
+                      borderRadius: '0.375rem',
+                      fontSize: isMobile ? '0.875rem' : '1rem',
+                      boxSizing: 'border-box'
                     }}
                   />
                 </div>
                 <div>
-                  <label htmlFor="yearBuilt" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                  <label htmlFor="yearBuilt" style={{ 
+                    display: 'block', 
+                    marginBottom: '0.5rem', 
+                    fontWeight: '500',
+                    fontSize: isMobile ? '0.875rem' : '1rem'
+                  }}>
                     Year Built
                   </label>
                   <input
@@ -345,14 +439,21 @@ const SellerListingForm = () => {
                       width: '100%',
                       padding: '0.5rem',
                       border: '1px solid #d1d5db',
-                      borderRadius: '0.375rem'
+                      borderRadius: '0.375rem',
+                      fontSize: isMobile ? '0.875rem' : '1rem',
+                      boxSizing: 'border-box'
                     }}
                   />
                 </div>
               </div>
 
               <div style={{ marginBottom: '1.5rem' }}>
-                <label htmlFor="description" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                <label htmlFor="description" style={{ 
+                  display: 'block', 
+                  marginBottom: '0.5rem', 
+                  fontWeight: '500',
+                  fontSize: isMobile ? '0.875rem' : '1rem'
+                }}>
                   Property Description
                 </label>
                 <textarea
@@ -367,7 +468,9 @@ const SellerListingForm = () => {
                     width: '100%',
                     padding: '0.5rem',
                     border: '1px solid #d1d5db',
-                    borderRadius: '0.375rem'
+                    borderRadius: '0.375rem',
+                    fontSize: isMobile ? '0.875rem' : '1rem',
+                    boxSizing: 'border-box'
                   }}
                 />
               </div>
@@ -375,36 +478,58 @@ const SellerListingForm = () => {
 
             {/* Features */}
             <div style={{ marginBottom: '2rem' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>
+              <h2 style={{ 
+                fontSize: isMobile ? '1.125rem' : '1.25rem', 
+                fontWeight: 'bold', 
+                marginBottom: '1.5rem' 
+              }}>
                 Property Features
               </h2>
               
               <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                <label style={{ 
+                  display: 'block', 
+                  marginBottom: '0.5rem', 
+                  fontWeight: '500',
+                  fontSize: isMobile ? '0.875rem' : '1rem'
+                }}>
                   Add Features
                 </label>
-                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                <div style={{ 
+                  display: 'flex', 
+                  flexDirection: isMobile ? 'column' : 'row',
+                  gap: '0.5rem', 
+                  marginBottom: '0.5rem' 
+                }}>
                   <input
                     type="text"
                     value={currentFeature}
                     onChange={(e) => setCurrentFeature(e.target.value)}
                     placeholder="e.g., Hardwood floors, Updated kitchen, Pool"
                     style={{
-                      flex: '1',
+                      flex: isMobile ? 'none' : '1',
+                      width: isMobile ? '100%' : 'auto',
                       padding: '0.5rem',
                       border: '1px solid #d1d5db',
-                      borderRadius: '0.375rem'
+                      borderRadius: '0.375rem',
+                      fontSize: isMobile ? '0.875rem' : '1rem',
+                      boxSizing: 'border-box'
                     }}
                   />
                   <Button
                     type="button"
                     onClick={handleAddFeature}
                     variant="secondary"
+                    style={isMobile ? { width: '100%' } : {}}
                   >
                     Add
                   </Button>
                 </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <div style={{ 
+                  display: 'flex', 
+                  flexWrap: 'wrap', 
+                  gap: '0.5rem' 
+                }}>
                   {formData.features.map((feature, index) => (
                     <span
                       key={index}
@@ -443,7 +568,11 @@ const SellerListingForm = () => {
 
             {/* Services Selection with Packages */}
             <div style={{ marginBottom: '2rem' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>
+              <h2 style={{ 
+                fontSize: isMobile ? '1.125rem' : '1.25rem', 
+                fontWeight: 'bold', 
+                marginBottom: '1.5rem' 
+              }}>
                 Select Your Service Package
               </h2>
               
@@ -459,7 +588,7 @@ const SellerListingForm = () => {
               />
             </div>
 
-            {/* Messaging Preferences - NEW SECTION */}
+            {/* Messaging Preferences */}
             <MessagingPreference
               messagingEnabled={formData.messagingEnabled}
               onChange={handleMessagingPreferenceChange}
@@ -468,13 +597,27 @@ const SellerListingForm = () => {
 
             {/* Additional Information */}
             <div style={{ marginBottom: '2rem' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>
+              <h2 style={{ 
+                fontSize: isMobile ? '1.125rem' : '1.25rem', 
+                fontWeight: 'bold', 
+                marginBottom: '1.5rem' 
+              }}>
                 Additional Information
               </h2>
               
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', 
+                gap: '1rem', 
+                marginBottom: '1.5rem' 
+              }}>
                 <div>
-                  <label htmlFor="occupancyStatus" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                  <label htmlFor="occupancyStatus" style={{ 
+                    display: 'block', 
+                    marginBottom: '0.5rem', 
+                    fontWeight: '500',
+                    fontSize: isMobile ? '0.875rem' : '1rem'
+                  }}>
                     Occupancy Status
                   </label>
                   <select
@@ -486,7 +629,9 @@ const SellerListingForm = () => {
                       width: '100%',
                       padding: '0.5rem',
                       border: '1px solid #d1d5db',
-                      borderRadius: '0.375rem'
+                      borderRadius: '0.375rem',
+                      fontSize: isMobile ? '0.875rem' : '1rem',
+                      boxSizing: 'border-box'
                     }}
                   >
                     {occupancyOptions.map(option => (
@@ -498,7 +643,12 @@ const SellerListingForm = () => {
                 </div>
                 
                 <div>
-                  <label htmlFor="preferredClosingDate" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                  <label htmlFor="preferredClosingDate" style={{ 
+                    display: 'block', 
+                    marginBottom: '0.5rem', 
+                    fontWeight: '500',
+                    fontSize: isMobile ? '0.875rem' : '1rem'
+                  }}>
                     Preferred Closing Date
                   </label>
                   <input
@@ -511,7 +661,9 @@ const SellerListingForm = () => {
                       width: '100%',
                       padding: '0.5rem',
                       border: '1px solid #d1d5db',
-                      borderRadius: '0.375rem'
+                      borderRadius: '0.375rem',
+                      fontSize: isMobile ? '0.875rem' : '1rem',
+                      boxSizing: 'border-box'
                     }}
                   />
                 </div>
@@ -527,12 +679,19 @@ const SellerListingForm = () => {
                     onChange={handleInputChange}
                     style={{ marginRight: '0.5rem' }}
                   />
-                  <label htmlFor="availableForShowing">Property is available for showings</label>
+                  <label htmlFor="availableForShowing" style={{ fontSize: isMobile ? '0.875rem' : '1rem' }}>
+                    Property is available for showings
+                  </label>
                 </div>
               </div>
 
               <div>
-                <label htmlFor="additionalNotes" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                <label htmlFor="additionalNotes" style={{ 
+                  display: 'block', 
+                  marginBottom: '0.5rem', 
+                  fontWeight: '500',
+                  fontSize: isMobile ? '0.875rem' : '1rem'
+                }}>
                   Additional Notes for Agents
                 </label>
                 <textarea
@@ -546,25 +705,34 @@ const SellerListingForm = () => {
                     width: '100%',
                     padding: '0.5rem',
                     border: '1px solid #d1d5db',
-                    borderRadius: '0.375rem'
+                    borderRadius: '0.375rem',
+                    fontSize: isMobile ? '0.875rem' : '1rem',
+                    boxSizing: 'border-box'
                   }}
                 />
               </div>
             </div>
           </CardBody>
 
-          <CardFooter>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+          <CardFooter style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: isMobile ? 'column' : 'row',
+              justifyContent: 'flex-end', 
+              gap: '1rem' 
+            }}>
               <Button
                 type="button"
                 variant="secondary"
                 onClick={() => navigate('/seller')}
+                style={isMobile ? { width: '100%' } : {}}
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={loading}
+                style={isMobile ? { width: '100%' } : {}}
               >
                 {loading ? 'Creating Listing...' : 'Create Listing'}
               </Button>
