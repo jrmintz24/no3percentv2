@@ -18,6 +18,17 @@ const AgentDashboardPage = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  // Handle resize
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -68,21 +79,36 @@ const AgentDashboardPage = () => {
   const currentTier = getUserSubscriptionTier(userProfile);
   
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1rem' }}>
+    <div style={{ 
+      maxWidth: '1200px', 
+      margin: '0 auto', 
+      padding: isMobile ? '1rem' : '2rem 1rem' 
+    }}>
       <div style={{ 
         display: 'flex', 
+        flexDirection: isMobile ? 'column' : 'row',
         justifyContent: 'space-between', 
-        alignItems: 'center',
+        alignItems: isMobile ? 'stretch' : 'center',
+        gap: isMobile ? '1rem' : '0',
         marginBottom: '2rem'
       }}>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>
+        <h1 style={{ 
+          fontSize: isMobile ? '1.25rem' : '1.5rem', 
+          fontWeight: 'bold', 
+          margin: 0,
+          textAlign: isMobile ? 'center' : 'left'
+        }}>
           Agent Dashboard
         </h1>
-        <div style={{ display: 'flex', gap: '1rem' }}>
-          <Button to="/agent/subscription" variant="secondary">
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: isMobile ? 'column' : 'row',
+          gap: '1rem' 
+        }}>
+          <Button to="/agent/subscription" variant="secondary" style={isMobile ? { width: '100%' } : {}}>
             Manage Subscription
           </Button>
-          <Button to="/agent/buy-tokens">
+          <Button to="/agent/buy-tokens" style={isMobile ? { width: '100%' } : {}}>
             Buy More Tokens
           </Button>
         </div>
@@ -90,18 +116,29 @@ const AgentDashboardPage = () => {
       
       <div style={{ 
         backgroundColor: '#f0f9ff', 
-        padding: '1.5rem', 
+        padding: isMobile ? '1rem' : '1.5rem', 
         borderRadius: '0.5rem',
         marginBottom: '2rem',
         borderLeft: '4px solid #2563eb'
       }}>
-        <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+        <h2 style={{ 
+          fontSize: isMobile ? '1rem' : '1.25rem', 
+          fontWeight: 'bold', 
+          marginBottom: '0.5rem' 
+        }}>
           Welcome, {userProfile?.displayName || 'Agent'}!
         </h2>
-        <p style={{ margin: '0 0 0.5rem 0' }}>
+        <p style={{ 
+          margin: '0 0 0.5rem 0',
+          fontSize: isMobile ? '0.875rem' : '1rem'
+        }}>
           Your dashboard gives you access to all buyer and seller listings, allowing you to submit proposals and manage clients.
         </p>
-        <p style={{ margin: 0, fontWeight: '500' }}>
+        <p style={{ 
+          margin: 0, 
+          fontWeight: '500',
+          fontSize: isMobile ? '0.875rem' : '1rem'
+        }}>
           Current Plan: <strong>{currentTier?.name || 'Starter'}</strong>
           {currentTier?.id !== 'starter' && (
             <span> - {currentTier?.monthlyTokens} tokens included monthly</span>
@@ -111,21 +148,32 @@ const AgentDashboardPage = () => {
       
       <div style={{ 
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+        gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(250px, 1fr))',
         gap: '1rem',
         marginBottom: '2rem'
       }}>
         <Card>
-          <CardBody>
+          <CardBody style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
             <div style={{ textAlign: 'center' }}>
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ height: '3rem', margin: '0 auto 1rem', color: '#2563eb' }}>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
               </svg>
             </div>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '0.5rem', textAlign: 'center' }}>
+            <h3 style={{ 
+              fontSize: isMobile ? '1rem' : '1.25rem', 
+              fontWeight: 'bold', 
+              marginBottom: '0.5rem', 
+              textAlign: 'center' 
+            }}>
               Active Proposals
             </h3>
-            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#2563eb', marginBottom: '1rem', textAlign: 'center' }}>
+            <div style={{ 
+              fontSize: isMobile ? '1.75rem' : '2rem', 
+              fontWeight: 'bold', 
+              color: '#2563eb', 
+              marginBottom: '1rem', 
+              textAlign: 'center' 
+            }}>
               {loading ? '...' : stats.proposals}
             </div>
             <Button to="/agent/proposals" variant="secondary" fullWidth>
@@ -135,16 +183,27 @@ const AgentDashboardPage = () => {
         </Card>
         
         <Card>
-          <CardBody>
+          <CardBody style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
             <div style={{ textAlign: 'center' }}>
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ height: '3rem', margin: '0 auto 1rem', color: '#2563eb' }}>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
               </svg>
             </div>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '0.5rem', textAlign: 'center' }}>
+            <h3 style={{ 
+              fontSize: isMobile ? '1rem' : '1.25rem', 
+              fontWeight: 'bold', 
+              marginBottom: '0.5rem', 
+              textAlign: 'center' 
+            }}>
               Available Listings
             </h3>
-            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#2563eb', marginBottom: '1rem', textAlign: 'center' }}>
+            <div style={{ 
+              fontSize: isMobile ? '1.75rem' : '2rem', 
+              fontWeight: 'bold', 
+              color: '#2563eb', 
+              marginBottom: '1rem', 
+              textAlign: 'center' 
+            }}>
               {loading ? '...' : stats.listings}
             </div>
             <Button to="/agent/listings" variant="secondary" fullWidth>
@@ -154,16 +213,27 @@ const AgentDashboardPage = () => {
         </Card>
         
         <Card>
-          <CardBody>
+          <CardBody style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
             <div style={{ textAlign: 'center' }}>
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ height: '3rem', margin: '0 auto 1rem', color: '#2563eb' }}>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
             </div>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '0.5rem', textAlign: 'center' }}>
+            <h3 style={{ 
+              fontSize: isMobile ? '1rem' : '1.25rem', 
+              fontWeight: 'bold', 
+              marginBottom: '0.5rem', 
+              textAlign: 'center' 
+            }}>
               Active Clients
             </h3>
-            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#2563eb', marginBottom: '1rem', textAlign: 'center' }}>
+            <div style={{ 
+              fontSize: isMobile ? '1.75rem' : '2rem', 
+              fontWeight: 'bold', 
+              color: '#2563eb', 
+              marginBottom: '1rem', 
+              textAlign: 'center' 
+            }}>
               {loading ? '...' : stats.clients}
             </div>
             <Button to="/agent/clients" variant="secondary" fullWidth>
@@ -175,17 +245,21 @@ const AgentDashboardPage = () => {
       
       <div style={{ 
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+        gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(300px, 1fr))',
         gap: '2rem'
       }}>
         <div>
           <Card>
-            <CardHeader>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', margin: 0 }}>
+            <CardHeader style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
+              <h3 style={{ 
+                fontSize: isMobile ? '1rem' : '1.25rem', 
+                fontWeight: 'bold', 
+                margin: 0 
+              }}>
                 Recent Activity
               </h3>
             </CardHeader>
-            <CardBody>
+            <CardBody style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
               <div style={{ 
                 display: 'flex',
                 flexDirection: 'column',
@@ -197,42 +271,67 @@ const AgentDashboardPage = () => {
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ height: '3rem', marginBottom: '1rem' }}>
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <p>No recent activity to display</p>
+                <p style={{ fontSize: isMobile ? '0.875rem' : '1rem' }}>No recent activity to display</p>
               </div>
             </CardBody>
           </Card>
           
           <div style={{ marginTop: '2rem' }}>
             <Card>
-              <CardHeader>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', margin: 0 }}>
+              <CardHeader style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
+                <h3 style={{ 
+                  fontSize: isMobile ? '1rem' : '1.25rem', 
+                  fontWeight: 'bold', 
+                  margin: 0 
+                }}>
                   Getting Started
                 </h3>
               </CardHeader>
-              <CardBody>
+              <CardBody style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
                 <div style={{ marginBottom: '1.5rem' }}>
-                  <h4 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '0.5rem' }}>
+                  <h4 style={{ 
+                    fontSize: isMobile ? '0.875rem' : '1rem', 
+                    fontWeight: '600', 
+                    marginBottom: '0.5rem' 
+                  }}>
                     1. Browse Available Listings
                   </h4>
-                  <p>
+                  <p style={{ 
+                    fontSize: isMobile ? '0.875rem' : '1rem',
+                    lineHeight: '1.5'
+                  }}>
                     Explore buyer and seller listings to find opportunities that match your expertise.
                   </p>
                 </div>
                 
                 <div style={{ marginBottom: '1.5rem' }}>
-                  <h4 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '0.5rem' }}>
+                  <h4 style={{ 
+                    fontSize: isMobile ? '0.875rem' : '1rem', 
+                    fontWeight: '600', 
+                    marginBottom: '0.5rem' 
+                  }}>
                     2. Submit Competitive Proposals
                   </h4>
-                  <p>
+                  <p style={{ 
+                    fontSize: isMobile ? '0.875rem' : '1rem',
+                    lineHeight: '1.5'
+                  }}>
                     Each proposal requires one token. Customize your services and pricing to stand out to potential clients.
                   </p>
                 </div>
                 
                 <div>
-                  <h4 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '0.5rem' }}>
+                  <h4 style={{ 
+                    fontSize: isMobile ? '0.875rem' : '1rem', 
+                    fontWeight: '600', 
+                    marginBottom: '0.5rem' 
+                  }}>
                     3. Manage Client Relationships
                   </h4>
-                  <p>
+                  <p style={{ 
+                    fontSize: isMobile ? '0.875rem' : '1rem',
+                    lineHeight: '1.5'
+                  }}>
                     Once your proposal is accepted, use our tools to communicate with clients and track progress.
                   </p>
                 </div>
@@ -245,23 +344,29 @@ const AgentDashboardPage = () => {
           <TokenDashboard />
           
           <Card style={{ marginTop: '2rem' }}>
-            <CardHeader>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', margin: 0 }}>
+            <CardHeader style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
+              <h3 style={{ 
+                fontSize: isMobile ? '1rem' : '1.25rem', 
+                fontWeight: 'bold', 
+                margin: 0 
+              }}>
                 Your Subscription
               </h3>
             </CardHeader>
-            <CardBody>
+            <CardBody style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
               <div style={{ 
                 display: 'flex', 
+                flexDirection: isMobile ? 'column' : 'row',
                 justifyContent: 'space-between', 
-                alignItems: 'center',
+                alignItems: isMobile ? 'flex-start' : 'center',
                 marginBottom: '1.5rem',
                 paddingBottom: '1.5rem',
-                borderBottom: '1px solid #e5e7eb'
+                borderBottom: '1px solid #e5e7eb',
+                gap: isMobile ? '1rem' : '0'
               }}>
                 <div>
                   <h4 style={{ 
-                    fontSize: '1.5rem', 
+                    fontSize: isMobile ? '1.25rem' : '1.5rem', 
                     fontWeight: '700',
                     color: '#111827',
                     marginBottom: '0.25rem'
@@ -279,9 +384,9 @@ const AgentDashboardPage = () => {
                     }
                   </p>
                 </div>
-                <div style={{ textAlign: 'right' }}>
+                <div style={{ textAlign: isMobile ? 'left' : 'right' }}>
                   <div style={{ 
-                    fontSize: '1.5rem', 
+                    fontSize: isMobile ? '1.25rem' : '1.5rem', 
                     fontWeight: '700',
                     color: '#2563eb'
                   }}>
@@ -300,7 +405,8 @@ const AgentDashboardPage = () => {
                 <h5 style={{ 
                   fontWeight: '600',
                   marginBottom: '0.75rem',
-                  color: '#374151'
+                  color: '#374151',
+                  fontSize: isMobile ? '0.875rem' : '1rem'
                 }}>
                   Current Benefits:
                 </h5>
@@ -360,13 +466,20 @@ const AgentDashboardPage = () => {
           </Card>
           
           <Card style={{ marginTop: '2rem' }}>
-            <CardHeader>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', margin: 0 }}>
+            <CardHeader style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
+              <h3 style={{ 
+                fontSize: isMobile ? '1rem' : '1.25rem', 
+                fontWeight: 'bold', 
+                margin: 0 
+              }}>
                 Market Insights
               </h3>
             </CardHeader>
-            <CardBody>
-              <p style={{ marginBottom: '1rem', fontSize: '0.875rem' }}>
+            <CardBody style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
+              <p style={{ 
+                marginBottom: '1rem', 
+                fontSize: '0.875rem' 
+              }}>
                 Stay updated with market trends and insights.
               </p>
               <div style={{ 

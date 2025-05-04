@@ -1,7 +1,7 @@
 // src/pages/SellerPages/SellerDashboardPage.js
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { collection, query, where, getDocs, count } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../services/firebase/config';
 import { useAuth } from '../../contexts/AuthContext';
 import { Card, CardHeader, CardBody } from '../../components/common/Card';
@@ -17,6 +17,17 @@ const SellerDashboardPage = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  
+  // Handle resize
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   
   useEffect(() => {
     const fetchDashboardStats = async () => {
@@ -75,45 +86,69 @@ const SellerDashboardPage = () => {
   }, [currentUser]);
   
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1rem' }}>
+    <div style={{ 
+      maxWidth: '1200px', 
+      margin: '0 auto', 
+      padding: isMobile ? '1rem' : '2rem 1rem' 
+    }}>
       <div style={{ 
         display: 'flex', 
+        flexDirection: isMobile ? 'column' : 'row',
         justifyContent: 'space-between', 
-        alignItems: 'center',
+        alignItems: isMobile ? 'stretch' : 'center',
+        gap: isMobile ? '1rem' : '0',
         marginBottom: '2rem'
       }}>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>
+        <h1 style={{ 
+          fontSize: isMobile ? '1.25rem' : '1.5rem', 
+          fontWeight: 'bold', 
+          margin: 0,
+          textAlign: isMobile ? 'center' : 'left'
+        }}>
           Seller Dashboard
         </h1>
         
-        <Button to="/seller/create-listing">
+        <Button 
+          to="/seller/create-listing"
+          style={isMobile ? { width: '100%' } : {}}
+        >
           Create Listing
         </Button>
       </div>
       
       <div style={{ 
         backgroundColor: '#f0f9ff', 
-        padding: '1.5rem', 
+        padding: isMobile ? '1rem' : '1.5rem', 
         borderRadius: '0.5rem',
         marginBottom: '2rem',
         borderLeft: '4px solid #2563eb'
       }}>
-        <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+        <h2 style={{ 
+          fontSize: isMobile ? '1rem' : '1.25rem', 
+          fontWeight: 'bold', 
+          marginBottom: '0.5rem' 
+        }}>
           Welcome, {userProfile?.displayName || 'Seller'}!
         </h2>
-        <p style={{ margin: 0 }}>
+        <p style={{ 
+          margin: 0,
+          fontSize: isMobile ? '0.875rem' : '1rem'
+        }}>
           Your dashboard gives you access to your property listings and agent proposals.
         </p>
       </div>
       
       <div style={{ 
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-        gap: '2rem',
+        gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(300px, 1fr))',
+        gap: isMobile ? '1rem' : '2rem',
         marginBottom: '2rem'
       }}>
         <Card>
-          <CardBody style={{ textAlign: 'center', padding: '2rem' }}>
+          <CardBody style={{ 
+            textAlign: 'center', 
+            padding: isMobile ? '1.5rem' : '2rem' 
+          }}>
             <div style={{ 
               display: 'flex',
               justifyContent: 'center',
@@ -123,11 +158,15 @@ const SellerDashboardPage = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
               </svg>
             </div>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>
+            <h3 style={{ 
+              fontSize: isMobile ? '1rem' : '1.25rem', 
+              fontWeight: 'bold', 
+              marginBottom: '1rem' 
+            }}>
               My Listings
             </h3>
             <div style={{ 
-              fontSize: '3rem',
+              fontSize: isMobile ? '2.5rem' : '3rem',
               fontWeight: 'bold',
               color: '#4f46e5',
               marginBottom: '1.5rem'
@@ -145,7 +184,8 @@ const SellerDashboardPage = () => {
                 border: '1px solid #e5e7eb',
                 borderRadius: '0.375rem',
                 textDecoration: 'none',
-                fontWeight: '500'
+                fontWeight: '500',
+                fontSize: isMobile ? '0.875rem' : '1rem'
               }}
             >
               View Listings
@@ -154,7 +194,10 @@ const SellerDashboardPage = () => {
         </Card>
         
         <Card>
-          <CardBody style={{ textAlign: 'center', padding: '2rem' }}>
+          <CardBody style={{ 
+            textAlign: 'center', 
+            padding: isMobile ? '1.5rem' : '2rem' 
+          }}>
             <div style={{ 
               display: 'flex',
               justifyContent: 'center',
@@ -164,11 +207,15 @@ const SellerDashboardPage = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
             </div>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>
+            <h3 style={{ 
+              fontSize: isMobile ? '1rem' : '1.25rem', 
+              fontWeight: 'bold', 
+              marginBottom: '1rem' 
+            }}>
               Agent Proposals
             </h3>
             <div style={{ 
-              fontSize: '3rem',
+              fontSize: isMobile ? '2.5rem' : '3rem',
               fontWeight: 'bold',
               color: '#4f46e5',
               marginBottom: '1.5rem'
@@ -186,7 +233,8 @@ const SellerDashboardPage = () => {
                 border: '1px solid #e5e7eb',
                 borderRadius: '0.375rem',
                 textDecoration: 'none',
-                fontWeight: '500'
+                fontWeight: '500',
+                fontSize: isMobile ? '0.875rem' : '1rem'
               }}
             >
               View Proposals
@@ -195,7 +243,10 @@ const SellerDashboardPage = () => {
         </Card>
         
         <Card>
-          <CardBody style={{ textAlign: 'center', padding: '2rem' }}>
+          <CardBody style={{ 
+            textAlign: 'center', 
+            padding: isMobile ? '1.5rem' : '2rem' 
+          }}>
             <div style={{ 
               display: 'flex',
               justifyContent: 'center',
@@ -205,11 +256,15 @@ const SellerDashboardPage = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
               </svg>
             </div>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>
+            <h3 style={{ 
+              fontSize: isMobile ? '1rem' : '1.25rem', 
+              fontWeight: 'bold', 
+              marginBottom: '1rem' 
+            }}>
               Market Activity
             </h3>
             <div style={{ 
-              fontSize: '3rem',
+              fontSize: isMobile ? '2.5rem' : '3rem',
               fontWeight: 'bold',
               color: '#4f46e5',
               marginBottom: '1.5rem'
@@ -227,7 +282,8 @@ const SellerDashboardPage = () => {
                 border: '1px solid #e5e7eb',
                 borderRadius: '0.375rem',
                 textDecoration: 'none',
-                fontWeight: '500'
+                fontWeight: '500',
+                fontSize: isMobile ? '0.875rem' : '1rem'
               }}
             >
               View Analytics
@@ -238,35 +294,60 @@ const SellerDashboardPage = () => {
       
       <div style={{ marginBottom: '2rem' }}>
         <Card>
-          <CardHeader>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', margin: 0 }}>
+          <CardHeader style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
+            <h2 style={{ 
+              fontSize: isMobile ? '1rem' : '1.25rem', 
+              fontWeight: 'bold', 
+              margin: 0 
+            }}>
               Getting Started
             </h2>
           </CardHeader>
-          <CardBody>
+          <CardBody style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
             <div style={{ marginBottom: '1.5rem' }}>
-              <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '0.5rem' }}>
+              <h3 style={{ 
+                fontSize: isMobile ? '0.875rem' : '1rem', 
+                fontWeight: '600', 
+                marginBottom: '0.5rem' 
+              }}>
                 1. Create a Property Listing
               </h3>
-              <p>
+              <p style={{ 
+                fontSize: isMobile ? '0.875rem' : '1rem',
+                lineHeight: '1.5'
+              }}>
                 Start by creating a property listing with detailed information about your home. The more details you provide, the better agent proposals you'll receive.
               </p>
             </div>
             
             <div style={{ marginBottom: '1.5rem' }}>
-              <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '0.5rem' }}>
+              <h3 style={{ 
+                fontSize: isMobile ? '0.875rem' : '1rem', 
+                fontWeight: '600', 
+                marginBottom: '0.5rem' 
+              }}>
                 2. Review Agent Proposals
               </h3>
-              <p>
+              <p style={{ 
+                fontSize: isMobile ? '0.875rem' : '1rem',
+                lineHeight: '1.5'
+              }}>
                 Real estate agents will submit proposals to represent your listing. Compare their services, commission rates, and strategies.
               </p>
             </div>
             
             <div>
-              <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '0.5rem' }}>
+              <h3 style={{ 
+                fontSize: isMobile ? '0.875rem' : '1rem', 
+                fontWeight: '600', 
+                marginBottom: '0.5rem' 
+              }}>
                 3. Connect with Your Agent
               </h3>
-              <p>
+              <p style={{ 
+                fontSize: isMobile ? '0.875rem' : '1rem',
+                lineHeight: '1.5'
+              }}>
                 Once you accept a proposal, you'll be connected with your chosen agent to begin the selling process.
               </p>
             </div>
