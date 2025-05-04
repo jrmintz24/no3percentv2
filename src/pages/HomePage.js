@@ -17,11 +17,29 @@ const HomePage = () => {
         position: 'relative',
         overflow: 'hidden'
       }}>
+        {/* Logo at top center - Larger and moved down */}
+        <div style={{
+          position: 'absolute',
+          top: '3.5rem',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 2
+        }}>
+          <div style={{
+            fontSize: '2.5rem',
+            fontWeight: '800',
+            letterSpacing: '-0.02em'
+          }}>
+            <span style={{ color: 'white' }}>no</span>
+            <span style={{ color: '#ef4444' }}>3%</span>
+          </div>
+        </div>
+
         {/* Agent CTA in top right corner */}
         <div style={{
           position: 'absolute',
-          top: '1rem',
-          right: '1rem',
+          top: '2rem',
+          right: '2rem',
           zIndex: 2
         }}>
           <Link to="/agents">
@@ -33,11 +51,7 @@ const HomePage = () => {
               borderRadius: '0.5rem',
               border: '1px solid rgba(59, 130, 246, 0.3)',
               backdropFilter: 'blur(10px)',
-              transition: 'all 0.2s ease',
-              ':hover': {
-                backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                borderColor: 'rgba(59, 130, 246, 0.5)'
-              }
+              transition: 'all 0.2s ease'
             }}
             onMouseOver={(e) => {
               e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.2)';
@@ -64,24 +78,6 @@ const HomePage = () => {
         }} />
         
         <div style={{ maxWidth: '1000px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            background: 'rgba(255, 255, 255, 0.08)',
-            backdropFilter: 'blur(12px)',
-            borderRadius: '2rem',
-            padding: '0.625rem 1.5rem',
-            marginBottom: '2.5rem',
-            fontSize: '1rem',
-            fontWeight: '600',
-            color: '#ffffff',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            gap: '0.5rem'
-          }}>
-            <span style={{ fontSize: '1.25rem' }}>🎯</span>
-            <span>You're in charge. Finally.</span>
-          </div>
-          
           <h1 style={{ 
             fontSize: '4.5rem',
             fontWeight: '800',
@@ -104,8 +100,8 @@ const HomePage = () => {
             lineHeight: '1.7',
             fontWeight: '400'
           }}>
-            Stop paying for services you don't need. Let top agents compete 
-            for your business. Get exactly what you want, when you want it.
+            Choose from 100+ customizable services. Let verified agents compete 
+            with transparent proposals. Pay only for what you need, save thousands.
           </p>
           
           {!currentUser ? (
@@ -168,10 +164,10 @@ const HomePage = () => {
             textAlign: 'center'
           }}>
             {[
-              { value: '$2.5M+', label: 'Saved on commissions' },
-              { value: '10,000+', label: 'Happy homeowners' },
-              { value: '4.9/5', label: 'Average rating' },
-              { value: '14 days', label: 'Average match time' }
+              { value: '$5M+', label: 'Saved on commissions' },
+              { value: '15,000+', label: 'Successful transactions' },
+              { value: '4.9/5', label: 'Agent rating' },
+              { value: '24 hrs', label: 'Average proposal time' }
             ].map((stat, index) => (
               <div key={index}>
                 <div style={{ fontSize: '2.25rem', fontWeight: '700', color: '#0f172a', marginBottom: '0.25rem' }}>
@@ -184,7 +180,7 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* Value Proposition Section */}
+      {/* Value Proposition Section - FURTHER ENHANCED */}
       <section style={{ padding: '6rem 1rem', backgroundColor: '#fafafa' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
@@ -217,19 +213,22 @@ const HomePage = () => {
           }}>
             {[
               {
-                icon: '🎮',
-                title: 'You Control Everything',
-                desc: 'Choose your services à la carte style. Want just paperwork? Cool. Need the full VIP treatment? Also cool. You decide, you pay for only what you need.'
-              },
-              {
-                icon: '⚡',
-                title: 'Instant Access',
-                desc: 'No more waiting for callbacks. Connect with verified agents instantly. They come to you with their best offers. It\'s like having agents on speed dial.'
+                icon: '🎯',
+                title: 'Choose Your Experience',
+                desc: 'Select from 100+ services across Essential, Full, or Premium packages. Build your own path. Pay only for what matters to you.',
+                highlight: 'Save up to 50%'
               },
               {
                 icon: '🏆',
-                title: 'Top Talent Only',
-                desc: 'Every agent is vetted and rated. They compete for your business, so you get the cream of the crop. Think of it as a talent show where you\'re the judge.'
+                title: 'Agents Compete for You',
+                desc: 'Get proposals from verified top agents. Compare rates, services, and strategies transparently. The best deal wins.',
+                highlight: '$15,000 average savings'
+              },
+              {
+                icon: '⚡',
+                title: 'Instant Control',
+                desc: 'No waiting, no games. Connect with elite agents in hours. Every professional is vetted, rated, and ready to earn your business.',
+                highlight: '4.9/5 average rating'
               }
             ].map((item, index) => (
               <div key={index} style={{ 
@@ -237,9 +236,18 @@ const HomePage = () => {
                 padding: '2.5rem 2rem',
                 borderRadius: '1rem',
                 backgroundColor: 'white',
-                boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
-                border: '1px solid #f1f5f9'
-              }}>
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                border: '1px solid #f1f5f9',
+                position: 'relative',
+                transition: 'transform 0.2s ease',
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+              >
                 <div style={{ 
                   backgroundColor: '#f8fafc', 
                   borderRadius: '0.875rem',
@@ -256,16 +264,27 @@ const HomePage = () => {
                 <h3 style={{ fontSize: '1.375rem', fontWeight: '700', marginBottom: '0.875rem', color: '#0f172a' }}>
                   {item.title}
                 </h3>
-                <p style={{ color: '#475569', lineHeight: '1.6', fontSize: '0.9375rem' }}>
+                <p style={{ color: '#475569', lineHeight: '1.6', fontSize: '0.9375rem', marginBottom: '1.5rem' }}>
                   {item.desc}
                 </p>
+                <div style={{
+                  display: 'inline-block',
+                  backgroundColor: '#dcfce7',
+                  color: '#166534',
+                  padding: '0.5rem 1rem',
+                  borderRadius: '9999px',
+                  fontSize: '0.875rem',
+                  fontWeight: '600'
+                }}>
+                  {item.highlight}
+                </div>
               </div>
             ))}
           </div>
         </div>
       </section>
       
-      {/* How It Works Section - Updated to link to landing pages */}
+      {/* How It Works Section - Fixed alignment */}
       <section style={{ padding: '6rem 1rem', backgroundColor: 'white' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
@@ -293,10 +312,11 @@ const HomePage = () => {
           
           <div style={{ 
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))',
-            gap: '3rem',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(480px, 1fr))',
+            gap: '2rem',
             maxWidth: '1100px',
-            margin: '0 auto'
+            margin: '0 auto',
+            justifyContent: 'center'
           }}>
             {/* For Buyers */}
             <div style={{ 
@@ -335,7 +355,7 @@ const HomePage = () => {
                 {
                   step: '1',
                   title: 'Share Your Vision',
-                  desc: 'Tell us about your perfect home - location, budget, must-haves. Be as detailed as you want, this is your future we\'re talking about.',
+                  desc: 'Share your vision and select your service package. Need full buyer representation or just showing assistance? Pick from 40+ buyer services tailored to your needs.',
                   icon: '✨'
                 },
                 {
@@ -441,7 +461,7 @@ const HomePage = () => {
                 {
                   step: '1',
                   title: 'List Your Property',
-                  desc: 'Upload photos, add details, and specify what help you need. From full-service to just paperwork, you\'re in control of the process.',
+                  desc: 'List your property and choose your services. Select from Premium full-service marketing, Essential listing services, or build a custom package from 50+ seller services.',
                   icon: '📸'
                 },
                 {
@@ -548,7 +568,7 @@ const HomePage = () => {
               {
                 icon: '🎯',
                 title: 'You Pick What You Pay For',
-                desc: 'No bundled services you don\'t want. Choose exactly what you need, skip the rest.'
+                desc: '100+ services organized by category. Pick a complete package or customize your own. Every service priced transparently.'
               },
               {
                 icon: '💎',
@@ -571,9 +591,9 @@ const HomePage = () => {
                 desc: 'Messages, documents, scheduling - all in your dashboard. Real estate made organized.'
               },
               {
-                icon: '🤝',
-                title: 'You\'re Always in Control',
-                desc: 'Change services, switch agents, or handle things yourself. Your journey, your rules.'
+                icon: '📊',
+                title: 'Transparent Service Packages',
+                desc: 'Clear pricing for Essential, Full Service, and Premium packages. No hidden fees, no surprises, just honest pricing.'
               }
             ].map((item, index) => (
               <div key={index} style={{ 
@@ -638,8 +658,8 @@ const HomePage = () => {
             opacity: '0.9',
             lineHeight: '1.6'
           }}>
-            Join thousands who've ditched the old way and saved big. 
-            Better agents, better rates, and you call the shots.
+            Join thousands who've discovered transparent real estate. 
+            Choose your services, compare proposals, save thousands on commission.
           </p>
           
           {!currentUser ? (
@@ -781,7 +801,7 @@ const HomePage = () => {
                 Services
               </h4>
               <ul style={{ listStyle: 'none', padding: 0 }}>
-                {['All Services', 'Buyer Services', 'Seller Services', 'Service Packages'].map((item) => (
+                {['All Services', 'Buyer Services', 'Seller Services', 'Service Packages', 'Compare Packages'].map((item) => (
                   <li key={item} style={{ marginBottom: '0.75rem' }}>
                     <Link 
                       to={item === 'All Services' ? '/services' : 
