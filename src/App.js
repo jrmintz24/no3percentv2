@@ -37,6 +37,7 @@ import SellerDashboardPage from './pages/SellerPages/SellerDashboardPage';
 import SellerListingForm from './components/seller/SellerListingForm';
 import SellerListingDetail from './components/seller/SellerListingDetail';
 import SellerListings from './components/seller/SellerListings';
+import SellerProposals from './components/seller/SellerProposals';
 
 // Scheduling Components
 import AgentAvailabilityCalendar from './components/scheduling/AgentAvailabilityCalendar';
@@ -157,6 +158,7 @@ function App() {
                       <Route path="create-listing" element={<SellerListingForm />} />
                       <Route path="listing/:listingId" element={<SellerListingDetail />} />
                       <Route path="my-listings" element={<SellerListings />} />
+                      <Route path="proposals" element={<SellerProposals />} />
                       <Route path="proposals/:proposalId" element={<ProposalResponse />} />
                       <Route path="profile" element={<UserProfile />} />
                       <Route path="messages" element={<MessagesList />} />
