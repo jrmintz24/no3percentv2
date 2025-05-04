@@ -9,27 +9,27 @@ const FAQPage = () => {
   const faqCategories = {
     general: {
       title: 'General Questions',
-      icon: '📚',
+      icon: '🏡',
       questions: [
         {
-          q: 'What is RealEstateMatch?',
-          a: 'RealEstateMatch is a platform that connects home buyers and sellers with real estate agents through a transparent, competitive bidding process. Agents compete for your business by submitting detailed proposals, allowing you to compare services, commission rates, and rebate offers.'
+          q: 'What is no3%?',
+          a: 'no3% is a revolutionary real estate platform that connects buyers and sellers with agents through a transparent, competitive process. Unlike traditional real estate where agents charge standard 3% commissions, our platform lets agents compete for your business with custom service packages and competitive rates, often resulting in significant savings.'
         },
         {
-          q: 'How is RealEstateMatch different from traditional real estate services?',
-          a: 'Unlike traditional services where you get assigned an agent or have to interview multiple agents yourself, our platform lets agents come to you with their best offers. You can compare everything transparently—commission rates, services offered, rebates, and agent experience—all in one place.'
+          q: 'How does the platform work?',
+          a: 'Buyers and sellers create detailed listings describing their needs and choose from our service packages (Showing Only, Essential, Full Service, or Premium). Agents then submit proposals with their rates and services. Clients can compare proposals side-by-side and choose the best fit for their needs.'
         },
         {
-          q: 'Is RealEstateMatch free to use?',
-          a: 'Yes! It\'s completely free for buyers and sellers to create listings and receive proposals from agents. Agents pay for tokens to submit proposals, but there\'s no cost to you as a buyer or seller.'
+          q: 'Is no3% free to use?',
+          a: 'Yes! It\'s completely free for buyers and sellers. Agents use a token system to submit proposals, but there\'s no cost to clients using our platform.'
         },
         {
-          q: 'How quickly can I expect to receive agent proposals?',
-          a: 'Most users receive their first proposals within 24 hours of posting their listing. For popular areas or well-detailed listings, you might start receiving proposals within just a few hours.'
+          q: 'How quickly will I receive agent proposals?',
+          a: 'Most clients receive their first proposals within 24 hours. For detailed listings in popular areas, you might start receiving proposals within just a few hours. Our token system ensures you receive serious, quality proposals from motivated agents.'
         },
         {
-          q: 'What areas does RealEstateMatch serve?',
-          a: 'We currently serve major metropolitan areas across the United States. Our network of agents is constantly growing, so even if your area isn\'t heavily covered yet, we likely have agents who can help.'
+          q: 'What makes no3% different from other real estate platforms?',
+          a: 'We offer a package-first approach where you choose your service level upfront, then add specific services as needed. This transparency, combined with our competitive bidding process, often results in savings of 30-50% compared to traditional real estate commissions.'
         }
       ]
     },
@@ -38,28 +38,28 @@ const FAQPage = () => {
       icon: '🏠',
       questions: [
         {
-          q: 'What are buyer rebates and how do they work?',
-          a: 'When sellers pay the buyer\'s agent commission (which is common), many agents on our platform offer to rebate a portion of that commission back to you. This can be thousands of dollars returned to you at closing, which you can use for your down payment, closing costs, or home improvements.'
+          q: 'What service packages are available for buyers?',
+          a: 'We offer four packages: Showing Only (just property tours), Essential (basic services for experienced buyers), Full Service (traditional agent services), and Premium (luxury service with all features). Each package can be customized with add-on services.'
         },
         {
-          q: 'How do I create a buyer listing?',
-          a: 'Simply click "Start Your Home Search" and fill out details about what you\'re looking for: location, budget, property type, must-have features, and timeline. The more detailed you are, the better proposals you\'ll receive from agents.'
+          q: 'What is the "Showing Only" package?',
+          a: 'Perfect for self-sufficient buyers who just need someone to show properties. Agents typically charge per showing or offer packages of showings. This is ideal if you\'re comfortable handling negotiations and paperwork yourself.'
+        },
+        {
+          q: 'Can I get a rebate when buying a home?',
+          a: 'Yes! When sellers pay the buyer\'s agent commission (which is common), many agents offer to rebate a portion back to you. This can be thousands of dollars that you can use for closing costs, down payment, or home improvements.'
+        },
+        {
+          q: 'How do I choose between agent proposals?',
+          a: 'Compare factors like commission rates, rebate offers, services included, agent experience in your target area, and reviews. Our platform makes it easy to compare these factors side-by-side. You can also message agents directly to ask questions before accepting a proposal.'
         },
         {
           q: 'Can I negotiate with agents after receiving proposals?',
-          a: 'Absolutely! Once you receive proposals, you can message agents directly through our platform to discuss their offers, ask questions, or negotiate terms before making your decision.'
-        },
-        {
-          q: 'What if I already have a pre-approval letter?',
-          a: 'Great! You can mention this in your listing, which makes you a more attractive client to agents. Many agents will offer better terms or higher rebates to pre-approved buyers.'
-        },
-        {
-          q: 'How do I choose the right agent from multiple proposals?',
-          a: 'Consider factors like: commission/rebate offered, services included, agent experience in your target area, communication style, availability, and reviews from past clients. Our platform makes it easy to compare all these factors side by side.'
+          a: 'Absolutely! Use our messaging system to discuss terms, ask questions, or negotiate rates before accepting. Many agents are willing to adjust their proposals to win your business.'
         },
         {
           q: 'Is my information kept private?',
-          a: 'Yes, your personal contact information is only shared with agents after you accept their proposal. During the proposal stage, agents can only see the details you\'ve chosen to share in your listing.'
+          a: 'Yes. Your contact information is only shared with agents after you accept their proposal. During the proposal stage, agents only see the details you\'ve included in your listing.'
         }
       ]
     },
@@ -68,28 +68,28 @@ const FAQPage = () => {
       icon: '💰',
       questions: [
         {
-          q: 'How can I save money on commissions?',
-          a: 'By having agents compete for your listing, you\'ll often receive proposals with lower commission rates than the traditional 6%. Many agents offer reduced rates or à la carte services that let you pay only for what you need.'
+          q: 'What service packages are available for sellers?',
+          a: 'We offer three main packages: Essential (1-1.5% commission for basic services), Full Service (2.5-3% for traditional agent services), and Premium (3-4% for luxury marketing and concierge service). All packages can be customized with add-ons.'
         },
         {
-          q: 'What services can I choose from?',
-          a: 'Agents offer various service levels: full-service (traditional), limited service (you do some tasks yourself for lower commission), or à la carte (pay only for specific services like listing photos, paperwork, or negotiation).'
+          q: 'How much can I save on commission?',
+          a: 'Most sellers save 30-50% compared to traditional 6% commissions. By choosing only the services you need and having agents compete, you could save thousands on your home sale.'
         },
         {
-          q: 'How do I create a seller listing?',
-          a: 'Click "List Your Property" and provide details about your home, including location, asking price, property features, and what services you need. You can also upload photos to give agents a better idea of your property.'
+          q: 'Can I list as "For Sale By Owner" and just get specific help?',
+          a: 'Yes! Choose our Essential package or select specific services à la carte. Many agents offer individual services like professional photography, contract review, or negotiation assistance without requiring full representation.'
         },
         {
-          q: 'Can I list my home as "For Sale By Owner" and just get help with specific tasks?',
-          a: 'Yes! Many agents on our platform offer à la carte services. You can handle most of the sale yourself and just hire an agent for specific tasks like paperwork, negotiations, or professional photography.'
+          q: 'What if I\'m not satisfied with the proposals?',
+          a: 'You\'re never obligated to accept any proposal. You can update your listing, adjust your service requirements, or wait for more agents to submit proposals. You maintain complete control throughout the process.'
         },
         {
-          q: 'How long does it take to sell a home through RealEstateMatch?',
-          a: 'The timeline is similar to traditional sales—it depends on your market, pricing, and property condition. However, our competitive process often results in more motivated agents who work harder to sell your home quickly.'
+          q: 'How does the verification badge work?',
+          a: 'Verified sellers get a badge on their listing and often receive more competitive proposals. Verification requires identity confirmation and proof of property ownership, which gives agents more confidence in your listing.'
         },
         {
-          q: 'What if I\'m not satisfied with the proposals I receive?',
-          a: 'You\'re never obligated to accept any proposal. You can update your listing with more details, adjust your requirements, or wait for more agents to submit proposals. You\'re always in control.'
+          q: 'Can I change my service package after accepting a proposal?',
+          a: 'Yes, you can discuss modifications with your agent. Many agents are flexible and can adjust services and pricing based on your changing needs during the sale process.'
         }
       ]
     },
@@ -98,32 +98,58 @@ const FAQPage = () => {
       icon: '🏆',
       questions: [
         {
-          q: 'How do I join RealEstateMatch as an agent?',
-          a: 'Click "Join Our Network" on the agents page to sign up. You\'ll need to provide your license information and go through our verification process. Once approved, you can start submitting proposals immediately.'
+          q: 'How do I join no3% as an agent?',
+          a: 'Sign up through our agent portal, provide your license information, and complete our verification process. Once approved, you can start submitting proposals immediately. We offer different subscription tiers with varying benefits.'
         },
         {
           q: 'How does the token system work?',
-          a: 'Agents purchase tokens to submit proposals. Different types of listings require different numbers of tokens. This system ensures serious inquiries and helps maintain quality interactions on the platform.'
+          a: 'Tokens are used to submit proposals. Costs vary based on listing type, verification status, and market demand. Buyer listings typically cost 1-2 tokens, while seller listings cost 2-4 tokens. Verified listings cost more but often result in higher-quality leads.'
         },
         {
-          q: 'How much do tokens cost?',
-          a: 'Token packages start at $50 for 10 tokens. Bulk packages offer better value. The exact number of tokens needed per proposal varies based on the listing type and market conditions.'
+          q: 'What are the subscription tiers?',
+          a: 'We offer three tiers: Starter (pay-as-you-go), Professional ($49/month with 10 tokens), and Enterprise ($199/month with 50 tokens). Higher tiers include benefits like featured agent badges and token discounts.'
         },
         {
-          q: 'How do I stand out from other agents?',
-          a: 'Provide detailed, personalized proposals that address the client\'s specific needs. Offer competitive rates, highlight your expertise in their area, include client testimonials, and respond quickly to messages.'
+          q: 'How can I make my proposals stand out?',
+          a: 'Focus on the client\'s specific needs, offer competitive rates, and use our priority boost feature to appear at the top of their proposal list. Include detailed service descriptions and highlight your local expertise.'
         },
         {
-          q: 'Can I offer rebates to buyers?',
-          a: 'Yes, in states where it\'s legal. Many successful agents on our platform offer buyer rebates as a competitive advantage. Check your state\'s regulations regarding rebates.'
+          q: 'Can I specialize in certain service packages?',
+          a: 'Yes! Some agents focus on "Showing Only" services for buyers or Essential packages for sellers. Specializing can help you stand out and operate more efficiently.'
         },
         {
-          q: 'What happens after a client accepts my proposal?',
-          a: 'You\'ll be connected directly with the client through our messaging system. From there, you can schedule meetings, share documents, and proceed with the traditional agent-client relationship.'
+          q: 'How does proposal priority work?',
+          a: 'You can add extra tokens to boost your proposal\'s visibility. Proposals with more tokens appear higher in the client\'s list. The current highest priority for each listing is shown when you submit.'
+        }
+      ]
+    },
+    platform: {
+      title: 'Platform Features',
+      icon: '⚙️',
+      questions: [
+        {
+          q: 'What are service packages?',
+          a: 'Service packages are pre-defined bundles of real estate services at different price points. Clients choose a package first, then can add individual services as needed. This makes pricing transparent and comparison easy.'
         },
         {
-          q: 'Is there a minimum commission I must charge?',
-          a: 'No, you set your own commission rates and service packages. However, we encourage sustainable business practices that allow you to provide quality service to your clients.'
+          q: 'How do add-on services work?',
+          a: 'After selecting a base package, clients can add specific services like professional photography, staging consultation, or attorney review. Agents price these services individually in their proposals.'
+        },
+        {
+          q: 'What is the verification system?',
+          a: 'Both agents and clients can get verified. Verified agents have confirmed licenses and background checks. Verified clients have confirmed identity and property ownership. Verified users often get better results on the platform.'
+        },
+        {
+          q: 'How does messaging work?',
+          a: 'Our secure messaging system allows communication between clients and agents after a proposal is submitted. Once a proposal is accepted, you can exchange contact information and continue conversations off-platform if desired.'
+        },
+        {
+          q: 'What happens after accepting a proposal?',
+          a: 'The agent and client are connected directly. You\'ll move forward with your real estate transaction just like a traditional agent-client relationship, but with the terms you\'ve already agreed upon.'
+        },
+        {
+          q: 'Is the platform available nationwide?',
+          a: 'Yes! We have agents throughout the United States. Some areas have more coverage than others, but our network is growing daily.'
         }
       ]
     },
@@ -132,50 +158,28 @@ const FAQPage = () => {
       icon: '💳',
       questions: [
         {
-          q: 'How do commission rates on RealEstateMatch compare to traditional rates?',
-          a: 'Commission rates on our platform typically range from 1% to 5%, compared to the traditional 5-6%. Because agents compete for business, they often offer more competitive rates or added value services.'
+          q: 'How much do agents charge on no3%?',
+          a: 'Commission rates vary by package: Showing Only (flat fee or per showing), Essential (1-1.5%), Full Service (2-2.5% for buyers, 2.5-3% for sellers), Premium (2.5-3% for buyers, 3-4% for sellers). Many agents offer rates below these ranges to win business.'
         },
         {
-          q: 'When do I pay the agent\'s commission?',
-          a: 'Just like traditional real estate transactions, commissions are paid at closing from the proceeds of the sale. There are no upfront fees for buyers or sellers using our platform.'
+          q: 'When do I pay the agent?',
+          a: 'Just like traditional real estate, commissions are paid at closing. There are no upfront fees for buyers or sellers. Agents only get paid when your transaction successfully closes.'
         },
         {
-          q: 'Are buyer rebates legal?',
-          a: 'Buyer rebates are legal in most states, but regulations vary. Agents on our platform will only offer rebates where legally permitted. Always consult with your agent about rebate eligibility in your state.'
+          q: 'How do buyer rebates work?',
+          a: 'In states where legal, agents can rebate part of their commission to buyers. For example, if the seller pays a 3% buyer agent commission and your agent charges 2%, you might receive a 1% rebate at closing.'
         },
         {
-          q: 'How are disputes handled?',
-          a: 'We provide a resolution center for any disputes between clients and agents. Most issues are resolved through direct communication, but our support team is available to mediate if necessary.'
+          q: 'What do tokens cost for agents?',
+          a: 'Token packages start at $20 for 5 tokens, with better rates for larger packages. Subscription tiers include monthly token allowances and offer the best value for active agents.'
+        },
+        {
+          q: 'Are there any hidden fees?',
+          a: 'No hidden fees for buyers or sellers. Agents pay for tokens to submit proposals, but all client services are free. The only costs are the agreed-upon commissions or fees in accepted proposals.'
         },
         {
           q: 'Can I cancel after accepting a proposal?',
-          a: 'Yes, though we encourage you to carefully review proposals before accepting. Cancellation terms should be discussed with your agent and included in your agreement.'
-        }
-      ]
-    },
-    safety: {
-      title: 'Safety & Security',
-      icon: '🔒',
-      questions: [
-        {
-          q: 'How are agents verified?',
-          a: 'All agents must provide valid real estate license information, which we verify with state databases. We also conduct background checks and monitor agent performance and client feedback.'
-        },
-        {
-          q: 'Is my personal information secure?',
-          a: 'Yes, we use bank-level encryption to protect your data. Personal contact information is only shared with agents after you accept their proposal. Financial information is never stored on our platform.'
-        },
-        {
-          q: 'What if I have a bad experience with an agent?',
-          a: 'You can report issues through our platform, leave reviews, and contact our support team. We take all complaints seriously and may suspend agents who violate our terms of service.'
-        },
-        {
-          q: 'How do reviews work?',
-          a: 'After completing a transaction, both clients and agents can leave reviews. Reviews are monitored for authenticity and inappropriate content. Fake reviews result in account suspension.'
-        },
-        {
-          q: 'Can I block or report inappropriate messages?',
-          a: 'Yes, you can block any user and report inappropriate behavior directly through our messaging system. Our team reviews all reports promptly.'
+          a: 'Yes, but terms depend on your agreement with the agent. Most agents understand that circumstances change. Discuss cancellation policies before accepting a proposal.'
         }
       ]
     }
@@ -190,7 +194,7 @@ const FAQPage = () => {
       {/* Hero Section */}
       <section style={{ 
         padding: '6rem 1rem 4rem',
-        background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)',
+        background: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
         textAlign: 'center',
         color: 'white',
         position: 'relative',
@@ -202,7 +206,7 @@ const FAQPage = () => {
           left: '0',
           right: '0',
           bottom: '0',
-          background: 'radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%)',
+          background: 'radial-gradient(circle at 30% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%)',
           pointerEvents: 'none'
         }} />
         
@@ -211,8 +215,7 @@ const FAQPage = () => {
             fontSize: '3.5rem',
             fontWeight: '800',
             marginBottom: '1.5rem',
-            lineHeight: '1.1',
-            letterSpacing: '-0.02em'
+            lineHeight: '1.1'
           }}>
             Frequently Asked Questions
           </h1>
@@ -220,9 +223,10 @@ const FAQPage = () => {
             fontSize: '1.25rem',
             opacity: '0.9',
             maxWidth: '600px',
-            margin: '0 auto'
+            margin: '0 auto',
+            lineHeight: '1.6'
           }}>
-            Everything you need to know about RealEstateMatch. Can't find what you're looking for? Contact our support team.
+            Everything you need to know about saving on real estate commissions. Can't find your answer? We're here to help.
           </p>
         </div>
       </section>
@@ -256,16 +260,16 @@ const FAQPage = () => {
                   alignItems: 'center',
                   gap: '0.5rem',
                   padding: '0.75rem 1.5rem',
-                  borderRadius: '2rem',
+                  borderRadius: '0.5rem',
                   border: 'none',
                   backgroundColor: activeCategory === key ? '#3b82f6' : 'white',
                   color: activeCategory === key ? 'white' : '#475569',
                   fontWeight: '600',
-                  fontSize: '0.9375rem',
+                  fontSize: '0.875rem',
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
                   whiteSpace: 'nowrap',
-                  boxShadow: activeCategory === key ? '0 2px 8px rgba(59, 130, 246, 0.2)' : '0 1px 3px rgba(0, 0, 0, 0.1)'
+                  boxShadow: activeCategory === key ? '0 2px 8px rgba(59, 130, 246, 0.3)' : 'none'
                 }}
               >
                 <span style={{ fontSize: '1.25rem' }}>{category.icon}</span>
@@ -277,9 +281,9 @@ const FAQPage = () => {
       </section>
 
       {/* FAQ Content */}
-      <section style={{ maxWidth: '900px', margin: '0 auto', padding: '4rem 1rem' }}>
+      <section style={{ maxWidth: '800px', margin: '0 auto', padding: '4rem 1rem' }}>
         <div style={{ 
-          marginBottom: '2rem',
+          marginBottom: '3rem',
           textAlign: 'center'
         }}>
           <h2 style={{ 
@@ -294,7 +298,7 @@ const FAQPage = () => {
             color: '#64748b',
             fontSize: '1.125rem'
           }}>
-            Click on any question to see the answer
+            Click any question to expand the answer
           </p>
         </div>
 
@@ -311,7 +315,8 @@ const FAQPage = () => {
                 borderRadius: '0.75rem',
                 border: '1px solid #e2e8f0',
                 overflow: 'hidden',
-                transition: 'all 0.2s ease'
+                transition: 'all 0.2s ease',
+                boxShadow: openQuestion === index ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none'
               }}
             >
               <button
@@ -337,7 +342,8 @@ const FAQPage = () => {
                   fontSize: '1.5rem',
                   color: '#3b82f6',
                   transform: openQuestion === index ? 'rotate(180deg)' : 'rotate(0deg)',
-                  transition: 'transform 0.2s ease'
+                  transition: 'transform 0.2s ease',
+                  lineHeight: '1'
                 }}>
                   ⌄
                 </span>
@@ -365,7 +371,7 @@ const FAQPage = () => {
         padding: '4rem 1rem',
         textAlign: 'center'
       }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+        <div style={{ maxWidth: '600px', margin: '0 auto' }}>
           <h2 style={{ 
             fontSize: '2rem',
             fontWeight: '700',
@@ -379,7 +385,7 @@ const FAQPage = () => {
             fontSize: '1.125rem',
             marginBottom: '2rem'
           }}>
-            Can't find what you're looking for? Our support team is here to help.
+            Our support team is here to help you get started saving on real estate commissions.
           </p>
           <div style={{ 
             display: 'flex',
@@ -388,7 +394,7 @@ const FAQPage = () => {
             flexWrap: 'wrap'
           }}>
             <a 
-              href="mailto:support@realestatematch.com"
+              href="mailto:support@no3percent.com"
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -396,7 +402,7 @@ const FAQPage = () => {
                 padding: '0.875rem 1.75rem',
                 backgroundColor: '#3b82f6',
                 color: 'white',
-                borderRadius: '0.625rem',
+                borderRadius: '0.5rem',
                 textDecoration: 'none',
                 fontWeight: '600',
                 fontSize: '1rem',
@@ -416,7 +422,7 @@ const FAQPage = () => {
                 backgroundColor: 'white',
                 color: '#3b82f6',
                 border: '1px solid #e2e8f0',
-                borderRadius: '0.625rem',
+                borderRadius: '0.5rem',
                 textDecoration: 'none',
                 fontWeight: '600',
                 fontSize: '1rem',
@@ -433,7 +439,7 @@ const FAQPage = () => {
       {/* CTA Section */}
       <section style={{ 
         padding: '6rem 1rem',
-        background: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
+        background: 'linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%)',
         color: 'white',
         textAlign: 'center',
         position: 'relative',
@@ -445,7 +451,7 @@ const FAQPage = () => {
           left: '0',
           right: '0',
           bottom: '0',
-          background: 'radial-gradient(circle at 70% 30%, rgba(255, 255, 255, 0.08) 0%, transparent 50%)',
+          background: 'radial-gradient(circle at 70% 30%, rgba(239, 68, 68, 0.1) 0%, transparent 60%)',
           pointerEvents: 'none'
         }} />
         
@@ -454,10 +460,9 @@ const FAQPage = () => {
             fontSize: '2.5rem',
             fontWeight: '800',
             marginBottom: '1.5rem',
-            lineHeight: '1.1',
-            letterSpacing: '-0.02em'
+            lineHeight: '1.1'
           }}>
-            Ready to Get Started?
+            Ready to Save on Your Next Real Estate Transaction?
           </h2>
           <p style={{ 
             fontSize: '1.25rem',
@@ -465,22 +470,44 @@ const FAQPage = () => {
             opacity: '0.9',
             lineHeight: '1.6'
           }}>
-            Join thousands of satisfied users who've found their perfect real estate match.
+            Join thousands of homeowners who've saved thousands on commissions.
           </p>
           
-          <Link to="/signup">
-            <Button size="large" style={{ 
-              backgroundColor: 'white',
-              color: '#1e3a8a',
-              padding: '1rem 3rem',
-              fontSize: '1.125rem',
-              borderRadius: '0.625rem',
-              fontWeight: '700',
-              boxShadow: '0 4px 14px 0 rgba(0, 0, 0, 0.15)',
-            }}>
-              Create Your Free Account
-            </Button>
-          </Link>
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Link to="/signup?type=buyer">
+              <Button size="large" style={{ 
+                backgroundColor: 'white',
+                color: '#1e3a8a',
+                padding: '1rem 2rem',
+                fontSize: '1.125rem',
+                borderRadius: '0.5rem',
+                fontWeight: '600',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}>
+                <span>🏠</span>
+                I'm Buying
+              </Button>
+            </Link>
+            
+            <Link to="/signup?type=seller">
+              <Button size="large" style={{ 
+                backgroundColor: '#ef4444',
+                color: 'white',
+                padding: '1rem 2rem',
+                fontSize: '1.125rem',
+                borderRadius: '0.5rem',
+                fontWeight: '600',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}>
+                <span>💰</span>
+                I'm Selling
+              </Button>
+            </Link>
+          </div>
         </div>
       </section>
     </div>

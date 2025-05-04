@@ -12,6 +12,9 @@ import FAQPage from './pages/FAQPage';
 import ServicesPage from './pages/ServicesPage';
 import BuyerServicesPage from './pages/BuyerServicesPage';
 import SellerServicesPage from './pages/SellerServicesPage';
+import HowItWorksBuyersPage from './pages/HowItWorksBuyersPage';
+import HowItWorksSellersPage from './pages/HowItWorksSellersPage';
+import HowItWorksAgentsPage from './pages/HowItWorksAgentsPage';
 
 // Agent Pages
 import AgentDashboardPage from './pages/AgentPages/AgentDashboardPage';
@@ -76,6 +79,11 @@ function App() {
               <Route path="/services" element={<ServicesPage />} />
               <Route path="/services/buyers" element={<BuyerServicesPage />} />
               <Route path="/services/sellers" element={<SellerServicesPage />} />
+              
+              {/* How It Works Pages */}
+              <Route path="/how-it-works" element={<HowItWorksBuyersPage />} />
+              <Route path="/how-it-works-sellers" element={<HowItWorksSellersPage />} />
+              <Route path="/how-it-works-agents" element={<HowItWorksAgentsPage />} />
               
               {/* Agent Routes */}
               <Route 

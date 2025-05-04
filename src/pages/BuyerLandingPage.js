@@ -2,149 +2,466 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '../components/common/Button';
 
-const BuyerLandingPage = () => {
+const BuyersLandingPage = () => {
+  const servicePackages = [
+    {
+      name: 'Showing Only',
+      commission: 'Per showing fee',
+      price: '$50-100/showing',
+      icon: '🏡',
+      features: [
+        'Property tours only',
+        'Perfect for self-sufficient buyers',
+        'No long-term commitment',
+        'Pay per showing or package deals',
+        'Ideal for experienced buyers'
+      ]
+    },
+    {
+      name: 'Essential',
+      commission: '1-1.5%',
+      price: 'Save up to 50%',
+      icon: '📋',
+      features: [
+        'Basic buyer representation',
+        'Contract preparation',
+        'Offer submission',
+        'Limited negotiation support',
+        'Digital document handling'
+      ]
+    },
+    {
+      name: 'Full Service',
+      commission: '2-2.5%',
+      price: 'Traditional with savings',
+      icon: '🌟',
+      features: [
+        'Complete buyer representation',
+        'Property search assistance',
+        'Full negotiation support',
+        'Transaction coordination',
+        'Inspection guidance',
+        'Closing support'
+      ],
+      popular: true
+    },
+    {
+      name: 'Premium',
+      commission: '2.5-3%',
+      price: 'White-glove service',
+      icon: '🏆',
+      features: [
+        'Luxury home specialist',
+        'Off-market opportunities',
+        'Concierge services',
+        'Priority showings',
+        'Investment analysis',
+        'Post-closing support'
+      ]
+    }
+  ];
+
+  const addOnServices = [
+    {
+      icon: '🔍',
+      title: 'Home Inspection Coordination',
+      description: 'Professional inspection scheduling and report analysis'
+    },
+    {
+      icon: '📊',
+      title: 'Market Analysis',
+      description: 'Detailed comparative market analysis for your target area'
+    },
+    {
+      icon: '💰',
+      title: 'Mortgage Assistance',
+      description: 'Connect with preferred lenders and rate comparison'
+    },
+    {
+      icon: '📸',
+      title: 'Virtual Tours',
+      description: 'Remote property viewing via video calls'
+    },
+    {
+      icon: '⚖️',
+      title: 'Legal Review',
+      description: 'Attorney review of contracts and documents'
+    },
+    {
+      icon: '🚚',
+      title: 'Relocation Services',
+      description: 'Moving coordination and area orientation'
+    }
+  ];
+
+  const benefits = [
+    {
+      icon: '💵',
+      title: 'Buyer Rebates',
+      description: 'Get cash back when sellers pay your agent commission'
+    },
+    {
+      icon: '🏷️',
+      title: 'Lower Commissions',
+      description: 'Save thousands with competitive agent rates'
+    },
+    {
+      icon: '🎯',
+      title: 'Choose Your Services',
+      description: 'Pay only for the services you actually need'
+    },
+    {
+      icon: '🤝',
+      title: 'Expert Negotiation',
+      description: 'Experienced agents fighting for your best deal'
+    }
+  ];
+
+  const processSteps = [
+    {
+      number: '1',
+      title: 'Create Your Profile',
+      description: 'Tell us what you\'re looking for in your dream home'
+    },
+    {
+      number: '2',
+      title: 'Choose Your Package',
+      description: 'Select from our service packages and customize with add-ons'
+    },
+    {
+      number: '3',
+      title: 'Review Proposals',
+      description: 'Compare agent proposals with rates and services side-by-side'
+    },
+    {
+      number: '4',
+      title: 'Find Your Home',
+      description: 'Work with your chosen agent to find and buy your perfect home'
+    }
+  ];
+
   return (
-    <div className="min-h-screen">
+    <div style={{ backgroundColor: '#ffffff' }}>
       {/* Hero Section */}
-      <section 
-        style={{
-          background: 'linear-gradient(135deg, #2563eb 0%, #1e40af 100%)',
-          color: 'white',
-          padding: '6rem 1rem',
-          textAlign: 'center',
-          position: 'relative',
-          overflow: 'hidden'
-        }}
-      >
+      <section style={{ 
+        padding: '6rem 1rem 4rem',
+        background: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
+        color: 'white',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
         <div style={{
           position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'radial-gradient(circle at 30% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%)',
+          top: '0',
+          left: '0',
+          right: '0',
+          bottom: '0',
+          background: 'radial-gradient(circle at 30% 50%, rgba(59, 130, 246, 0.15) 0%, transparent 60%)',
           pointerEvents: 'none'
         }} />
         
-        <div style={{ maxWidth: '800px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
-          <h1 style={{
-            fontSize: '3.5rem',
-            fontWeight: '800',
-            marginBottom: '1.5rem',
-            lineHeight: '1.1'
-          }}>
-            Find Your Dream Home Without the Hassle
-          </h1>
-          <p style={{
-            fontSize: '1.5rem',
-            marginBottom: '2.5rem',
-            opacity: '0.9',
-            lineHeight: '1.6'
-          }}>
-            Let top agents compete for your business. Get personal service, better rates, and the home you deserve.
-          </p>
-          <Link to="/signup?type=buyer">
-            <Button
-              size="large"
-              style={{
-                backgroundColor: 'white',
-                color: '#2563eb',
-                padding: '1rem 2.5rem',
-                fontSize: '1.25rem',
-                fontWeight: '600',
-                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
-              }}
-            >
-              Start Your Search
-            </Button>
-          </Link>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
+          <div style={{ maxWidth: '800px' }}>
+            <div style={{ marginBottom: '1rem' }}>
+              <span style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                color: 'white',
+                padding: '0.5rem 1rem',
+                borderRadius: '9999px',
+                fontSize: '0.875rem',
+                fontWeight: '600'
+              }}>
+                FOR HOME BUYERS
+              </span>
+            </div>
+            
+            <h1 style={{ 
+              fontSize: '3.5rem',
+              fontWeight: '800',
+              marginBottom: '1.5rem',
+              lineHeight: '1.1'
+            }}>
+              Find Your Dream Home<br />
+              <span style={{ color: '#93c5fd' }}>Without the 3% Fee</span>
+            </h1>
+            
+            <p style={{ 
+              fontSize: '1.5rem',
+              marginBottom: '2.5rem',
+              opacity: '0.9',
+              lineHeight: '1.5'
+            }}>
+              Choose your service level, get competitive proposals, and save thousands with buyer rebates
+            </p>
+            
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+              <Link to="/signup?type=buyer">
+                <Button size="large" style={{ 
+                  backgroundColor: 'white',
+                  color: '#1e3a8a',
+                  padding: '1rem 2rem',
+                  fontSize: '1.125rem',
+                  fontWeight: '600',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <span>🏠</span>
+                  Start Your Home Search
+                </Button>
+              </Link>
+              
+              <Link to="/how-it-works">
+                <Button size="large" variant="secondary" style={{ 
+                  backgroundColor: 'transparent',
+                  color: 'white',
+                  border: '2px solid white',
+                  padding: '1rem 2rem',
+                  fontSize: '1.125rem',
+                  fontWeight: '600'
+                }}>
+                  How It Works
+                </Button>
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* Pain Points Section */}
-      <section style={{ padding: '5rem 1rem', backgroundColor: 'white' }}>
+      {/* Service Packages Section */}
+      <section style={{ padding: '5rem 1rem', backgroundColor: '#f8fafc' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <h2 style={{
-            fontSize: '2.5rem',
-            fontWeight: '700',
-            textAlign: 'center',
-            marginBottom: '1rem',
-            color: '#111827'
-          }}>
-            Tired of the Traditional Home Buying Process?
-          </h2>
-          <p style={{
-            fontSize: '1.25rem',
-            textAlign: 'center',
-            marginBottom: '3rem',
-            color: '#4b5563',
-            maxWidth: '800px',
-            margin: '0 auto 3rem'
-          }}>
-            We understand your frustrations. That's why we're changing the game.
-          </p>
+          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+            <h2 style={{ 
+              fontSize: '2.5rem',
+              fontWeight: '800',
+              marginBottom: '1rem',
+              color: '#0f172a'
+            }}>
+              Choose Your Service Level
+            </h2>
+            <p style={{ 
+              fontSize: '1.25rem',
+              color: '#475569',
+              maxWidth: '700px',
+              margin: '0 auto'
+            }}>
+              From basic showings to full-service representation, find the perfect package for your needs
+            </p>
+          </div>
           
-          <div style={{
+          <div style={{ 
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: '2rem'
+          }}>
+            {servicePackages.map((pkg, index) => (
+              <div 
+                key={index}
+                style={{
+                  backgroundColor: 'white',
+                  borderRadius: '1rem',
+                  padding: '2rem',
+                  position: 'relative',
+                  border: pkg.popular ? '2px solid #3b82f6' : '1px solid #e2e8f0',
+                  boxShadow: pkg.popular ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none',
+                  display: 'flex',
+                  flexDirection: 'column'
+                }}
+              >
+                {pkg.popular && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '-1rem',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    backgroundColor: '#3b82f6',
+                    color: 'white',
+                    padding: '0.25rem 1rem',
+                    borderRadius: '9999px',
+                    fontSize: '0.875rem',
+                    fontWeight: '600'
+                  }}>
+                    Most Popular
+                  </div>
+                )}
+                
+                <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                  <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>{pkg.icon}</div>
+                  <h3 style={{ fontSize: '1.5rem', fontWeight: '700', marginBottom: '0.5rem' }}>
+                    {pkg.name}
+                  </h3>
+                  <div style={{ 
+                    fontSize: '1.25rem',
+                    fontWeight: '700',
+                    color: '#3b82f6',
+                    marginBottom: '0.25rem'
+                  }}>
+                    {pkg.commission}
+                  </div>
+                  <div style={{ fontSize: '0.875rem', color: '#64748b' }}>
+                    {pkg.price}
+                  </div>
+                </div>
+                
+                <ul style={{ 
+                  listStyle: 'none',
+                  padding: 0,
+                  margin: '0 0 2rem 0',
+                  flex: 1
+                }}>
+                  {pkg.features.map((feature, idx) => (
+                    <li key={idx} style={{ 
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '0.5rem',
+                      marginBottom: '0.75rem',
+                      fontSize: '0.9375rem',
+                      color: '#475569'
+                    }}>
+                      <span style={{ color: '#3b82f6', flexShrink: 0 }}>✓</span>
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+                
+                <Link to="/signup?type=buyer" style={{ display: 'block' }}>
+                  <Button 
+                    fullWidth
+                    variant={pkg.popular ? 'primary' : 'secondary'}
+                  >
+                    Choose {pkg.name}
+                  </Button>
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Add-On Services Section */}
+      <section style={{ padding: '5rem 1rem', backgroundColor: '#ffffff' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+            <h2 style={{ 
+              fontSize: '2.5rem',
+              fontWeight: '800',
+              marginBottom: '1rem',
+              color: '#0f172a'
+            }}>
+              Customize with Add-Ons
+            </h2>
+            <p style={{ 
+              fontSize: '1.25rem',
+              color: '#475569',
+              maxWidth: '700px',
+              margin: '0 auto'
+            }}>
+              Enhance your package with additional services tailored to your needs
+            </p>
+          </div>
+          
+          <div style={{ 
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-            gap: '2rem',
-            marginBottom: '3rem'
+            gap: '1.5rem'
           }}>
-            {[
-              {
-                problem: 'Endless Cold Calls',
-                solution: 'Choose Who Contacts You',
-                icon: '📞'
-              },
-              {
-                problem: 'Hidden Fees',
-                solution: 'Transparent Pricing',
-                icon: '💰'
-              },
-              {
-                problem: 'Locked-In Contracts',
-                solution: 'Work on Your Terms',
-                icon: '🔒'
-              },
-              {
-                problem: 'One-Size-Fits-All Service',
-                solution: 'Customized Assistance',
-                icon: '📋'
-              }
-            ].map((item, index) => (
-              <div key={index} style={{
-                backgroundColor: '#f9fafb',
-                borderRadius: '1rem',
-                padding: '2rem',
-                textAlign: 'center',
-                transition: 'transform 0.2s ease',
-                ':hover': {
-                  transform: 'translateY(-4px)'
-                }
-              }}>
-                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>{item.icon}</div>
-                <h3 style={{
-                  fontSize: '1.25rem',
-                  fontWeight: '600',
-                  color: '#ef4444',
-                  marginBottom: '0.5rem'
-                }}>
-                  {item.problem}
-                </h3>
+            {addOnServices.map((service, index) => (
+              <div 
+                key={index}
+                style={{
+                  backgroundColor: '#f8fafc',
+                  borderRadius: '0.75rem',
+                  padding: '1.5rem',
+                  display: 'flex',
+                  gap: '1rem',
+                  alignItems: 'flex-start',
+                  transition: 'all 0.2s ease',
+                  border: '1px solid transparent',
+                  ':hover': {
+                    backgroundColor: 'white',
+                    border: '1px solid #e2e8f0'
+                  }
+                }}
+              >
                 <div style={{
-                  fontSize: '1rem',
-                  color: '#6b7280',
-                  marginBottom: '1rem'
+                  fontSize: '2rem',
+                  width: '3rem',
+                  height: '3rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: 'white',
+                  borderRadius: '0.5rem',
+                  flexShrink: 0
                 }}>
-                  ↓
+                  {service.icon}
                 </div>
-                <h4 style={{
-                  fontSize: '1.25rem',
-                  fontWeight: '600',
-                  color: '#059669'
+                <div>
+                  <h3 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '0.25rem' }}>
+                    {service.title}
+                  </h3>
+                  <p style={{ color: '#64748b', fontSize: '0.9375rem', margin: 0 }}>
+                    {service.description}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Benefits Section */}
+      <section style={{ 
+        padding: '5rem 1rem',
+        background: 'linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%)',
+        color: 'white',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        <div style={{
+          position: 'absolute',
+          top: '0',
+          left: '0',
+          right: '0',
+          bottom: '0',
+          background: 'radial-gradient(circle at 70% 30%, rgba(59, 130, 246, 0.1) 0%, transparent 60%)',
+          pointerEvents: 'none'
+        }} />
+        
+        <div style={{ maxWidth: '1200px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
+          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+            <h2 style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '1rem' }}>
+              Why Buy Through no3%
+            </h2>
+            <p style={{ fontSize: '1.25rem', opacity: '0.9', maxWidth: '700px', margin: '0 auto' }}>
+              Save money, get better service, and take control of your home buying journey
+            </p>
+          </div>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '2rem' }}>
+            {benefits.map((benefit, index) => (
+              <div key={index} style={{ textAlign: 'center' }}>
+                <div style={{ 
+                  fontSize: '3rem',
+                  marginBottom: '1rem',
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                  width: '5rem',
+                  height: '5rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '1rem',
+                  margin: '0 auto 1rem'
                 }}>
-                  {item.solution}
-                </h4>
+                  {benefit.icon}
+                </div>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: '600', marginBottom: '0.5rem' }}>
+                  {benefit.title}
+                </h3>
+                <p style={{ opacity: '0.8', fontSize: '1rem' }}>
+                  {benefit.description}
+                </p>
               </div>
             ))}
           </div>
@@ -152,345 +469,128 @@ const BuyerLandingPage = () => {
       </section>
 
       {/* How It Works Section */}
-      <section style={{ padding: '5rem 1rem', backgroundColor: '#f9fafb' }}>
+      <section style={{ padding: '5rem 1rem', backgroundColor: '#ffffff' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <h2 style={{
-            fontSize: '2.5rem',
-            fontWeight: '700',
-            textAlign: 'center',
-            marginBottom: '3rem',
-            color: '#111827'
-          }}>
-            How It Works
-          </h2>
+          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+            <h2 style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '1rem', color: '#0f172a' }}>
+              How It Works
+            </h2>
+            <p style={{ fontSize: '1.25rem', color: '#475569', maxWidth: '700px', margin: '0 auto' }}>
+              Your path to homeownership in four simple steps
+            </p>
+          </div>
           
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: '2rem'
-          }}>
-            {[
-              {
-                step: '1',
-                title: 'Create Your Profile',
-                description: 'Tell us what you\'re looking for in your dream home - location, budget, must-haves, and deal-breakers.'
-              },
-              {
-                step: '2',
-                title: 'Receive Proposals',
-                description: 'Local agents review your needs and submit personalized proposals with their services and fees.'
-              },
-              {
-                step: '3',
-                title: 'Compare & Choose',
-                description: 'Review proposals side-by-side, interview agents, and select the one that fits your needs.'
-              },
-              {
-                step: '4',
-                title: 'Find Your Home',
-                description: 'Work with your chosen agent to find and purchase your perfect home, on your terms.'
-              }
-            ].map((item, index) => (
-              <div key={index} style={{
-                textAlign: 'center',
-                padding: '2rem'
-              }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '2rem' }}>
+            {processSteps.map((step, index) => (
+              <div key={index} style={{ position: 'relative', textAlign: 'center' }}>
                 <div style={{
                   width: '3rem',
                   height: '3rem',
-                  borderRadius: '50%',
-                  backgroundColor: '#2563eb',
+                  backgroundColor: '#3b82f6',
                   color: 'white',
+                  borderRadius: '50%',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  margin: '0 auto 1rem',
                   fontSize: '1.5rem',
-                  fontWeight: '700'
+                  fontWeight: '700',
+                  margin: '0 auto 1rem'
                 }}>
-                  {item.step}
+                  {step.number}
                 </div>
-                <h3 style={{
-                  fontSize: '1.25rem',
-                  fontWeight: '600',
-                  marginBottom: '0.5rem',
-                  color: '#111827'
-                }}>
-                  {item.title}
+                <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '0.5rem', color: '#0f172a' }}>
+                  {step.title}
                 </h3>
-                <p style={{
-                  color: '#4b5563',
-                  lineHeight: '1.6'
-                }}>
-                  {item.description}
+                <p style={{ color: '#64748b', fontSize: '0.9375rem' }}>
+                  {step.description}
                 </p>
+                {index < processSteps.length - 1 && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '1.5rem',
+                    left: '60%',
+                    width: '100%',
+                    height: '2px',
+                    background: 'linear-gradient(90deg, #3b82f6 0%, #e2e8f0 100%)',
+                    zIndex: 0,
+                    '@media (max-width: 1024px)': {
+                      display: 'none'
+                    }
+                  }} />
+                )}
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Rebate Calculator Section */}
-      <section style={{ padding: '5rem 1rem', backgroundColor: 'white' }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-          <h2 style={{
-            fontSize: '2.5rem',
-            fontWeight: '700',
-            textAlign: 'center',
-            marginBottom: '1rem',
-            color: '#111827'
+      {/* Buyer Rebates Section */}
+      <section style={{ padding: '5rem 1rem', backgroundColor: '#f8fafc' }}>
+        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+          <div style={{ 
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
+            gap: '3rem',
+            alignItems: 'center'
           }}>
-            Buyer Rebates: Your Money Back
-          </h2>
-          <p style={{
-            fontSize: '1.25rem',
-            textAlign: 'center',
-            marginBottom: '3rem',
-            color: '#4b5563'
-          }}>
-            When sellers pay agent commissions, you can get cash back at closing!
-          </p>
-          
-          <div style={{
-            backgroundColor: '#f0fdf4',
-            borderRadius: '1rem',
-            padding: '2rem',
-            marginBottom: '2rem'
-          }}>
-            <h3 style={{
-              fontSize: '1.5rem',
-              fontWeight: '600',
-              marginBottom: '1rem',
-              color: '#166534'
-            }}>
-              Potential Rebate Calculator
-            </h3>
-            <div style={{
-              display: 'grid',
-              gap: '1rem',
-              marginBottom: '1.5rem'
-            }}>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
-                  Home Price
-                </label>
-                <input
-                  type="number"
-                  placeholder="$500,000"
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    borderRadius: '0.5rem',
-                    border: '1px solid #d1d5db'
-                  }}
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
-                  Commission Rate
-                </label>
-                <select style={{
-                  width: '100%',
-                  padding: '0.75rem',
-                  borderRadius: '0.5rem',
-                  border: '1px solid #d1d5db'
-                }}>
-                  <option>2.5% (Typical with us)</option>
-                  <option>3% (Traditional)</option>
-                </select>
-              </div>
+            <div>
+              <h2 style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '1.5rem', color: '#0f172a' }}>
+                Get Cash Back with<br />
+                <span style={{ color: '#3b82f6' }}>Buyer Rebates</span>
+              </h2>
+              <p style={{ fontSize: '1.125rem', color: '#475569', marginBottom: '2rem', lineHeight: '1.6' }}>
+                When sellers pay your agent's commission, many agents offer to rebate a portion back to you. 
+                This can mean thousands of dollars in your pocket at closing.
+              </p>
+              <ul style={{ listStyle: 'none', padding: 0, marginBottom: '2rem' }}>
+                <li style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                  <span style={{ fontSize: '1.5rem', color: '#3b82f6' }}>✓</span>
+                  <span style={{ fontSize: '1rem', color: '#475569' }}>Up to 2% of the purchase price back</span>
+                </li>
+                <li style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                  <span style={{ fontSize: '1.5rem', color: '#3b82f6' }}>✓</span>
+                  <span style={{ fontSize: '1rem', color: '#475569' }}>Use for closing costs or down payment</span>
+                </li>
+                <li style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <span style={{ fontSize: '1.5rem', color: '#3b82f6' }}>✓</span>
+                  <span style={{ fontSize: '1rem', color: '#475569' }}>Available in most states (where legal)</span>
+                </li>
+              </ul>
+              <Link to="/signup?type=buyer">
+                <Button size="large">
+                  Start Saving Today
+                </Button>
+              </Link>
             </div>
+            
             <div style={{
-              backgroundColor: '#dcfce7',
-              padding: '1rem',
-              borderRadius: '0.5rem',
+              backgroundColor: 'white',
+              borderRadius: '1rem',
+              padding: '2rem',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
               textAlign: 'center'
             }}>
-              <p style={{ fontSize: '1.125rem', color: '#166534', marginBottom: '0.25rem' }}>
-                Estimated Rebate
+              <h3 style={{ fontSize: '1.5rem', fontWeight: '700', marginBottom: '1rem', color: '#0f172a' }}>
+                Example Savings
+              </h3>
+              <div style={{ fontSize: '2rem', fontWeight: '800', color: '#3b82f6', marginBottom: '1rem' }}>
+                $6,000 - $10,000
+              </div>
+              <p style={{ color: '#64748b', marginBottom: '2rem' }}>
+                Average rebate on a $500,000 home purchase
               </p>
-              <p style={{ fontSize: '2rem', fontWeight: '700', color: '#166534' }}>
-                $6,250
-              </p>
-              <p style={{ fontSize: '0.875rem', color: '#166534' }}>
-                Back in your pocket at closing!
-              </p>
+              <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '1.5rem' }}>
+                <p style={{ fontSize: '0.875rem', color: '#475569', marginBottom: '0.5rem' }}>
+                  Traditional 3% commission: $15,000
+                </p>
+                <p style={{ fontSize: '0.875rem', color: '#475569', marginBottom: '0.5rem' }}>
+                  With 2% rebate: $5,000 cost
+                </p>
+                <p style={{ fontSize: '0.875rem', fontWeight: '600', color: '#16a34a' }}>
+                  Your savings: $10,000
+                </p>
+              </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Services Section */}
-      <section style={{ padding: '4rem 1rem', backgroundColor: '#f9fafb' }}>
-        <div style={{ maxWidth: '1000px', margin: '0 auto', textAlign: 'center' }}>
-          <h2 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '1rem' }}>
-            Explore Available Services
-          </h2>
-          <p style={{ color: '#4b5563', marginBottom: '2rem', maxWidth: '600px', margin: '0 auto 2rem' }}>
-            Browse our full catalog of services to understand exactly what you can expect from our agents.
-          </p>
-          <Link to="/services/buyers">
-            <Button
-              style={{
-                backgroundColor: '#3b82f6',
-                color: 'white',
-                padding: '0.75rem 2rem'
-              }}
-            >
-              View All Services
-            </Button>
-          </Link>
-        </div>
-      </section>
-
-      {/* Testimonials Section */}
-      <section style={{ padding: '5rem 1rem', backgroundColor: 'white' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <h2 style={{
-            fontSize: '2.5rem',
-            fontWeight: '700',
-            textAlign: 'center',
-            marginBottom: '3rem',
-            color: '#111827'
-          }}>
-            What Buyers Are Saying
-          </h2>
-          
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
-            gap: '2rem'
-          }}>
-            {[
-              {
-                name: 'Sarah J.',
-                location: 'Seattle, WA',
-                text: 'I received 5 proposals within 24 hours! Ended up with an amazing agent who got me a $8,000 rebate at closing.',
-                savings: '$8,000 rebate'
-              },
-              {
-                name: 'Michael R.',
-                location: 'Austin, TX',
-                text: 'No more random calls from agents. I chose who to work with and saved money in the process.',
-                savings: '$5,500 rebate'
-              },
-              {
-                name: 'Emily L.',
-                location: 'Denver, CO',
-                text: 'The transparency was refreshing. I knew exactly what services I was getting and what I\'d pay.',
-                savings: '$6,800 rebate'
-              }
-            ].map((testimonial, index) => (
-              <div key={index} style={{
-                backgroundColor: '#f9fafb',
-                borderRadius: '1rem',
-                padding: '2rem',
-                position: 'relative'
-              }}>
-                <div style={{
-                  fontSize: '3rem',
-                  color: '#2563eb',
-                  position: 'absolute',
-                  top: '1rem',
-                  left: '1.5rem',
-                  opacity: '0.2'
-                }}>
-                  "
-                </div>
-                <p style={{
-                  fontSize: '1.125rem',
-                  lineHeight: '1.6',
-                  marginBottom: '1.5rem',
-                  color: '#374151',
-                  position: 'relative',
-                  zIndex: 1
-                }}>
-                  {testimonial.text}
-                </p>
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}>
-                  <div>
-                    <p style={{ fontWeight: '600', color: '#111827' }}>{testimonial.name}</p>
-                    <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>{testimonial.location}</p>
-                  </div>
-                  <div style={{
-                    backgroundColor: '#dcfce7',
-                    color: '#166534',
-                    padding: '0.5rem 1rem',
-                    borderRadius: '2rem',
-                    fontSize: '0.875rem',
-                    fontWeight: '600'
-                  }}>
-                    {testimonial.savings}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ Preview Section */}
-      <section style={{ padding: '5rem 1rem', backgroundColor: '#f9fafb' }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-          <h2 style={{
-            fontSize: '2.5rem',
-            fontWeight: '700',
-            textAlign: 'center',
-            marginBottom: '3rem',
-            color: '#111827'
-          }}>
-            Common Questions
-          </h2>
-          
-          <div style={{ display: 'grid', gap: '1rem' }}>
-            {[
-              {
-                question: 'How do buyer rebates work?',
-                answer: 'When sellers pay the traditional 5-6% commission, your agent can rebate part of their commission back to you at closing. This puts thousands back in your pocket!'
-              },
-              {
-                question: 'Are buyer rebates legal?',
-                answer: 'Yes! Buyer rebates are legal in 40 states. We\'ll let you know if they\'re available in your area when you sign up.'
-              },
-              {
-                question: 'How quickly will I receive proposals?',
-                answer: 'Most buyers receive their first proposals within 24 hours. You typically get 3-5 proposals within the first 48 hours.'
-              }
-            ].map((faq, index) => (
-              <div key={index} style={{
-                backgroundColor: 'white',
-                borderRadius: '0.5rem',
-                padding: '1.5rem',
-                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
-              }}>
-                <h3 style={{
-                  fontSize: '1.125rem',
-                  fontWeight: '600',
-                  marginBottom: '0.5rem',
-                  color: '#111827'
-                }}>
-                  {faq.question}
-                </h3>
-                <p style={{
-                  color: '#4b5563',
-                  lineHeight: '1.6'
-                }}>
-                  {faq.answer}
-                </p>
-              </div>
-            ))}
-          </div>
-          
-          <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-            <Link to="/faq">
-              <Button variant="secondary">
-                View All FAQs
-              </Button>
-            </Link>
           </div>
         </div>
       </section>
@@ -498,44 +598,64 @@ const BuyerLandingPage = () => {
       {/* CTA Section */}
       <section style={{ 
         padding: '5rem 1rem',
-        background: 'linear-gradient(135deg, #2563eb 0%, #1e40af 100%)',
+        background: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
         color: 'white',
-        textAlign: 'center'
+        textAlign: 'center',
+        position: 'relative',
+        overflow: 'hidden'
       }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-          <h2 style={{
-            fontSize: '2.5rem',
-            fontWeight: '700',
-            marginBottom: '1.5rem'
-          }}>
-            Ready to Find Your Dream Home?
+        <div style={{
+          position: 'absolute',
+          top: '0',
+          left: '0',
+          right: '0',
+          bottom: '0',
+          background: 'radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 70%)',
+          pointerEvents: 'none'
+        }} />
+        
+        <div style={{ maxWidth: '800px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
+          <h2 style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '1.5rem' }}>
+            Ready to Save on Your Home Purchase?
           </h2>
-          <p style={{
-            fontSize: '1.25rem',
-            marginBottom: '2rem',
-            opacity: '0.9'
-          }}>
-            Join thousands of happy homeowners who saved money and found their perfect home.
+          <p style={{ fontSize: '1.25rem', marginBottom: '2.5rem', opacity: '0.9' }}>
+            Join thousands of smart buyers who've saved money on their real estate transactions
           </p>
-          <Link to="/signup?type=buyer">
-            <Button
-              size="large"
-              style={{
+          
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Link to="/signup?type=buyer">
+              <Button size="large" style={{ 
                 backgroundColor: 'white',
-                color: '#2563eb',
-                padding: '1rem 2.5rem',
-                fontSize: '1.25rem',
+                color: '#1e3a8a',
+                padding: '1rem 2rem',
+                fontSize: '1.125rem',
                 fontWeight: '600',
-                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
-              }}
-            >
-              Start Your Search
-            </Button>
-          </Link>
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}>
+                <span>🏠</span>
+                Start Your Search
+              </Button>
+            </Link>
+            
+            <Link to="/how-it-works">
+              <Button size="large" variant="secondary" style={{ 
+                backgroundColor: 'transparent',
+                color: 'white',
+                border: '2px solid white',
+                padding: '1rem 2rem',
+                fontSize: '1.125rem',
+                fontWeight: '600'
+              }}>
+                Learn More
+              </Button>
+            </Link>
+          </div>
         </div>
       </section>
     </div>
   );
 };
 
-export default BuyerLandingPage;
+export default BuyersLandingPage;
