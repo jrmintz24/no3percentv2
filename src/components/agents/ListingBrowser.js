@@ -1,18 +1,27 @@
+// src/components/agents/ListingBrowser.js
+
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { collection, query, getDocs, where, orderBy, limit } from 'firebase/firestore';
 import { db } from '../../services/firebase/config';
 import { useAuth } from '../../contexts/AuthContext';
+import EnhancedListingCard from './EnhancedListingCard'; // Import from the same directory
 import { Card, CardHeader, CardBody } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
 
 const ListingBrowser = () => {
   const { currentUser } = useAuth();
+  const navigate = useNavigate();
   
-  const [listings, setListings] = useState([]);
+  const [buyerListings, setBuyerListings] = useState([]);
+  const [sellerListings, setSellerListings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState('buyer');
+  const [activeTab, setActiveTab] = useState('all'); // 'all', 'buyer', 'seller'
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [sortOrder, setSortOrder] = useState('newest'); // 'newest', 'oldest', 'budgetHigh', 'budgetLow'
+  const [searchTerm, setSearchTerm] = useState('');
   
   useEffect(() => {
     const fetchListings = async () => {
@@ -20,28 +29,40 @@ const ListingBrowser = () => {
         setLoading(true);
         setError('');
         
-        // Determine which collection to query based on the active tab
-        const collectionName = activeTab === 'buyer' ? 'buyerListings' : 'sellerListings';
-        
-        console.log(`Attempting to fetch listings from ${collectionName}`);
-        
-        // Create a simple query to get active listings
-        // Note: We're removing the status filter to see if any listings exist
-        const listingsQuery = query(
-          collection(db, collectionName),
-          limit(10)
+        console.log("Attempting to fetch listings from buyerListings");
+        const buyerQuery = query(
+          collection(db, 'buyerListings'),
+          orderBy('createdAt', 'desc'),
+          limit(50)
         );
         
-        const listingsSnapshot = await getDocs(listingsQuery);
-        console.log(`Found ${listingsSnapshot.size} listings`);
+        const buyerDocs = await getDocs(buyerQuery);
+        const buyerData = buyerDocs.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          type: 'buyer'
+        }));
         
-        const listingsData = [];
+        setBuyerListings(buyerData);
+        console.log(`Found ${buyerData.length} buyer listings`);
         
-        listingsSnapshot.forEach((doc) => {
-          listingsData.push({ id: doc.id, ...doc.data() });
-        });
+        console.log("Attempting to fetch listings from sellerListings");
+        const sellerQuery = query(
+          collection(db, 'sellerListings'),
+          orderBy('createdAt', 'desc'),
+          limit(50)
+        );
         
-        setListings(listingsData);
+        const sellerDocs = await getDocs(sellerQuery);
+        const sellerData = sellerDocs.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          type: 'seller'
+        }));
+        
+        setSellerListings(sellerData);
+        console.log(`Found ${sellerData.length} seller listings`);
+        
       } catch (err) {
         console.error('Error fetching listings:', err);
         setError(`Error loading listings: ${err.message}`);
@@ -51,184 +72,327 @@ const ListingBrowser = () => {
     };
     
     fetchListings();
-  }, [activeTab]);
+  }, []);
+  
+  const handleSelectListing = (listing) => {
+    if (listing.type === 'buyer') {
+      navigate(`/agent/buyer-listing/${listing.id}`);
+    } else {
+      navigate(`/agent/seller-listing/${listing.id}`);
+    }
+  };
+  
+  // Filtered and sorted listings
+  const getFilteredListings = () => {
+    let filteredListings = [];
+    
+    // Filter by listing type
+    if (activeTab === 'all') {
+      filteredListings = [...buyerListings, ...sellerListings];
+    } else if (activeTab === 'buyer') {
+      filteredListings = [...buyerListings];
+    } else {
+      filteredListings = [...sellerListings];
+    }
+    
+    // Filter by verification status
+    if (verifiedOnly) {
+      filteredListings = filteredListings.filter(listing => 
+        listing.verificationStatus === 'verified'
+      );
+    }
+    
+    // Filter by search term
+    if (searchTerm.trim() !== '') {
+      const term = searchTerm.toLowerCase().trim();
+      filteredListings = filteredListings.filter(listing => {
+        // Search in title/property name
+        if ((listing.title && listing.title.toLowerCase().includes(term)) || 
+            (listing.propertyName && listing.propertyName.toLowerCase().includes(term))) {
+          return true;
+        }
+        
+        // Search in location/address
+        if ((listing.location && listing.location.toLowerCase().includes(term)) || 
+            (listing.address && listing.address.toLowerCase().includes(term))) {
+          return true;
+        }
+        
+        // Search in description/additional info
+        if ((listing.description && listing.description.toLowerCase().includes(term)) || 
+            (listing.additionalInfo && listing.additionalInfo.toLowerCase().includes(term))) {
+          return true;
+        }
+        
+        // Search in property type
+        if (listing.propertyType && listing.propertyType.toLowerCase().includes(term)) {
+          return true;
+        }
+        
+        return false;
+      });
+    }
+    
+    // Sort listings
+    return filteredListings.sort((a, b) => {
+      switch (sortOrder) {
+        case 'newest':
+          return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
+        case 'oldest':
+          return (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0);
+        case 'budgetHigh':
+          const bValue = b.budget || b.price || (b.priceRange?.max || 0);
+          const aValue = a.budget || a.price || (a.priceRange?.max || 0);
+          return bValue - aValue;
+        case 'budgetLow':
+          const aValue2 = a.budget || a.price || (a.priceRange?.max || 0);
+          const bValue2 = b.budget || b.price || (b.priceRange?.max || 0);
+          return aValue2 - bValue2;
+        default:
+          return 0;
+      }
+    });
+  };
+  
+  const filteredListings = getFilteredListings();
+  
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+        <LoadingSpinner />
+        <p style={{ marginLeft: '1rem' }}>Loading listings...</p>
+      </div>
+    );
+  }
   
   return (
-    <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '2rem 1rem' }}>
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        marginBottom: '2rem'
-      }}>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>
-          Available Listings
-        </h1>
-      </div>
-      
-      <div style={{ 
-        display: 'flex', 
-        borderBottom: '1px solid #e5e7eb',
-        marginBottom: '2rem'
-      }}>
-        <button
-          onClick={() => setActiveTab('buyer')}
-          style={{ 
-            padding: '1rem 1.5rem',
-            fontWeight: activeTab === 'buyer' ? 'bold' : 'normal',
-            color: activeTab === 'buyer' ? '#2563eb' : '#6b7280',
-            borderBottom: activeTab === 'buyer' ? '2px solid #2563eb' : 'none',
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer'
-          }}
-        >
-          Buyer Listings
-        </button>
-        <button
-          onClick={() => setActiveTab('seller')}
-          style={{ 
-            padding: '1rem 1.5rem',
-            fontWeight: activeTab === 'seller' ? 'bold' : 'normal',
-            color: activeTab === 'seller' ? '#2563eb' : '#6b7280',
-            borderBottom: activeTab === 'seller' ? '2px solid #2563eb' : 'none',
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer'
-          }}
-        >
-          Seller Listings
-        </button>
-      </div>
-      
-      {error && (
-        <div style={{ 
-          backgroundColor: '#fee2e2', 
-          color: '#b91c1c', 
-          padding: '1rem', 
-          borderRadius: '0.375rem', 
-          marginBottom: '1rem' 
-        }}>
-          {error}
-        </div>
-      )}
-      
-      {loading ? (
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          padding: '2rem' 
-        }}>
-          Loading listings...
-        </div>
-      ) : (
-        <>
-          {listings.length > 0 ? (
+    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1rem' }}>
+      <Card>
+        <CardHeader>
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '1rem'
+          }}>
+            <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>
+              Browse Listings
+            </h1>
+            
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <Button to="/agent/search" variant="secondary">
+                Advanced Search
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        
+        <CardBody>
+          {/* Search and Filter Bar */}
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column',
+            gap: '1rem',
+            marginBottom: '1.5rem'
+          }}>
+            {/* Quick search */}
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <input 
+                type="text"
+                placeholder="Search listings..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={{
+                  padding: '0.75rem',
+                  borderRadius: '0.375rem',
+                  border: '1px solid #d1d5db',
+                  flex: 1
+                }}
+              />
+            </div>
+            
+            {/* Filters */}
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '1rem',
+              borderBottom: '1px solid #e5e7eb',
+              paddingBottom: '1rem'
+            }}>
+              {/* Type filter tabs */}
+              <div style={{ 
+                display: 'flex',
+                alignItems: 'center'
+              }}>
+                <button
+                  onClick={() => setActiveTab('all')}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    backgroundColor: activeTab === 'all' ? '#dbeafe' : 'transparent',
+                    border: 'none',
+                    borderRadius: '0.5rem',
+                    fontWeight: activeTab === 'all' ? '600' : '400',
+                    color: activeTab === 'all' ? '#2563eb' : '#6b7280',
+                    cursor: 'pointer'
+                  }}
+                >
+                  All Listings
+                </button>
+                <button
+                  onClick={() => setActiveTab('buyer')}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    backgroundColor: activeTab === 'buyer' ? '#dbeafe' : 'transparent',
+                    border: 'none',
+                    borderRadius: '0.5rem',
+                    fontWeight: activeTab === 'buyer' ? '600' : '400',
+                    color: activeTab === 'buyer' ? '#2563eb' : '#6b7280',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Buyers
+                </button>
+                <button
+                  onClick={() => setActiveTab('seller')}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    backgroundColor: activeTab === 'seller' ? '#dbeafe' : 'transparent',
+                    border: 'none',
+                    borderRadius: '0.5rem',
+                    fontWeight: activeTab === 'seller' ? '600' : '400',
+                    color: activeTab === 'seller' ? '#2563eb' : '#6b7280',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Sellers
+                </button>
+              </div>
+              
+              {/* Sort and verification filters */}
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <input
+                    type="checkbox"
+                    id="verifiedOnly"
+                    checked={verifiedOnly}
+                    onChange={() => setVerifiedOnly(!verifiedOnly)}
+                    style={{ marginRight: '0.5rem' }}
+                  />
+                  <label htmlFor="verifiedOnly" style={{ fontSize: '0.875rem' }}>
+                    Verified only
+                  </label>
+                </div>
+                
+                <select
+                  value={sortOrder}
+                  onChange={(e) => setSortOrder(e.target.value)}
+                  style={{
+                    padding: '0.5rem',
+                    borderRadius: '0.375rem',
+                    border: '1px solid #d1d5db',
+                    fontSize: '0.875rem'
+                  }}
+                >
+                  <option value="newest">Newest first</option>
+                  <option value="oldest">Oldest first</option>
+                  <option value="budgetHigh">Budget: High to Low</option>
+                  <option value="budgetLow">Budget: Low to High</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          
+          {/* Listing count */}
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '1rem' 
+          }}>
+            <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+              Showing {filteredListings.length} listings
+            </div>
+            
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                style={{
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  color: '#4b5563',
+                  fontSize: '0.875rem',
+                  cursor: 'pointer',
+                  padding: '0.25rem 0.5rem'
+                }}
+              >
+                Clear search
+              </button>
+            )}
+          </div>
+          
+          {error && (
+            <div style={{ 
+              backgroundColor: '#fee2e2', 
+              color: '#b91c1c', 
+              padding: '1rem', 
+              borderRadius: '0.375rem', 
+              marginBottom: '1rem' 
+            }}>
+              {error}
+            </div>
+          )}
+          
+          {/* Listings */}
+          {filteredListings.length > 0 ? (
             <div style={{ display: 'grid', gap: '1.5rem' }}>
-              {listings.map((listing) => (
-                <Card key={listing.id}>
-                  <CardBody>
-                    <div style={{ 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
-                      alignItems: 'flex-start',
-                      marginBottom: '1rem'
-                    }}>
-                      <div>
-                        <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
-                          {activeTab === 'buyer' 
-                            ? (listing.title || 'Property Search Requirements') 
-                            : (listing.propertyName || 'Property Listing')}
-                        </h2>
-                        <p style={{ color: '#6b7280', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
-                          Listed on: {listing.createdAt ? new Date(listing.createdAt.seconds * 1000).toLocaleDateString() : 'Unknown date'}
-                        </p>
-                      </div>
-                      
-                      <div style={{ 
-                        backgroundColor: '#e0f2fe', 
-                        color: '#0369a1', 
-                        padding: '0.25rem 0.75rem', 
-                        borderRadius: '9999px', 
-                        fontSize: '0.75rem',
-                        fontWeight: '500'
-                      }}>
-                        {activeTab === 'buyer' ? 'Buyer' : 'Seller'}
-                      </div>
-                    </div>
-                    
-                    <div style={{ marginBottom: '1.5rem' }}>
-                      {activeTab === 'buyer' ? (
-                        <>
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
-                            <div>
-                              <p style={{ margin: '0 0 0.25rem 0', fontWeight: '500', fontSize: '0.875rem' }}>Location:</p>
-                              <p style={{ margin: '0', fontSize: '0.875rem' }}>{listing.location || 'Not specified'}</p>
-                            </div>
-                            <div>
-                              <p style={{ margin: '0 0 0.25rem 0', fontWeight: '500', fontSize: '0.875rem' }}>Budget:</p>
-                              <p style={{ margin: '0', fontSize: '0.875rem' }}>
-                                {listing.budget ? `$${listing.budget.toLocaleString()}` : 'Not specified'}
-                              </p>
-                            </div>
-                            <div>
-                              <p style={{ margin: '0 0 0.25rem 0', fontWeight: '500', fontSize: '0.875rem' }}>Bedrooms:</p>
-                              <p style={{ margin: '0', fontSize: '0.875rem' }}>{listing.bedrooms || 'Not specified'}</p>
-                            </div>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
-                            <div>
-                              <p style={{ margin: '0 0 0.25rem 0', fontWeight: '500', fontSize: '0.875rem' }}>Address:</p>
-                              <p style={{ margin: '0', fontSize: '0.875rem' }}>{listing.address || 'Not specified'}</p>
-                            </div>
-                            <div>
-                              <p style={{ margin: '0 0 0.25rem 0', fontWeight: '500', fontSize: '0.875rem' }}>Price:</p>
-                              <p style={{ margin: '0', fontSize: '0.875rem' }}>
-                                {listing.price ? `$${listing.price.toLocaleString()}` : 'Not specified'}
-                              </p>
-                            </div>
-                            <div>
-                              <p style={{ margin: '0 0 0.25rem 0', fontWeight: '500', fontSize: '0.875rem' }}>Property Type:</p>
-                              <p style={{ margin: '0', fontSize: '0.875rem' }}>{listing.propertyType || 'Not specified'}</p>
-                            </div>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                    
-                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                      <Button 
-                        to={`/agent/${activeTab === 'buyer' ? 'buyer' : 'seller'}-listing/${listing.id}`}
-                        size="small"
-                      >
-                        View Details
-                      </Button>
-                    </div>
-                  </CardBody>
-                </Card>
+              {filteredListings.map(listing => (
+                <EnhancedListingCard
+                  key={listing.id}
+                  listing={listing}
+                  onSelect={handleSelectListing}
+                />
               ))}
             </div>
           ) : (
             <div style={{ 
-              textAlign: 'center', 
-              padding: '3rem 1rem', 
+              textAlign: 'center',
+              padding: '3rem 1rem',
               backgroundColor: '#f9fafb',
-              borderRadius: '0.5rem',
-              color: '#6b7280'
+              borderRadius: '0.5rem'
             }}>
-              <p style={{ fontSize: '1.125rem', marginBottom: '0.5rem' }}>
-                No {activeTab} listings available at this time
+              <p style={{ color: '#6b7280', marginBottom: '1rem' }}>
+                No listings found with the current filters.
               </p>
-              <p style={{ fontSize: '0.875rem' }}>
-                Check back later for new listings
-              </p>
+              <Button onClick={() => {
+                setActiveTab('all');
+                setVerifiedOnly(false);
+                setSearchTerm('');
+              }}>
+                Reset Filters
+              </Button>
             </div>
           )}
-        </>
-      )}
+        </CardBody>
+      </Card>
+      
+      {/* Footer with link to advanced search */}
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        marginTop: '2rem',
+        padding: '1rem',
+        backgroundColor: '#f9fafb',
+        borderRadius: '0.5rem'
+      }}>
+        <p style={{ marginRight: '1rem', color: '#6b7280' }}>
+          Need more specific search options?
+        </p>
+        <Button to="/agent/search" variant="secondary" size="small">
+          Advanced Search
+        </Button>
+      </div>
     </div>
   );
 };
