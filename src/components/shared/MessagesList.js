@@ -30,9 +30,9 @@ const MessagesList = () => {
         
         // Query channels where the current user is a participant
         const channelsQuery = query(
-          collection(db, 'messagingChannels'),
+          collection(db, 'messageChannels'),
           where('participants', 'array-contains', currentUser.uid),
-          orderBy('lastMessageAt', 'desc')
+          orderBy('lastMessageTime', 'desc')
         );
         
         // Set up real-time listener
@@ -46,16 +46,15 @@ const MessagesList = () => {
             
             console.log(`Retrieved ${channelsList.length} channels`);
             
-            // For each channel, query unread messages
+            // For each channel, query unread messages (from subcollection)
             const unreadCountsObj = {};
             
             await Promise.all(channelsList.map(async (channel) => {
               try {
                 const messagesQuery = query(
-                  collection(db, 'messages'),
-                  where('channelId', '==', channel.id),
+                  collection(db, 'messageChannels', channel.id, 'messages'),
                   where('senderId', '!=', currentUser.uid),
-                  where('isRead', '==', false)
+                  where('read', '==', false)
                 );
                 
                 const messagesSnap = await getDocs(messagesQuery);
@@ -118,6 +117,9 @@ const MessagesList = () => {
       </div>
     );
   }
+
+  // Get the user's role from userProfile
+  const userRole = userProfile?.userType || 'agent'; // Default to agent if not set
   
   return (
     <div style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem 1rem' }}>
@@ -143,7 +145,7 @@ const MessagesList = () => {
                 No messages yet
               </p>
               <p style={{ fontSize: '0.875rem' }}>
-                Accepted proposals will create message channels
+                Start conversations by viewing proposals
               </p>
             </div>
           </CardBody>
@@ -151,14 +153,13 @@ const MessagesList = () => {
       ) : (
         <div>
           {channels.map((channel) => {
-            const isAgent = currentUser.uid === channel.agentId;
-            const otherPersonName = isAgent ? channel.clientName : channel.agentName;
+            const otherParticipantId = channel.participants.find(id => id !== currentUser.uid);
             const hasUnread = unreadCounts[channel.id] > 0;
             
             return (
               <Link 
                 key={channel.id} 
-                to={`/${isAgent ? 'agent' : channel.listingType}/messages/${channel.id}`}
+                to={`/${userRole}/messages/${channel.id}`} // Use role-specific route
                 style={{ textDecoration: 'none', color: 'inherit' }}
               >
                 <Card style={{ 
@@ -193,7 +194,7 @@ const MessagesList = () => {
                         fontWeight: hasUnread ? 'bold' : 'normal', 
                         marginBottom: '0.25rem'
                       }}>
-                        {otherPersonName}
+                        {channel.participantInfo?.[otherParticipantId]?.name || 'Unknown User'}
                       </div>
                       <div style={{ 
                         display: 'flex',
@@ -211,7 +212,7 @@ const MessagesList = () => {
                           {channel.listingType === 'buyer' ? 'Buyer' : 'Seller'} Listing
                         </div>
                         <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
-                          {channel.lastMessageAt ? new Date(channel.lastMessageAt.seconds * 1000).toLocaleDateString() : ''}
+                          {channel.lastMessageTime?.toDate()?.toLocaleDateString() || 'No messages'}
                         </div>
                         
                         {/* Unread Count Badge */}

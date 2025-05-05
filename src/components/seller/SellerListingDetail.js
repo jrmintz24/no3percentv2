@@ -17,6 +17,8 @@ const SellerListingDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [proposals, setProposals] = useState([]);
+  const [acceptedProposal, setAcceptedProposal] = useState(null);
+  const [transaction, setTransaction] = useState(null);
   
   // Handle resize
   useEffect(() => {
@@ -38,7 +40,8 @@ const SellerListingDetail = () => {
         const docSnap = await getDoc(docRef);
         
         if (docSnap.exists()) {
-          setListing({ id: docSnap.id, ...docSnap.data() });
+          const listingData = { id: docSnap.id, ...docSnap.data() };
+          setListing(listingData);
           
           // Fetch proposals for this listing
           const proposalsQuery = query(
@@ -54,6 +57,25 @@ const SellerListingDetail = () => {
           });
           
           setProposals(proposalsList);
+          
+          // Check if there's an accepted proposal
+          const acceptedProp = proposalsList.find(p => 
+            p.status === 'accepted' || p.status === 'Accepted'
+          );
+          
+          if (acceptedProp) {
+            setAcceptedProposal(acceptedProp);
+            
+            // If accepted proposal has a transaction, fetch it
+            if (acceptedProp.transactionId) {
+              const transactionRef = doc(db, 'transactions', acceptedProp.transactionId);
+              const transactionSnap = await getDoc(transactionRef);
+              
+              if (transactionSnap.exists()) {
+                setTransaction({ id: transactionSnap.id, ...transactionSnap.data() });
+              }
+            }
+          }
         } else {
           setError('Listing not found');
         }
@@ -167,6 +189,27 @@ const SellerListingDetail = () => {
             flexDirection: isMobile ? 'column' : 'row',
             gap: '1rem' 
           }}>
+            {transaction && (
+              <Button
+                to={`/transaction/${transaction.id}`}
+                style={{ 
+                  backgroundColor: '#059669',
+                  color: 'white',
+                  width: isMobile ? '100%' : 'auto',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.5rem 1rem',
+                  fontWeight: '600',
+                  fontSize: '1rem'
+                }}
+              >
+                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Go to Transaction
+              </Button>
+            )}
             <Button 
               to={`/seller/edit-listing/${listingId}`} 
               variant="secondary"
@@ -184,6 +227,42 @@ const SellerListingDetail = () => {
           </div>
         )}
       </div>
+      
+      {/* Transaction Banner - Only show if there's an active transaction */}
+      {transaction && (
+        <div style={{
+          backgroundColor: '#dcfce7',
+          borderRadius: '0.5rem',
+          border: '1px solid #86efac',
+          padding: '1rem',
+          marginBottom: '1.5rem',
+          display: 'flex',
+          flexDirection: isMobile ? 'column' : 'row',
+          justifyContent: 'space-between',
+          alignItems: isMobile ? 'stretch' : 'center',
+          gap: '1rem'
+        }}>
+          <div>
+            <h2 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#166534' }}>
+              Active Transaction
+            </h2>
+            <p style={{ color: '#059669', marginTop: '0.25rem' }}>
+              This listing has an accepted proposal with an active transaction
+            </p>
+          </div>
+          <Button
+            to={`/transaction/${transaction.id}`}
+            style={{ 
+              backgroundColor: '#10b981',
+              color: 'white',
+              width: isMobile ? '100%' : 'auto',
+              fontWeight: '600'
+            }}
+          >
+            View Transaction Dashboard
+          </Button>
+        </div>
+      )}
       
       <Card>
         <CardHeader style={{ 
@@ -413,13 +492,38 @@ const SellerListingDetail = () => {
       <div style={{ marginTop: '2rem' }}>
         <Card>
           <CardHeader>
-            <h2 style={{ 
-              fontSize: isMobile ? '1.125rem' : '1.25rem', 
-              fontWeight: 'bold', 
-              margin: 0 
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
             }}>
-              Agent Proposals ({proposals.length})
-            </h2>
+              <h2 style={{ 
+                fontSize: isMobile ? '1.125rem' : '1.25rem', 
+                fontWeight: 'bold', 
+                margin: 0 
+              }}>
+                Agent Proposals ({proposals.length})
+              </h2>
+              
+              {acceptedProposal && transaction && (
+                <Button
+                  to={`/transaction/${transaction.id}`}
+                  size="small"
+                  style={{ 
+                    backgroundColor: '#059669',
+                    color: 'white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}
+                >
+                  <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  View Transaction
+                </Button>
+              )}
+            </div>
           </CardHeader>
           
           <CardBody style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
@@ -432,7 +536,12 @@ const SellerListingDetail = () => {
                       padding: isMobile ? '0.875rem' : '1rem', 
                       borderRadius: '0.5rem', 
                       border: '1px solid #e5e7eb',
-                      backgroundColor: '#f9fafb'
+                      backgroundColor: (proposal.status === 'accepted' || proposal.status === 'Accepted') 
+                        ? '#f0fdf4' 
+                        : '#f9fafb',
+                      borderLeft: (proposal.status === 'accepted' || proposal.status === 'Accepted')
+                        ? '4px solid #10b981'
+                        : '1px solid #e5e7eb'
                     }}
                   >
                     <div style={{ 
@@ -449,13 +558,27 @@ const SellerListingDetail = () => {
                       }}>
                         {proposal.agentName || 'Anonymous Agent'}
                       </h3>
-                      <p style={{ 
-                        margin: 0, 
-                        color: '#6b7280', 
-                        fontSize: isMobile ? '0.8125rem' : '0.875rem' 
-                      }}>
-                        Submitted: {proposal.createdAt?.toDate().toLocaleDateString() || 'Unknown date'}
-                      </p>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        {(proposal.status === 'accepted' || proposal.status === 'Accepted') && (
+                          <span style={{
+                            backgroundColor: '#dcfce7',
+                            color: '#166534',
+                            padding: '0.25rem 0.75rem',
+                            borderRadius: '9999px',
+                            fontSize: '0.75rem',
+                            fontWeight: '500'
+                          }}>
+                            Accepted
+                          </span>
+                        )}
+                        <p style={{ 
+                          margin: 0, 
+                          color: '#6b7280', 
+                          fontSize: isMobile ? '0.8125rem' : '0.875rem' 
+                        }}>
+                          Submitted: {proposal.createdAt?.toDate().toLocaleDateString() || 'Unknown date'}
+                        </p>
+                      </div>
                     </div>
                     
                     <p style={{ 
@@ -465,13 +588,29 @@ const SellerListingDetail = () => {
                       {proposal.message || 'No message provided'}
                     </p>
                     
-                    <Button 
-                      to={`/seller/proposals/${proposal.id}`} 
-                      size="small"
-                      style={isMobile ? { width: '100%' } : {}}
-                    >
-                      View Details
-                    </Button>
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      <Button 
+                        to={`/seller/proposals/${proposal.id}`} 
+                        size="small"
+                        style={isMobile ? { width: '100%' } : {}}
+                      >
+                        View Details
+                      </Button>
+                      
+                      {(proposal.status === 'accepted' || proposal.status === 'Accepted') && proposal.transactionId && (
+                        <Button 
+                          to={`/transaction/${proposal.transactionId}`}
+                          size="small"
+                          style={{ 
+                            backgroundColor: '#059669',
+                            color: 'white',
+                            width: isMobile ? '100%' : 'auto'
+                          }}
+                        >
+                          Go to Transaction
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>

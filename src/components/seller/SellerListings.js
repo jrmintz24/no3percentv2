@@ -1,7 +1,7 @@
 // src/components/seller/SellerListings.js
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../services/firebase/config';
 import { useAuth } from '../../contexts/AuthContext';
 import { Card, CardBody } from '../../components/common/Card';
@@ -14,7 +14,6 @@ const SellerListings = () => {
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [debug, setDebug] = useState('');
   
   // Handle resize
   useEffect(() => {
@@ -28,18 +27,15 @@ const SellerListings = () => {
 
   useEffect(() => {
     const fetchListings = async () => {
+      if (!currentUser) {
+        setError('You must be logged in to view your listings');
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
         setError('');
-        setDebug('Starting to fetch listings');
-        
-        if (!currentUser) {
-          setError('User not authenticated');
-          setLoading(false);
-          return;
-        }
-        
-        setDebug(`User authenticated with ID: ${currentUser.uid}`);
         
         // Query listings where the current user is the owner
         const listingsQuery = query(
@@ -47,12 +43,7 @@ const SellerListings = () => {
           where('userId', '==', currentUser.uid)
         );
         
-        setDebug('Query created, attempting to fetch listings');
-        
         const listingsSnapshot = await getDocs(listingsQuery);
-        
-        setDebug(`Query executed. Found ${listingsSnapshot.size} listings`);
-        
         const listingsData = [];
         
         listingsSnapshot.forEach((doc) => {
@@ -62,12 +53,17 @@ const SellerListings = () => {
           });
         });
         
-        setDebug('Processed listings data');
+        // Sort on client side to avoid index issues
+        listingsData.sort((a, b) => {
+          const dateA = a.createdAt?.toDate() || new Date(0);
+          const dateB = b.createdAt?.toDate() || new Date(0);
+          return dateB - dateA; // newest first
+        });
+        
         setListings(listingsData);
       } catch (err) {
         console.error('Error fetching listings:', err);
         setError(`Error loading listings: ${err.message}`);
-        setDebug(`Error details: ${JSON.stringify(err)}`);
       } finally {
         setLoading(false);
       }
@@ -117,14 +113,6 @@ const SellerListings = () => {
           fontSize: isMobile ? '0.875rem' : '1rem'
         }}>
           {error}
-          {debug && (
-            <div style={{ 
-              marginTop: '0.5rem', 
-              fontSize: isMobile ? '0.75rem' : '0.875rem' 
-            }}>
-              Debug info: {debug}
-            </div>
-          )}
         </div>
       )}
       
@@ -187,21 +175,21 @@ const SellerListings = () => {
                       fontWeight: 'bold', 
                       marginBottom: '0.5rem' 
                     }}>
-                      {listing.propertyName || 'Property Listing'}
+                      {listing.propertyType || 'Property Listing'}
                     </h2>
                     <p style={{ 
                       color: '#6b7280', 
                       fontSize: isMobile ? '0.8125rem' : '0.875rem', 
                       marginBottom: '0.5rem' 
                     }}>
-                      {listing.address || 'No address provided'}
+                      {listing.propertyAddress || 'No address provided'}
                     </p>
                     <p style={{ 
                       fontSize: isMobile ? '1rem' : '1.125rem', 
                       fontWeight: '600', 
                       color: '#2563eb' 
                     }}>
-                      {listing.price ? `$${listing.price.toLocaleString()}` : 'Price not specified'}
+                      ${listing.askingPrice?.toLocaleString() || '0'}
                     </p>
                   </div>
                   
@@ -214,7 +202,7 @@ const SellerListings = () => {
                     fontWeight: '500',
                     alignSelf: isMobile ? 'flex-start' : 'flex-start'
                   }}>
-                    {listing.status || 'Active'}
+                    {listing.status || 'active'}
                   </div>
                 </div>
                 
@@ -239,7 +227,7 @@ const SellerListings = () => {
                   gap: isMobile ? '0.75rem' : '0.5rem' 
                 }}>
                   <Button 
-                    to={`/seller/proposals/${listing.id}`}
+                    to={`/seller/proposals?listingId=${listing.id}`}
                     variant="secondary"
                     size={isMobile ? 'medium' : 'small'}
                     style={isMobile ? { width: '100%' } : {}}
@@ -266,15 +254,17 @@ const SellerListings = () => {
 // Helper function to get status badge color
 const getStatusBadgeColor = (status) => {
   switch (status) {
-    case 'Pending':
+    case 'pending':
       return { bg: '#e0f2fe', text: '#0369a1' };
-    case 'Under Contract':
+    case 'undercontract':
       return { bg: '#fef9c3', text: '#854d0e' };
-    case 'Sold':
+    case 'sold':
       return { bg: '#dcfce7', text: '#15803d' };
-    case 'Inactive':
+    case 'inactive':
       return { bg: '#f3f4f6', text: '#6b7280' };
-    case 'Active':
+    case 'accepted':
+      return { bg: '#dbeafe', text: '#1e40af' };
+    case 'active':
     default:
       return { bg: '#dbeafe', text: '#1e40af' };
   }

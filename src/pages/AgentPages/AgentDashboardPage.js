@@ -1,16 +1,17 @@
 // src/pages/AgentPages/AgentDashboardPage.js
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import TokenDashboard from '../../components/agents/TokenManagement/TokenDashboard';
 import { Card, CardHeader, CardBody } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import { db } from '../../services/firebase/config';
 import { subscriptionTiers } from '../../config/subscriptions';
 
 const AgentDashboardPage = () => {
   const { currentUser, userProfile, getUserSubscriptionTier } = useAuth();
+  const navigate = useNavigate();
   const [stats, setStats] = useState({
     proposals: 0,
     listings: 0,
@@ -19,6 +20,7 @@ const AgentDashboardPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [recentMessages, setRecentMessages] = useState([]);
 
   // Handle resize
   useEffect(() => {
@@ -58,12 +60,28 @@ const AgentDashboardPage = () => {
           where('status', '==', 'Accepted')
         );
         const clientsSnapshot = await getDocs(clientsQuery);
+
+        // Fetch recent messages
+        const messagesQuery = query(
+          collection(db, 'messageChannels'),
+          where('participants', 'array-contains', currentUser.uid),
+          orderBy('lastMessageTime', 'desc'),
+          limit(5)
+        );
+        const messagesSnapshot = await getDocs(messagesQuery);
+        const messages = [];
+        
+        messagesSnapshot.forEach((doc) => {
+          messages.push({ id: doc.id, ...doc.data() });
+        });
         
         setStats({
           proposals: proposalsSnapshot.size,
           listings: buyerListingsSnapshot.size + sellerListingsSnapshot.size,
           clients: clientsSnapshot.size,
         });
+        
+        setRecentMessages(messages);
       } catch (error) {
         console.error("Error fetching agent dashboard stats:", error);
         setError("Failed to load dashboard statistics");
@@ -256,23 +274,70 @@ const AgentDashboardPage = () => {
                 fontWeight: 'bold', 
                 margin: 0 
               }}>
-                Recent Activity
+                Recent Messages
               </h3>
             </CardHeader>
             <CardBody style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
-              <div style={{ 
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '2rem 0',
-                color: '#6b7280'
-              }}>
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ height: '3rem', marginBottom: '1rem' }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <p style={{ fontSize: isMobile ? '0.875rem' : '1rem' }}>No recent activity to display</p>
-              </div>
+              {recentMessages.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {recentMessages.map((message) => {
+                    const otherParticipantId = message.participants.find(id => id !== currentUser.uid);
+                    const otherParticipant = message.participantInfo?.[otherParticipantId];
+                    
+                    return (
+                      <div
+                        key={message.id}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '0.75rem',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '0.5rem',
+                          cursor: 'pointer',
+                          transition: 'background-color 0.2s ease',
+                        }}
+                        onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'}
+                        onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                        onClick={() => navigate(`/agent/messages/${message.id}`)}
+                      >
+                        <div>
+                          <p style={{ margin: 0, fontWeight: '500' }}>
+                            {otherParticipant?.name || 'Unknown User'}
+                          </p>
+                          <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.875rem', color: '#6b7280' }}>
+                            {message.lastMessage || 'No messages yet'}
+                          </p>
+                        </div>
+                        <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+                          {message.lastMessageTime?.toDate()?.toLocaleDateString()}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <Button
+                    onClick={() => navigate('/agent/messages')}
+                    variant="secondary"
+                    fullWidth
+                  >
+                    View All Messages
+                  </Button>
+                </div>
+              ) : (
+                <div style={{ 
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '2rem 0',
+                  color: '#6b7280'
+                }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ height: '3rem', marginBottom: '1rem' }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                  <p style={{ fontSize: isMobile ? '0.875rem' : '1rem' }}>No messages yet</p>
+                </div>
+              )}
             </CardBody>
           </Card>
           

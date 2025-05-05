@@ -1,7 +1,7 @@
 // src/components/buyer/BuyerListings.js
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../services/firebase/config';
 import { useAuth } from '../../contexts/AuthContext';
 import { Card, CardHeader, CardBody } from '../../components/common/Card';
@@ -27,14 +27,19 @@ const BuyerListings = () => {
 
   useEffect(() => {
     const fetchListings = async () => {
+      if (!currentUser) {
+        setError('You must be logged in to view your listings');
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
         
         // Create a query to get listings for this buyer
         const listingsQuery = query(
           collection(db, 'buyerListings'),
-          where('userId', '==', currentUser.uid),
-          orderBy('createdAt', 'desc')
+          where('userId', '==', currentUser.uid)
         );
         
         const listingsSnapshot = await getDocs(listingsQuery);
@@ -44,11 +49,18 @@ const BuyerListings = () => {
           listingsData.push({ id: doc.id, ...doc.data() });
         });
         
+        // Sort on client side to avoid index issues
+        listingsData.sort((a, b) => {
+          const dateA = a.createdAt?.toDate() || new Date(0);
+          const dateB = b.createdAt?.toDate() || new Date(0);
+          return dateB - dateA; // newest first
+        });
+        
         setListings(listingsData);
         setError('');
       } catch (err) {
         console.error('Error fetching listings:', err);
-        setError('Error loading listings');
+        setError('Error loading listings: ' + err.message);
       } finally {
         setLoading(false);
       }
@@ -130,14 +142,14 @@ const BuyerListings = () => {
                           fontWeight: 'bold', 
                           marginBottom: '0.5rem' 
                         }}>
-                          {listing.title || 'Property Search Requirements'}
+                          {listing.propertyType || 'Property Search Requirements'}
                         </h2>
                         <p style={{ 
                           color: '#6b7280', 
                           fontSize: isMobile ? '0.8125rem' : '0.875rem', 
                           marginBottom: '0.5rem' 
                         }}>
-                          Created: {listing.createdAt?.toDate().toLocaleDateString() || 'Unknown date'}
+                          Created: {listing.createdAt?.toDate ? listing.createdAt.toDate().toLocaleDateString() : 'Unknown date'}
                         </p>
                       </div>
                       
@@ -150,7 +162,7 @@ const BuyerListings = () => {
                         fontWeight: '500',
                         alignSelf: isMobile ? 'flex-start' : 'flex-start'
                       }}>
-                        {listing.status || 'Active'}
+                        {listing.status || 'active'}
                       </div>
                     </div>
                     
@@ -172,7 +184,7 @@ const BuyerListings = () => {
                           margin: '0', 
                           fontSize: isMobile ? '0.8125rem' : '0.875rem' 
                         }}>
-                          {listing.location || 'Not specified'}
+                          {listing.desiredLocation || 'Not specified'}
                         </p>
                       </div>
                       <div>
@@ -187,7 +199,7 @@ const BuyerListings = () => {
                           margin: '0', 
                           fontSize: isMobile ? '0.8125rem' : '0.875rem' 
                         }}>
-                          {listing.budget ? `$${listing.budget.toLocaleString()}` : 'Not specified'}
+                          ${listing.minPrice?.toLocaleString() || '0'} - ${listing.maxPrice?.toLocaleString() || '0'}
                         </p>
                       </div>
                       <div>
@@ -196,13 +208,13 @@ const BuyerListings = () => {
                           fontWeight: '500', 
                           fontSize: isMobile ? '0.8125rem' : '0.875rem' 
                         }}>
-                          Bedrooms:
+                          Timeline:
                         </p>
                         <p style={{ 
                           margin: '0', 
                           fontSize: isMobile ? '0.8125rem' : '0.875rem' 
                         }}>
-                          {listing.bedrooms || 'Not specified'}
+                          {listing.timeline || 'Not specified'}
                         </p>
                       </div>
                     </div>
@@ -260,11 +272,11 @@ const BuyerListings = () => {
 // Helper function to get status colors
 const getStatusColor = (status) => {
   switch (status) {
-    case 'Closed':
+    case 'accepted':
       return { bg: '#dcfce7', text: '#15803d' };
-    case 'Paused':
+    case 'paused':
       return { bg: '#fef3c7', text: '#b45309' };
-    case 'Active':
+    case 'active':
     default:
       return { bg: '#e0f2fe', text: '#0369a1' };
   }

@@ -1,7 +1,7 @@
 // src/components/agents/AgentClientsPage.js
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../services/firebase/config';
 import { useAuth } from '../../contexts/AuthContext';
 import { Card, CardBody } from '../../components/common/Card';
@@ -20,19 +20,26 @@ const AgentClientsPage = () => {
         setLoading(true);
         
         if (!currentUser) {
+          console.log("No authenticated user");
           setError('User not authenticated');
           setLoading(false);
           return;
         }
         
+        console.log("Current user UID:", currentUser.uid);
+        console.log("Attempting to fetch proposals for agent:", currentUser.uid);
+        
         // Query accepted proposals where the current user is the agent
+        // Using capitalized 'Accepted' status
         const proposalsQuery = query(
           collection(db, 'proposals'),
           where('agentId', '==', currentUser.uid),
           where('status', '==', 'Accepted')
         );
         
+        console.log("Query created, fetching proposals...");
         const proposalsSnapshot = await getDocs(proposalsQuery);
+        console.log(`Found ${proposalsSnapshot.size} accepted proposals`);
         
         // Fetch client and listing details for each accepted proposal
         const clientsData = [];
@@ -40,6 +47,7 @@ const AgentClientsPage = () => {
         
         proposalsSnapshot.forEach((doc) => {
           const proposal = { id: doc.id, ...doc.data() };
+          console.log("Processing proposal:", proposal.id, "with status:", proposal.status);
           
           // Create promise for fetching listing details
           const listingPromise = getDocs(
@@ -51,6 +59,7 @@ const AgentClientsPage = () => {
             if (!listingSnapshot.empty) {
               const listingDoc = listingSnapshot.docs[0];
               const listing = { id: listingDoc.id, ...listingDoc.data() };
+              console.log("Found listing:", listing.id);
               
               // Fetch client details
               return getDocs(
@@ -62,17 +71,19 @@ const AgentClientsPage = () => {
                 if (!userSnapshot.empty) {
                   const userDoc = userSnapshot.docs[0];
                   const client = { id: userDoc.id, ...userDoc.data() };
+                  console.log("Found client:", client.id);
                   
-                  // Find the messaging channel for this client relationship
+                  // Try to find message channel
                   return getDocs(
                     query(
-                      collection(db, 'messagingChannels'),
+                      collection(db, 'messageChannels'),
                       where('proposalId', '==', proposal.id)
                     )
                   ).then(channelSnapshot => {
                     let channelId = null;
                     if (!channelSnapshot.empty) {
                       channelId = channelSnapshot.docs[0].id;
+                      console.log("Found message channel:", channelId);
                     }
                     
                     clientsData.push({
@@ -83,20 +94,43 @@ const AgentClientsPage = () => {
                       channelId,
                       lastActivity: proposal.acceptedAt || proposal.createdAt
                     });
+                  }).catch(err => {
+                    console.error("Error finding message channel:", err);
+                    // Still add client even if message channel query fails
+                    clientsData.push({
+                      proposalId: proposal.id,
+                      client,
+                      listing,
+                      listingType: proposal.listingType,
+                      channelId: null,
+                      lastActivity: proposal.acceptedAt || proposal.createdAt
+                    });
                   });
+                } else {
+                  console.log("No user found for listing:", listing.id);
                 }
+              }).catch(err => {
+                console.error("Error fetching user:", err);
               });
+            } else {
+              console.log("No listing found for proposal:", proposal.id);
             }
+          }).catch(err => {
+            console.error("Error fetching listing:", err);
           });
           
           clientPromises.push(listingPromise);
         });
         
         // Wait for all promises to resolve
-        await Promise.all(clientPromises);
+        await Promise.all(clientPromises.filter(Boolean));
+        console.log(`Processed ${clientsData.length} clients`);
         
         // Sort clients by most recent activity
-        clientsData.sort((a, b) => b.lastActivity - a.lastActivity);
+        clientsData.sort((a, b) => {
+          if (!a.lastActivity || !b.lastActivity) return 0;
+          return b.lastActivity - a.lastActivity;
+        });
         
         setClients(clientsData);
       } catch (err) {
@@ -204,7 +238,7 @@ const AgentClientsPage = () => {
                   <p style={{ marginBottom: '0.5rem' }}>
                     {clientData.listingType === 'buyer' 
                       ? (clientData.listing.title || 'Property Search')
-                      : (clientData.listing.propertyName || 'Property Listing')}
+                      : (clientData.listing.propertyName || clientData.listing.propertyAddress || 'Property Listing')}
                   </p>
                   <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>
                     {clientData.listingType === 'buyer'

@@ -1,12 +1,19 @@
+// src/components/layout/Header.js
+
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../../services/firebase/config';
+import NotificationBell from '../notifications/NotificationBell';
 
 const Header = () => {
   const { currentUser, userProfile, logout } = useAuth();
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [hasActiveTransactions, setHasActiveTransactions] = useState(false);
+  const [activeTransactions, setActiveTransactions] = useState([]);
   
   // Handle resize
   useEffect(() => {
@@ -17,6 +24,46 @@ const Header = () => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+  
+  // Check if user has active transactions
+  useEffect(() => {
+    const checkForActiveTransactions = async () => {
+      if (!currentUser) return;
+      
+      try {
+        // For clients (buyers/sellers)
+        const clientTransactionsQuery = query(
+          collection(db, 'transactions'),
+          where('clientId', '==', currentUser.uid),
+          where('status', '==', 'active')
+        );
+        
+        // For agents
+        const agentTransactionsQuery = query(
+          collection(db, 'transactions'),
+          where('agentId', '==', currentUser.uid),
+          where('status', '==', 'active')
+        );
+        
+        const [clientResults, agentResults] = await Promise.all([
+          getDocs(clientTransactionsQuery),
+          getDocs(agentTransactionsQuery)
+        ]);
+
+        // Store transactions for potential use in dropdown
+        const transactions = [];
+        clientResults.forEach(doc => transactions.push({ id: doc.id, ...doc.data() }));
+        agentResults.forEach(doc => transactions.push({ id: doc.id, ...doc.data() }));
+        setActiveTransactions(transactions);
+        
+        setHasActiveTransactions(!clientResults.empty || !agentResults.empty);
+      } catch (error) {
+        console.error("Error checking for transactions:", error);
+      }
+    };
+    
+    checkForActiveTransactions();
+  }, [currentUser]);
   
   const handleLogout = async () => {
     try {
@@ -163,6 +210,51 @@ const Header = () => {
                   Dashboard
                 </Link>
                 
+                {/* Transaction Link - Always visible, with prominent styling when there are active transactions */}
+                <Link 
+                  to="/transaction"
+                  style={{
+                    backgroundColor: hasActiveTransactions ? '#dcfce7' : 'transparent',
+                    border: hasActiveTransactions ? '1px solid #86efac' : 'none',
+                    color: hasActiveTransactions ? '#166534' : '#4b5563',
+                    padding: hasActiveTransactions ? '0.5rem 1rem' : '0',
+                    borderRadius: '0.5rem',
+                    textDecoration: 'none',
+                    fontWeight: hasActiveTransactions ? '600' : '500',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  {hasActiveTransactions && (
+                    <span style={{ 
+                      width: '8px', 
+                      height: '8px', 
+                      borderRadius: '50%', 
+                      backgroundColor: '#10b981',
+                      display: 'inline-block'
+                    }}></span>
+                  )}
+                  Transactions
+                  {hasActiveTransactions && (
+                    <span style={{
+                      backgroundColor: '#10b981',
+                      color: 'white',
+                      borderRadius: '9999px',
+                      minWidth: '1.5rem',
+                      height: '1.5rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '0.75rem',
+                      fontWeight: '600'
+                    }}>
+                      {activeTransactions.length}
+                    </span>
+                  )}
+                </Link>
+                
                 {userProfile?.userType === 'agent' && (
                   <>
                     <Link 
@@ -282,6 +374,9 @@ const Header = () => {
                   </Link>
                 )}
                 
+                {/* Notification Bell */}
+                <NotificationBell />
+                
                 <Link 
                   to={`/${userProfile?.userType}/profile`} 
                   style={{ 
@@ -314,19 +409,59 @@ const Header = () => {
         
         {/* Mobile menu button */}
         {isMobile && (
-          <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            style={{ 
-              background: 'none',
-              border: 'none',
-              padding: '0.5rem',
-              cursor: 'pointer'
-            }}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ height: '1.5rem', width: '1.5rem' }}>
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            {/* Transaction Icon for Mobile - Only shows with active transactions */}
+            {currentUser && hasActiveTransactions && (
+              <Link 
+                to="/transaction"
+                style={{
+                  backgroundColor: '#dcfce7',
+                  color: '#166534',
+                  padding: '0.5rem',
+                  borderRadius: '0.5rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span style={{
+                  backgroundColor: '#10b981',
+                  color: 'white',
+                  borderRadius: '9999px',
+                  minWidth: '1.5rem',
+                  height: '1.5rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '0.75rem',
+                  fontWeight: '600',
+                  marginLeft: '0.25rem'
+                }}>
+                  {activeTransactions.length}
+                </span>
+              </Link>
+            )}
+            
+            {/* Notification Bell for mobile */}
+            {currentUser && <NotificationBell />}
+            
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              style={{ 
+                background: 'none',
+                border: 'none',
+                padding: '0.5rem',
+                cursor: 'pointer'
+              }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ height: '1.5rem', width: '1.5rem' }}>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          </div>
         )}
       </div>
       
@@ -449,6 +584,53 @@ const Header = () => {
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Dashboard
+                </Link>
+                
+                {/* Transaction Link for mobile */}
+                <Link 
+                  to="/transaction"
+                  style={{
+                    backgroundColor: hasActiveTransactions ? '#dcfce7' : 'transparent',
+                    border: hasActiveTransactions ? '1px solid #86efac' : 'none',
+                    color: hasActiveTransactions ? '#166534' : '#4b5563',
+                    padding: hasActiveTransactions ? '0.75rem' : '0.5rem 0',
+                    borderRadius: '0.5rem',
+                    textDecoration: 'none',
+                    fontWeight: hasActiveTransactions ? '600' : '500',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                  }}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    {hasActiveTransactions && (
+                      <span style={{ 
+                        width: '8px', 
+                        height: '8px', 
+                        borderRadius: '50%', 
+                        backgroundColor: '#10b981',
+                        display: 'inline-block'
+                      }}></span>
+                    )}
+                    Transactions
+                  </div>
+                  {hasActiveTransactions && (
+                    <span style={{
+                      backgroundColor: '#10b981',
+                      color: 'white',
+                      borderRadius: '9999px',
+                      minWidth: '1.5rem',
+                      height: '1.5rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '0.75rem',
+                      fontWeight: '600'
+                    }}>
+                      {activeTransactions.length}
+                    </span>
+                  )}
                 </Link>
                 
                 {userProfile?.userType === 'agent' && (

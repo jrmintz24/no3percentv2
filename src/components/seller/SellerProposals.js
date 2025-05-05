@@ -6,6 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../services/firebase/config';
 import { Card, CardHeader, CardBody } from '../common/Card';
+import { Button } from '../common/Button';
 
 const SellerProposals = () => {
   const { currentUser } = useAuth();
@@ -73,7 +74,7 @@ const SellerProposals = () => {
               ...proposalData,
               agentName: agentData?.displayName || 'Unknown Agent',
               agentEmail: agentData?.email || '',
-              listingTitle: listingData?.propertyAddress || 'Property Listing',
+              listingTitle: listingData?.propertyAddress || listingData?.address || 'Property Listing',
               listingType: 'Seller',
               listingData: listingData
             };
@@ -94,14 +95,27 @@ const SellerProposals = () => {
 
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
-      case 'pending':
-        return '#F59E0B'; // Yellow
       case 'accepted':
         return '#10B981'; // Green
       case 'rejected':
         return '#EF4444'; // Red
+      case 'active':
+      case 'pending':
       default:
-        return '#6B7280'; // Gray
+        return '#F59E0B'; // Yellow
+    }
+  };
+
+  const getStatusText = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'accepted':
+        return 'Accepted';
+      case 'rejected':
+        return 'Rejected';
+      case 'active':
+        return 'Active';
+      default:
+        return 'Pending';
     }
   };
 
@@ -208,7 +222,7 @@ const SellerProposals = () => {
                     fontWeight: '500',
                     alignSelf: isMobile ? 'flex-start' : 'center'
                   }}>
-                    {proposal.status || 'Pending'}
+                    {getStatusText(proposal.status)}
                   </div>
                 </div>
               </CardHeader>
@@ -220,10 +234,12 @@ const SellerProposals = () => {
                       marginBottom: '0.5rem',
                       fontSize: isMobile ? '0.875rem' : '1rem'
                     }}>
-                      Commission Rate
+                      Commission Structure
                     </h4>
                     <p style={{ fontSize: isMobile ? '0.875rem' : '1rem' }}>
-                      {proposal.commission}%
+                      {proposal.feeStructure === 'percentage' ? 
+                        `${proposal.commissionRate}% Commission` : 
+                        `$${proposal.flatFee?.toLocaleString() || '0'} Flat Fee`}
                     </p>
                   </div>
                   
@@ -270,11 +286,14 @@ const SellerProposals = () => {
                     gap: '1rem',
                     marginTop: '1rem'
                   }}>
-                    <Link
+                    <Link 
                       to={`/seller/proposals/${proposal.id}`}
                       style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
                         padding: '0.5rem 1rem',
-                        backgroundColor: '#3B82F6',
+                        backgroundColor: '#2563eb',
                         color: 'white',
                         borderRadius: '0.375rem',
                         textDecoration: 'none',
@@ -286,10 +305,13 @@ const SellerProposals = () => {
                     >
                       View Details
                     </Link>
-                    {proposal.status === 'Accepted' && (
+                    {proposal.status === 'accepted' && (
                       <Link
                         to={`/seller/messages/${proposal.messagingChannelId || ''}`}
                         style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
                           padding: '0.5rem 1rem',
                           backgroundColor: '#10B981',
                           color: 'white',

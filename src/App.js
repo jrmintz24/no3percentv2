@@ -1,3 +1,5 @@
+// src/App.js
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
@@ -57,6 +59,9 @@ import RootRedirect from './components/RootRedirect';
 // Admin Pages
 import VerificationRequests from './pages/AdminPages/VerificationRequests';
 
+// NEW: Transaction Components
+import TransactionDashboard from './pages/TransactionDashboard';
+
 function App() {
   return (
     <Router>
@@ -85,21 +90,24 @@ function App() {
               <Route path="/how-it-works-sellers" element={<HowItWorksSellersPage />} />
               <Route path="/how-it-works-agents" element={<HowItWorksAgentsPage />} />
               
-              {/* Agent Routes */}
+              {/* NEW: Transaction Route - accessible by all authenticated users */}
               <Route 
-                path="/agent/dashboard" 
+                path="/transaction/:transactionId" 
                 element={
-                  <ProtectedRoute requiredRole="agent">
-                    <AgentDashboardPage />
+                  <ProtectedRoute>
+                    <TransactionDashboard />
                   </ProtectedRoute>
                 } 
               />
+              
+              {/* Agent Routes */}
               <Route 
                 path="/agent/*" 
                 element={
                   <ProtectedRoute requiredRole="agent">
                     <Routes>
                       <Route path="/" element={<AgentDashboardPage />} />
+                      <Route path="dashboard" element={<AgentDashboardPage />} />
                       <Route path="buy-tokens" element={<TokenPurchasePage />} />
                       <Route path="listings" element={<ListingBrowser />} />
                       <Route path="buyer-listing/:listingId" element={<AgentBuyerListingDetail />} />
@@ -114,6 +122,8 @@ function App() {
                       <Route path="availability" element={<AgentAvailabilityCalendar />} />
                       <Route path="appointments" element={<AppointmentsDashboard />} />
                       <Route path="subscription" element={<SubscriptionManager />} />
+                      {/* NEW: Transaction route for agents */}
+                      <Route path="transaction/:transactionId" element={<TransactionDashboard />} />
                     </Routes>
                   </ProtectedRoute>
                 } 
@@ -121,19 +131,12 @@ function App() {
               
               {/* Buyer Routes */}
               <Route 
-                path="/buyer/dashboard" 
-                element={
-                  <ProtectedRoute requiredRole="buyer">
-                    <BuyerDashboardPage />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
                 path="/buyer/*" 
                 element={
                   <ProtectedRoute requiredRole="buyer">
                     <Routes>
                       <Route path="/" element={<BuyerDashboardPage />} />
+                      <Route path="dashboard" element={<BuyerDashboardPage />} />
                       <Route path="create-listing" element={<BuyerListingForm />} />
                       <Route path="listing/:listingId" element={<BuyerListingDetail />} />
                       <Route path="my-listings" element={<BuyerListings />} />
@@ -143,6 +146,8 @@ function App() {
                       <Route path="messages" element={<MessagesList />} />
                       <Route path="messages/:channelId" element={<MessageChannel />} />
                       <Route path="appointments" element={<AppointmentsDashboard />} />
+                      {/* NEW: Transaction route for buyers */}
+                      <Route path="transaction/:transactionId" element={<TransactionDashboard />} />
                     </Routes>
                   </ProtectedRoute>
                 } 
@@ -150,19 +155,12 @@ function App() {
               
               {/* Seller Routes */}
               <Route 
-                path="/seller/dashboard" 
-                element={
-                  <ProtectedRoute requiredRole="seller">
-                    <SellerDashboardPage />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
                 path="/seller/*" 
                 element={
                   <ProtectedRoute requiredRole="seller">
                     <Routes>
                       <Route path="/" element={<SellerDashboardPage />} />
+                      <Route path="dashboard" element={<SellerDashboardPage />} />
                       <Route path="create-listing" element={<SellerListingForm />} />
                       <Route path="listing/:listingId" element={<SellerListingDetail />} />
                       <Route path="my-listings" element={<SellerListings />} />
@@ -172,6 +170,8 @@ function App() {
                       <Route path="messages" element={<MessagesList />} />
                       <Route path="messages/:channelId" element={<MessageChannel />} />
                       <Route path="appointments" element={<AppointmentsDashboard />} />
+                      {/* NEW: Transaction route for sellers */}
+                      <Route path="transaction/:transactionId" element={<TransactionDashboard />} />
                     </Routes>
                   </ProtectedRoute>
                 } 
@@ -179,18 +179,11 @@ function App() {
               
               {/* Admin Routes */}
               <Route 
-                path="/admin/dashboard" 
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <VerificationRequests />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
                 path="/admin/*" 
                 element={
                   <ProtectedRoute requiredRole="admin">
                     <Routes>
+                      <Route path="dashboard" element={<VerificationRequests />} />
                       <Route path="verification-requests" element={<VerificationRequests />} />
                     </Routes>
                   </ProtectedRoute>

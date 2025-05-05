@@ -1,4 +1,4 @@
-// src/pages/BuyerPages/BuyerDashboardPage.js
+// src/pages/SellerPages/SellerDashboardPage.js
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
@@ -7,20 +7,19 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Card, CardHeader, CardBody } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 
-const BuyerDashboardPage = () => {
+const SellerDashboardPage = () => {
   const { currentUser, userProfile } = useAuth();
   const navigate = useNavigate();
   
   const [stats, setStats] = useState({
     listings: 0,
     proposals: 0,
-    activity: 0
+    interested: 0
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [recentMessages, setRecentMessages] = useState([]);
-  const [activeTransactions, setActiveTransactions] = useState([]);
   
   // Handle resize
   useEffect(() => {
@@ -43,14 +42,14 @@ const BuyerDashboardPage = () => {
           return;
         }
         
-        // Fetch count of buyer's listings
+        // Fetch count of seller's listings
         const listingsQuery = query(
-          collection(db, 'buyerListings'),
+          collection(db, 'sellerListings'),
           where('userId', '==', currentUser.uid)
         );
         const listingsSnapshot = await getDocs(listingsQuery);
         
-        // Fetch count of proposals for buyer's listings
+        // Fetch count of proposals for seller's listings
         const proposalsPromises = [];
         
         listingsSnapshot.forEach((doc) => {
@@ -58,7 +57,7 @@ const BuyerDashboardPage = () => {
           const proposalQuery = query(
             collection(db, 'proposals'),
             where('listingId', '==', listingId),
-            where('listingType', '==', 'buyer')
+            where('listingType', '==', 'seller')
           );
           proposalsPromises.push(getDocs(proposalQuery));
         });
@@ -85,27 +84,13 @@ const BuyerDashboardPage = () => {
           messages.push({ id: doc.id, ...doc.data() });
         });
         
-        // Fetch active transactions
-        const transactionsQuery = query(
-          collection(db, 'transactions'),
-          where('clientId', '==', currentUser.uid),
-          where('status', '==', 'active')
-        );
-        const transactionsSnapshot = await getDocs(transactionsQuery);
-        const transactions = [];
-        
-        transactionsSnapshot.forEach((doc) => {
-          transactions.push({ id: doc.id, ...doc.data() });
-        });
-        
         setStats({
           listings: listingsSnapshot.size,
           proposals: totalProposals,
-          activity: 0 // This can be replaced with actual market activity data
+          interested: totalProposals // For now, we'll use total proposals as a proxy for interested agents
         });
         
         setRecentMessages(messages);
-        setActiveTransactions(transactions);
         
       } catch (err) {
         console.error('Error fetching dashboard stats:', err);
@@ -138,11 +123,11 @@ const BuyerDashboardPage = () => {
           margin: 0,
           textAlign: isMobile ? 'center' : 'left'
         }}>
-          Buyer Dashboard
+          Seller Dashboard
         </h1>
         
         <Button 
-          to="/buyer/create-listing"
+          to="/seller/create-listing"
           style={isMobile ? { width: '100%' } : {}}
         >
           Create Listing
@@ -161,107 +146,15 @@ const BuyerDashboardPage = () => {
           fontWeight: 'bold', 
           marginBottom: '0.5rem' 
         }}>
-          Welcome, {userProfile?.displayName || 'Buyer'}!
+          Welcome, {userProfile?.displayName || 'Seller'}!
         </h2>
         <p style={{ 
           margin: 0,
           fontSize: isMobile ? '0.875rem' : '1rem'
         }}>
-          Your dashboard gives you access to your property search criteria and agent proposals.
+          Your dashboard gives you access to your property listings and agent proposals.
         </p>
       </div>
-      
-      {/* Active Transactions Section */}
-      {activeTransactions.length > 0 && (
-        <div style={{ marginBottom: '2rem' }}>
-          <Card>
-            <CardHeader style={{ 
-              backgroundColor: '#dcfce7',
-              borderColor: '#86efac',
-              padding: isMobile ? '1rem' : '1.5rem' 
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h2 style={{ 
-                  fontSize: isMobile ? '1rem' : '1.25rem', 
-                  fontWeight: 'bold', 
-                  color: '#15803d',
-                  margin: 0 
-                }}>
-                  Active Transactions
-                </h2>
-                <span style={{
-                  backgroundColor: '#10b981',
-                  color: 'white',
-                  fontSize: '0.875rem',
-                  fontWeight: '500',
-                  padding: '0.25rem 0.75rem',
-                  borderRadius: '9999px'
-                }}>
-                  {activeTransactions.length}
-                </span>
-              </div>
-            </CardHeader>
-            <CardBody style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {activeTransactions.map(transaction => (
-                  <div 
-                    key={transaction.id} 
-                    style={{
-                      padding: '1rem',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '0.5rem',
-                      display: 'flex',
-                      flexDirection: isMobile ? 'column' : 'row',
-                      justifyContent: 'space-between',
-                      alignItems: isMobile ? 'start' : 'center',
-                      gap: isMobile ? '1rem' : '0'
-                    }}
-                  >
-                    <div>
-                      <h3 style={{ 
-                        fontSize: '1rem', 
-                        fontWeight: '600', 
-                        marginBottom: '0.25rem' 
-                      }}>
-                        {transaction.propertyDetails?.address || 'Property Transaction'}
-                      </h3>
-                      <p style={{ 
-                        color: '#6b7280', 
-                        fontSize: '0.875rem',
-                        margin: '0' 
-                      }}>
-                        Created: {transaction.createdAt?.toDate?.().toLocaleDateString() || 'Recently'}
-                      </p>
-                    </div>
-                    <Button 
-                      to={`/transaction/${transaction.id}`}
-                      style={{
-                        backgroundColor: '#16a34a',
-                        width: isMobile ? '100%' : 'auto'
-                      }}
-                    >
-                      View Transaction
-                    </Button>
-                  </div>
-                ))}
-                
-                <Link 
-                  to="/transaction"
-                  style={{
-                    textAlign: 'center',
-                    display: 'block',
-                    padding: '0.75rem',
-                    color: '#2563eb',
-                    fontWeight: '500'
-                  }}
-                >
-                  View All Transactions
-                </Link>
-              </div>
-            </CardBody>
-          </Card>
-        </div>
-      )}
       
       <div style={{ 
         display: 'grid',
@@ -299,7 +192,7 @@ const BuyerDashboardPage = () => {
               {loading ? '...' : stats.listings}
             </div>
             <Link 
-              to="/buyer/my-listings"
+              to="/seller/my-listings"
               style={{
                 display: 'block',
                 textAlign: 'center',
@@ -348,7 +241,7 @@ const BuyerDashboardPage = () => {
               {loading ? '...' : stats.proposals}
             </div>
             <Link 
-              to="/buyer/proposals"
+              to="/seller/proposals"
               style={{
                 display: 'block',
                 textAlign: 'center',
@@ -378,7 +271,7 @@ const BuyerDashboardPage = () => {
               marginBottom: '1.5rem' 
             }}>
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#4f46e5" style={{ width: '2.5rem', height: '2.5rem' }}>
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
             </div>
             <h3 style={{ 
@@ -386,7 +279,7 @@ const BuyerDashboardPage = () => {
               fontWeight: 'bold', 
               marginBottom: '1rem' 
             }}>
-              Market Activity
+              Interested Agents
             </h3>
             <div style={{ 
               fontSize: isMobile ? '2.5rem' : '3rem',
@@ -394,10 +287,10 @@ const BuyerDashboardPage = () => {
               color: '#4f46e5',
               marginBottom: '1.5rem'
             }}>
-              {loading ? '...' : stats.activity}
+              {loading ? '...' : stats.interested}
             </div>
             <Link 
-              to="/buyer/analytics"
+              to="/seller/proposals"
               style={{
                 display: 'block',
                 textAlign: 'center',
@@ -411,7 +304,7 @@ const BuyerDashboardPage = () => {
                 fontSize: isMobile ? '0.875rem' : '1rem'
               }}
             >
-              View Analytics
+              View Agents
             </Link>
           </CardBody>
         </Card>
@@ -451,7 +344,7 @@ const BuyerDashboardPage = () => {
                       }}
                       onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'}
                       onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                      onClick={() => navigate(`/buyer/messages/${message.id}`)}
+                      onClick={() => navigate(`/seller/messages/${message.id}`)}
                     >
                       <div>
                         <p style={{ margin: 0, fontWeight: '500' }}>
@@ -468,7 +361,7 @@ const BuyerDashboardPage = () => {
                   );
                 })}
                 <Button
-                  onClick={() => navigate('/buyer/messages')}
+                  onClick={() => navigate('/seller/messages')}
                   variant="secondary"
                   fullWidth
                 >
@@ -489,7 +382,7 @@ const BuyerDashboardPage = () => {
                 </svg>
                 <p style={{ fontSize: isMobile ? '0.875rem' : '1rem' }}>No messages yet</p>
                 <Button
-                  onClick={() => navigate('/buyer/messages')}
+                  onClick={() => navigate('/seller/messages')}
                   variant="secondary"
                   style={{ marginTop: '1rem' }}
                 >
@@ -519,13 +412,13 @@ const BuyerDashboardPage = () => {
                 fontWeight: '600', 
                 marginBottom: '0.5rem' 
               }}>
-                1. Create a Property Search
+                1. Create Your Property Listing
               </h3>
               <p style={{ 
                 fontSize: isMobile ? '0.875rem' : '1rem',
                 lineHeight: '1.5'
               }}>
-                Start by creating a listing with your property requirements. The more details you provide, the better agent proposals you'll receive.
+                Start by creating a listing with your property details. The more information you provide, the better proposals you'll receive from agents.
               </p>
             </div>
             
@@ -541,7 +434,7 @@ const BuyerDashboardPage = () => {
                 fontSize: isMobile ? '0.875rem' : '1rem',
                 lineHeight: '1.5'
               }}>
-                Real estate agents will submit proposals to help with your property search. Compare their services, commission rates, and strategies.
+                Real estate agents will submit proposals for your listing. Compare their services, commission rates, and marketing strategies.
               </p>
             </div>
             
@@ -551,13 +444,13 @@ const BuyerDashboardPage = () => {
                 fontWeight: '600', 
                 marginBottom: '0.5rem' 
               }}>
-                3. Connect with Your Agent
+                3. Choose Your Agent
               </h3>
               <p style={{ 
                 fontSize: isMobile ? '0.875rem' : '1rem',
                 lineHeight: '1.5'
               }}>
-                Once you accept a proposal, you'll be connected with your chosen agent to begin the buying process.
+                Accept the proposal that best fits your needs. You'll be connected with your chosen agent to begin the selling process.
               </p>
             </div>
           </CardBody>
@@ -567,4 +460,4 @@ const BuyerDashboardPage = () => {
   );
 };
 
-export default BuyerDashboardPage;
+export default SellerDashboardPage;
