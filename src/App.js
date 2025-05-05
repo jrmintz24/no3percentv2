@@ -1,7 +1,7 @@
 // src/App.js
 
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import Header from './components/layout/Header';
 import HomePage from './pages/HomePage';
@@ -59,8 +59,9 @@ import RootRedirect from './components/RootRedirect';
 // Admin Pages
 import VerificationRequests from './pages/AdminPages/VerificationRequests';
 
-// NEW: Transaction Components
+// Transaction Components
 import TransactionDashboard from './pages/TransactionDashboard';
+import TransactionsListPage from './pages/TransactionsListPage';
 
 function App() {
   return (
@@ -90,7 +91,23 @@ function App() {
               <Route path="/how-it-works-sellers" element={<HowItWorksSellersPage />} />
               <Route path="/how-it-works-agents" element={<HowItWorksAgentsPage />} />
               
-              {/* NEW: Transaction Route - accessible by all authenticated users */}
+              {/* Transaction Routes - accessible by all authenticated users */}
+              <Route 
+                path="/transactions" 
+                element={
+                  <ProtectedRoute>
+                    <TransactionsListPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/transaction" 
+                element={
+                  <ProtectedRoute>
+                    <Navigate to="/transactions" replace />
+                  </ProtectedRoute>
+                } 
+              />
               <Route 
                 path="/transaction/:transactionId" 
                 element={
@@ -122,7 +139,7 @@ function App() {
                       <Route path="availability" element={<AgentAvailabilityCalendar />} />
                       <Route path="appointments" element={<AppointmentsDashboard />} />
                       <Route path="subscription" element={<SubscriptionManager />} />
-                      {/* NEW: Transaction route for agents */}
+                      <Route path="transactions" element={<TransactionsListPage />} />
                       <Route path="transaction/:transactionId" element={<TransactionDashboard />} />
                     </Routes>
                   </ProtectedRoute>
@@ -139,6 +156,7 @@ function App() {
                       <Route path="dashboard" element={<BuyerDashboardPage />} />
                       <Route path="create-listing" element={<BuyerListingForm />} />
                       <Route path="listing/:listingId" element={<BuyerListingDetail />} />
+                      <Route path="edit-listing/:listingId" element={<BuyerListingForm existingListingMode={true} />} />
                       <Route path="my-listings" element={<BuyerListings />} />
                       <Route path="proposals" element={<BuyerProposals />} />
                       <Route path="proposals/:proposalId" element={<ProposalResponse />} />
@@ -146,7 +164,7 @@ function App() {
                       <Route path="messages" element={<MessagesList />} />
                       <Route path="messages/:channelId" element={<MessageChannel />} />
                       <Route path="appointments" element={<AppointmentsDashboard />} />
-                      {/* NEW: Transaction route for buyers */}
+                      <Route path="transactions" element={<TransactionsListPage />} />
                       <Route path="transaction/:transactionId" element={<TransactionDashboard />} />
                     </Routes>
                   </ProtectedRoute>
@@ -163,6 +181,7 @@ function App() {
                       <Route path="dashboard" element={<SellerDashboardPage />} />
                       <Route path="create-listing" element={<SellerListingForm />} />
                       <Route path="listing/:listingId" element={<SellerListingDetail />} />
+                      <Route path="edit-listing/:listingId" element={<SellerListingForm existingListingMode={true} />} />
                       <Route path="my-listings" element={<SellerListings />} />
                       <Route path="proposals" element={<SellerProposals />} />
                       <Route path="proposals/:proposalId" element={<ProposalResponse />} />
@@ -170,7 +189,7 @@ function App() {
                       <Route path="messages" element={<MessagesList />} />
                       <Route path="messages/:channelId" element={<MessageChannel />} />
                       <Route path="appointments" element={<AppointmentsDashboard />} />
-                      {/* NEW: Transaction route for sellers */}
+                      <Route path="transactions" element={<TransactionsListPage />} />
                       <Route path="transaction/:transactionId" element={<TransactionDashboard />} />
                     </Routes>
                   </ProtectedRoute>
@@ -185,6 +204,7 @@ function App() {
                     <Routes>
                       <Route path="dashboard" element={<VerificationRequests />} />
                       <Route path="verification-requests" element={<VerificationRequests />} />
+                      <Route path="transactions" element={<TransactionsListPage />} />
                     </Routes>
                   </ProtectedRoute>
                 } 

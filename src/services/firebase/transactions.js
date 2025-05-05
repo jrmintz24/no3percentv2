@@ -1,244 +1,201 @@
 // src/services/firebase/transactions.js
 
-import { collection, addDoc, doc, updateDoc, serverTimestamp, getDoc } from 'firebase/firestore';
+import { doc, collection, addDoc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { db } from './config';
-import { serviceTasks } from '../../config/serviceTasks';
-import { buyerServices, sellerServices } from '../../config/services';
 
-export const createTransaction = async (proposalId) => {
+// Create a new transaction when a proposal is accepted
+export const createTransaction = async (proposal, clientId, agentId) => {
   try {
-    // Get proposal details
-    const proposalDoc = await getDoc(doc(db, 'proposals', proposalId));
-    if (!proposalDoc.exists()) throw new Error('Proposal not found');
+    console.log("Creating transaction for proposal:", proposal.id);
     
-    const proposal = proposalDoc.data();
-    
-    // Check if proposal is accepted (with case-insensitive comparison)
-    const isAccepted = proposal.status && 
-      (proposal.status.toLowerCase() === 'accepted' || 
-       proposal.status === 'Accepted');
-       
-    if (!isAccepted) {
-      throw new Error('Cannot create transaction: Proposal is not accepted');
+    // Get listing details if available
+    let listingData = {};
+    try {
+      const listingCollection = proposal.listingType === 'buyer' ? 'buyerListings' : 'sellerListings';
+      const listingDoc = await getDoc(doc(db, listingCollection, proposal.listingId));
+      if (listingDoc.exists()) {
+        listingData = listingDoc.data();
+      }
+    } catch (err) {
+      console.error("Error fetching listing details:", err);
     }
     
-    // Get listing details
-    const listingCollection = proposal.listingType === 'buyer' ? 'buyerListings' : 'sellerListings';
-    const listingDoc = await getDoc(doc(db, listingCollection, proposal.listingId));
+    // Create the transaction document
+    const transactionRef = doc(collection(db, 'transactions'));
     
-    if (!listingDoc.exists()) throw new Error('Listing not found');
-    
-    const listing = listingDoc.data();
-    
-    // Create transaction
-    const transactionData = {
-      proposalId,
+    await setDoc(transactionRef, {
+      proposalId: proposal.id,
       listingId: proposal.listingId,
       listingType: proposal.listingType,
-      clientId: listing.userId,
-      agentId: proposal.agentId,
-      status: 'active',
-      services: proposal.services || [],
-      packageInfo: proposal.packageInfo || null,
+      clientId: clientId,
+      agentId: agentId,
+      status: "active",
       feeStructure: proposal.feeStructure,
-      commissionRate: proposal.commissionRate || null,
-      flatFee: proposal.flatFee || null,
-      propertyDetails: {
-        address: listing.address || listing.location || null,
-        price: listing.price || listing.priceRange?.max || null,
-        propertyType: listing.propertyType || null,
-        bedrooms: listing.bedrooms || null,
-        bathrooms: listing.bathrooms || null,
-        squareFootage: listing.squareFootage || null
-      },
+      commissionRate: proposal.feeStructure === 'percentage' ? proposal.commissionRate : null,
+      flatFee: proposal.feeStructure === 'flat' ? proposal.flatFee : null,
       timeline: {
-        proposalSubmitted: proposal.createdAt,
         proposalAccepted: serverTimestamp(),
-        expectedClosing: listing.preferredClosingDate || listing.preferredMoveInDate || null
+        expectedClosing: null // Set based on business logic or user input
+      },
+      propertyDetails: {
+        address: listingData.address || listingData.location || "Property Address",
+        price: listingData.price || listingData.budget || listingData.priceRange?.max || 0,
+        propertyType: listingData.propertyType || "Not specified",
+        bedrooms: listingData.bedrooms || "Not specified",
+        bathrooms: listingData.bathrooms || "Not specified"
       },
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
-    };
+    });
     
-    console.log('Creating transaction with data:', JSON.stringify(transactionData));
-    const transactionRef = await addDoc(collection(db, 'transactions'), transactionData);
-    const transactionId = transactionRef.id;
-    console.log('Transaction created with ID:', transactionId);
+    console.log("Transaction created with ID:", transactionRef.id);
     
-    // Create service instances for each selected service
-    for (const serviceName of proposal.services) {
-      await createServiceInstance(transactionId, serviceName, proposal.listingType);
+    // Create initial transaction services based on proposal services
+    if (proposal.services && proposal.services.length > 0) {
+      for (const serviceName of proposal.services) {
+        await addDoc(collection(db, 'transactionServices'), {
+          transactionId: transactionRef.id,
+          serviceName: serviceName,
+          status: 'pending',
+          startedAt: null,
+          completedAt: null,
+          tasks: getDefaultTasksForService(serviceName), // Add default tasks based on service type
+          createdAt: serverTimestamp()
+        });
+      }
+      console.log(`Created ${proposal.services.length} service entries for transaction`);
     }
     
-    // Update proposal status - normalize to 'Accepted' with capital A
-    await updateDoc(doc(db, 'proposals', proposalId), {
-      status: 'Accepted',
-      transactionId: transactionId,
-      acceptedAt: serverTimestamp()
-    });
-    
-    // Update listing status
-    await updateDoc(doc(db, listingCollection, proposal.listingId), {
-      status: 'under_contract',
-      acceptedProposalId: proposalId,
+    // Update the proposal with the transaction ID
+    await setDoc(doc(db, 'proposals', proposal.id), {
+      transactionId: transactionRef.id,
       updatedAt: serverTimestamp()
-    });
+    }, { merge: true });
     
-    return transactionId;
+    return transactionRef.id;
   } catch (error) {
     console.error('Error creating transaction:', error);
     throw error;
   }
 };
 
-// Rest of the file remains unchanged
-export const createServiceInstance = async (transactionId, serviceName, listingType) => {
-  try {
-    // Find service configuration
-    const services = listingType === 'buyer' ? buyerServices : sellerServices;
-    const serviceConfig = services.find(s => s.name === serviceName);
-    
-    if (!serviceConfig) {
-      console.warn(`Service ${serviceName} not found, creating basic service`);
-      // Create a basic service if config not found
-      await addDoc(collection(db, 'transactionServices'), {
-        transactionId,
-        serviceName: serviceName,
-        status: 'pending',
-        tasks: [],
-        documents: [],
-        notes: [],
-        startedAt: null,
-        completedAt: null,
-        agentConfirmed: false,
-        clientConfirmed: false,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
-      return;
-    }
-    
-    // Get task template for this service
-    const taskTemplate = serviceTasks[serviceConfig.id] || [];
-    
-    const serviceData = {
-      transactionId,
-      serviceId: serviceConfig.id,
-      serviceName: serviceConfig.name,
-      description: serviceConfig.description || '',
-      status: 'pending',
-      tasks: taskTemplate.map(task => ({
-        ...task,
-        status: 'pending',
-        completedBy: null,
-        completedAt: null
-      })),
-      documents: [],
-      notes: [],
-      startedAt: null,
-      completedAt: null,
-      agentConfirmed: false,
-      clientConfirmed: false,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
-    };
-    
-    return await addDoc(collection(db, 'transactionServices'), serviceData);
-  } catch (error) {
-    console.error('Error creating service instance:', error);
-    throw error;
-  }
+// Get a default set of tasks for a service type
+export const getDefaultTasksForService = (serviceName) => {
+  const defaultTasks = {
+    'property_showings': [
+      { id: 'task1', title: 'Schedule initial property tour', description: 'Set up first viewing of properties', status: 'pending', assignee: 'agent' },
+      { id: 'task2', title: 'Collect feedback after showings', description: 'Document client feedback on each property', status: 'pending', assignee: 'agent' }
+    ],
+    'market_analysis': [
+      { id: 'task1', title: 'Research comparable properties', description: 'Find similar properties in the area', status: 'pending', assignee: 'agent' },
+      { id: 'task2', title: 'Prepare market analysis report', description: 'Document findings and recommendations', status: 'pending', assignee: 'agent' },
+      { id: 'task3', title: 'Review market analysis', description: 'Schedule time to review the analysis with agent', status: 'pending', assignee: 'client' }
+    ],
+    'offer_negotiation': [
+      { id: 'task1', title: 'Prepare offer', description: 'Draft initial offer based on client requirements', status: 'pending', assignee: 'agent' },
+      { id: 'task2', title: 'Review offer terms', description: 'Review and provide feedback on offer terms', status: 'pending', assignee: 'client' },
+      { id: 'task3', title: 'Submit offer', description: 'Submit offer to seller/seller\'s agent', status: 'pending', assignee: 'agent' },
+      { id: 'task4', title: 'Negotiate counteroffer', description: 'Handle negotiations for best terms', status: 'pending', assignee: 'agent' }
+    ],
+    'closing_coordination': [
+      { id: 'task1', title: 'Schedule property inspection', description: 'Arrange for professional home inspection', status: 'pending', assignee: 'agent' },
+      { id: 'task2', title: 'Review inspection results', description: 'Review and address any inspection concerns', status: 'pending', assignee: 'both' },
+      { id: 'task3', title: 'Coordinate with lender', description: 'Ensure lender has required documents', status: 'pending', assignee: 'agent' },
+      { id: 'task4', title: 'Review closing documents', description: 'Review all closing documents before signing', status: 'pending', assignee: 'client' },
+      { id: 'task5', title: 'Schedule closing date', description: 'Coordinate closing date with all parties', status: 'pending', assignee: 'agent' }
+    ],
+    'contract_review': [
+      { id: 'task1', title: 'Draft contract', description: 'Prepare contract documents', status: 'pending', assignee: 'agent' },
+      { id: 'task2', title: 'Review contract', description: 'Review contract details and provisions', status: 'pending', assignee: 'client' },
+      { id: 'task3', title: 'Address concerns', description: 'Address any contract questions or concerns', status: 'pending', assignee: 'agent' },
+      { id: 'task4', title: 'Finalize contract', description: 'Complete all signatures and finalize contract', status: 'pending', assignee: 'both' }
+    ],
+    'pricing_strategy': [
+      { id: 'task1', title: 'Research local market', description: 'Analyze current market conditions', status: 'pending', assignee: 'agent' },
+      { id: 'task2', title: 'Determine price range', description: 'Recommend optimal price range', status: 'pending', assignee: 'agent' },
+      { id: 'task3', title: 'Review pricing strategy', description: 'Discuss and finalize pricing strategy', status: 'pending', assignee: 'both' }
+    ],
+    'home_staging': [
+      { id: 'task1', title: 'Initial home assessment', description: 'Evaluate current home presentation', status: 'pending', assignee: 'agent' },
+      { id: 'task2', title: 'Provide staging recommendations', description: 'Share specific staging suggestions', status: 'pending', assignee: 'agent' },
+      { id: 'task3', title: 'Implement staging changes', description: 'Make recommended staging changes', status: 'pending', assignee: 'client' },
+      { id: 'task4', title: 'Final staging review', description: 'Review and finalize staging before photos', status: 'pending', assignee: 'agent' }
+    ]
+  };
+  
+  return defaultTasks[serviceName] || [];
 };
 
+// Add a method to update transaction status
 export const updateTransactionStatus = async (transactionId, status) => {
   try {
-    await updateDoc(doc(db, 'transactions', transactionId), {
-      status,
+    const transactionRef = doc(db, 'transactions', transactionId);
+    await setDoc(transactionRef, {
+      status: status,
       updatedAt: serverTimestamp()
-    });
+    }, { merge: true });
+    
+    return true;
   } catch (error) {
     console.error('Error updating transaction status:', error);
     throw error;
   }
 };
 
-export const addTransactionNote = async (transactionId, noteContent, userId, userRole) => {
+// Update transaction timeline
+export const updateTransactionTimeline = async (transactionId, timelineUpdates) => {
   try {
-    const noteData = {
-      transactionId,
-      content: noteContent,
-      createdBy: userId,
-      createdByRole: userRole,
-      createdAt: serverTimestamp()
+    const transactionRef = doc(db, 'transactions', transactionId);
+    const transDoc = await getDoc(transactionRef);
+    
+    if (!transDoc.exists()) {
+      throw new Error('Transaction not found');
+    }
+    
+    const currentTimeline = transDoc.data().timeline || {};
+    const updatedTimeline = {
+      ...currentTimeline,
+      ...timelineUpdates,
+      updatedAt: serverTimestamp()
     };
     
-    return await addDoc(collection(db, 'transactionNotes'), noteData);
+    await setDoc(transactionRef, {
+      timeline: updatedTimeline,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+    
+    return true;
   } catch (error) {
-    console.error('Error adding transaction note:', error);
+    console.error('Error updating transaction timeline:', error);
     throw error;
   }
 };
 
-export const updateServiceStatus = async (serviceId, status) => {
+// Update service status
+export const updateServiceStatus = async (serviceId, status, tasks = null) => {
   try {
+    const serviceRef = doc(db, 'transactionServices', serviceId);
     const updateData = {
-      status,
+      status: status,
       updatedAt: serverTimestamp()
     };
     
-    if (status === 'in-progress') {
+    if (status === 'in-progress' && !updateData.startedAt) {
       updateData.startedAt = serverTimestamp();
-    } else if (status === 'completed') {
+    }
+    
+    if (status === 'completed' && !updateData.completedAt) {
       updateData.completedAt = serverTimestamp();
     }
     
-    await updateDoc(doc(db, 'transactionServices', serviceId), updateData);
+    if (tasks) {
+      updateData.tasks = tasks;
+    }
+    
+    await setDoc(serviceRef, updateData, { merge: true });
+    return true;
   } catch (error) {
     console.error('Error updating service status:', error);
     throw error;
   }
-};
-
-export const updateTaskStatus = async (serviceId, taskIndex, status, userId) => {
-  try {
-    const serviceDoc = await getDoc(doc(db, 'transactionServices', serviceId));
-    if (!serviceDoc.exists()) throw new Error('Service not found');
-    
-    const serviceData = serviceDoc.data();
-    const tasks = serviceData.tasks || [];
-    
-    // Update the specific task
-    tasks[taskIndex] = {
-      ...tasks[taskIndex],
-      status,
-      completedBy: status === 'completed' ? userId : null,
-      completedAt: status === 'completed' ? serverTimestamp() : null
-    };
-    
-    // Update the service document
-    await updateDoc(doc(db, 'transactionServices', serviceId), {
-      tasks,
-      updatedAt: serverTimestamp()
-    });
-    
-    // Check if all tasks are completed
-    const allTasksCompleted = tasks.every(task => task.status === 'completed');
-    if (allTasksCompleted && serviceData.status !== 'completed') {
-      // Optionally update service status or notify
-      console.log('All tasks completed for service:', serviceId);
-    }
-    
-  } catch (error) {
-    console.error('Error updating task status:', error);
-    throw error;
-  }
-};
-
-export default {
-  createTransaction,
-  createServiceInstance,
-  updateTransactionStatus,
-  addTransactionNote,
-  updateServiceStatus,
-  updateTaskStatus
 };

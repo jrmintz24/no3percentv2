@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, updateDoc, collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../services/firebase/config';
 import { useAuth } from '../../contexts/AuthContext';
+import { createTransaction } from '../../services/firebase/transactions';
 import LoadingSpinner from '../common/LoadingSpinner';
 import { Card, CardBody } from '../common/Card';
 import { Button } from '../common/Button';
@@ -68,6 +69,7 @@ const ProposalResponse = () => {
   const [existingChannel, setExistingChannel] = useState(null);
   const [creatingChannel, setCreatingChannel] = useState(false);
   const [transaction, setTransaction] = useState(null);
+  const [success, setSuccess] = useState(null);
   
   // Add isMobile state to handle responsive layout
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -274,6 +276,15 @@ const ProposalResponse = () => {
       await Promise.all(updatePromises);
       console.log("All other proposals updated");
       
+      // Create transaction for this accepted proposal
+      console.log("Creating transaction for accepted proposal");
+      const transactionId = await createTransaction(
+        proposal,
+        currentUser.uid,  // Client ID
+        proposal.agentId  // Agent ID
+      );
+      console.log("Transaction created with ID:", transactionId);
+      
       // Create notification for the agent
       console.log("Creating notification for agent");
       await addDoc(collection(db, 'notifications'), {
@@ -290,15 +301,17 @@ const ProposalResponse = () => {
       setProposal({
         ...proposal,
         status: 'Accepted',
-        acceptedAt: serverTimestamp()
+        acceptedAt: serverTimestamp(),
+        transactionId: transactionId
       });
       
-      // NOTE: We're not creating a transaction directly here - 
-      // You should implement a separate process for that or update the navigation
+      // Show success message and redirect to the transaction
+      setSuccess('Proposal accepted! Creating your transaction workspace...');
       
-      // Show success message and reload page (transaction might be created by a cloud function)
-      alert('Proposal accepted successfully!');
-      window.location.reload();
+      // Wait a moment before redirecting
+      setTimeout(() => {
+        navigate(`/transaction/${transactionId}`);
+      }, 2000);
 
     } catch (err) {
       console.error('Error accepting proposal:', err);
@@ -472,6 +485,29 @@ const ProposalResponse = () => {
   const isAccepted = proposal.status === 'accepted' || proposal.status === 'Accepted';
   const isRejected = proposal.status === 'rejected';
   const isActive = proposal.status === 'active' || proposal.status === 'pending';
+  
+  // Success message display
+  if (success) {
+    return (
+      <div style={{ maxWidth: '48rem', margin: '0 auto', padding: '1rem', textAlign: 'center' }}>
+        <div style={{ 
+          backgroundColor: '#dcfce7', 
+          color: '#15803d', 
+          padding: '2rem', 
+          borderRadius: '0.5rem',
+          marginBottom: '1rem'
+        }}>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>
+            {success}
+          </h2>
+          <p>Redirecting you to the transaction workspace...</p>
+          <div style={{ marginTop: '1rem' }}>
+            <LoadingSpinner />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Simple version with minimal UI
   return (
@@ -511,8 +547,20 @@ const ProposalResponse = () => {
           {/* Proposal info */}
           <div style={{ marginBottom: '1rem', padding: '1rem', backgroundColor: '#f9fafb', borderRadius: '0.5rem' }}>
             <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>Proposal Information</h3>
-            <p><strong>Commission Rate:</strong> {proposal.commissionRate}%</p>
+            <p><strong>Fee Structure:</strong> {proposal.feeStructure === 'percentage' ? 'Percentage Commission' : 'Flat Fee'}</p>
+            {proposal.feeStructure === 'percentage' && (
+              <p><strong>Commission Rate:</strong> {proposal.commissionRate}%</p>
+            )}
+            {proposal.feeStructure === 'flat' && (
+              <p><strong>Flat Fee:</strong> ${proposal.flatFee}</p>
+            )}
             <p><strong>Services:</strong> {proposal.services?.join(', ')}</p>
+            {proposal.message && (
+              <div style={{ marginTop: '1rem' }}>
+                <h4 style={{ fontWeight: 'medium', marginBottom: '0.5rem' }}>Agent's Message:</h4>
+                <p style={{ whiteSpace: 'pre-wrap' }}>{proposal.message}</p>
+              </div>
+            )}
           </div>
           
           {/* Action buttons */}
@@ -589,9 +637,21 @@ const ProposalResponse = () => {
               <h3 style={{ color: '#16a34a', fontWeight: 'bold', marginBottom: '0.5rem' }}>
                 Proposal Accepted!
               </h3>
-              <p style={{ color: '#16a34a' }}>
+              <p style={{ color: '#16a34a', marginBottom: '1rem' }}>
                 This proposal has been accepted and is now active.
               </p>
+              
+              {proposal.transactionId && (
+                <Button
+                  onClick={() => navigate(`/transaction/${proposal.transactionId}`)}
+                  style={{ 
+                    backgroundColor: '#16a34a', 
+                    color: 'white'
+                  }}
+                >
+                  Go to Transaction Workspace
+                </Button>
+              )}
             </div>
           )}
           

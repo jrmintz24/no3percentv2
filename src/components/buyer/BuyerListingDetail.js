@@ -6,6 +6,8 @@ import { db } from '../../services/firebase/config';
 import { useAuth } from '../../contexts/AuthContext';
 import { Card, CardHeader, CardBody, CardFooter } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
+import BuyerListingForm from './BuyerListingForm';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
 
 const BuyerListingDetail = () => {
   const { listingId } = useParams();
@@ -19,6 +21,7 @@ const BuyerListingDetail = () => {
   const [proposals, setProposals] = useState([]);
   const [acceptedProposal, setAcceptedProposal] = useState(null);
   const [transaction, setTransaction] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
   
   // Handle resize
   useEffect(() => {
@@ -111,7 +114,7 @@ const BuyerListingDetail = () => {
         justifyContent: 'center', 
         padding: '2rem' 
       }}>
-        Loading listing details...
+        <LoadingSpinner />
       </div>
     );
   }
@@ -154,6 +157,26 @@ const BuyerListingDetail = () => {
           Listing not found
         </div>
         <Button to="/buyer">Back to Dashboard</Button>
+      </div>
+    );
+  }
+  
+  // Show edit form if in edit mode
+  if (isEditing) {
+    return (
+      <div style={{ maxWidth: '900px', margin: '0 auto', padding: '1rem' }}>
+        <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>
+          Edit Your Listing
+        </h1>
+        <BuyerListingForm 
+          existingListing={listing}
+          onCancel={() => setIsEditing(false)}
+          onSuccess={() => {
+            setIsEditing(false);
+            // Re-fetch the listing to show updated data
+            window.location.reload();
+          }}
+        />
       </div>
     );
   }
@@ -211,7 +234,7 @@ const BuyerListingDetail = () => {
               </Button>
             )}
             <Button 
-              to={`/buyer/edit-listing/${listingId}`} 
+              onClick={() => setIsEditing(true)} 
               variant="secondary"
               style={isMobile ? { width: '100%' } : {}}
             >

@@ -1,7 +1,7 @@
 // src/pages/TransactionDashboard.js
 
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../services/firebase/config';
 import { useAuth } from '../contexts/AuthContext';
@@ -22,63 +22,107 @@ const TransactionDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const navigate = useNavigate();
 
-  // Handle resize
   useEffect(() => {
+    console.log("TransactionDashboard mounted with params:", { 
+      transactionId, 
+      currentUser: currentUser?.uid 
+    });
+    
+    // Handle missing parameters
+    if (!transactionId) {
+      console.log("Missing transactionId, redirecting to transactions list");
+      navigate('/transactions');
+      return;
+    }
+    
+    if (!currentUser) {
+      console.log("No authenticated user");
+      return;
+    }
+
+    // Handle resize
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
     
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  useEffect(() => {
-    if (!transactionId || !currentUser) return;
-
+    
     // Subscribe to transaction updates
+    console.log("Attempting to fetch transaction:", transactionId);
     const unsubscribeTransaction = onSnapshot(
       doc(db, 'transactions', transactionId),
       (doc) => {
+        console.log("Transaction doc snapshot received", { exists: doc.exists() });
         if (doc.exists()) {
           const data = { id: doc.id, ...doc.data() };
+          console.log("Transaction data:", data);
           setTransaction(data);
           
           // Verify user has access
           if (data.clientId !== currentUser.uid && data.agentId !== currentUser.uid) {
+            console.log("Access denied - user not associated with transaction", { 
+              currentUserId: currentUser.uid, 
+              clientId: data.clientId, 
+              agentId: data.agentId 
+            });
             setError('You do not have access to this transaction');
           }
         } else {
+          console.log("Transaction document not found");
           setError('Transaction not found');
         }
         setLoading(false);
       },
       (error) => {
         console.error('Error fetching transaction:', error);
-        setError('Error loading transaction');
+        setError('Error loading transaction details: ' + error.message);
         setLoading(false);
       }
     );
 
     // Subscribe to transaction services
+    console.log("Attempting to fetch transaction services for:", transactionId);
     const servicesQuery = query(
       collection(db, 'transactionServices'),
       where('transactionId', '==', transactionId)
     );
 
-    const unsubscribeServices = onSnapshot(servicesQuery, (snapshot) => {
-      const servicesData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setServices(servicesData);
-    });
+    const unsubscribeServices = onSnapshot(servicesQuery, 
+      (snapshot) => {
+        console.log("Transaction services snapshot received", { count: snapshot.docs.length });
+        const servicesData = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        setServices(servicesData);
+      },
+      (error) => {
+        console.error('Error fetching transaction services:', error);
+        // Don't set error state here to avoid blocking the UI if services aren't loaded
+        // but the main transaction is
+      }
+    );
 
     return () => {
+      window.removeEventListener('resize', handleResize);
       unsubscribeTransaction();
       unsubscribeServices();
+      console.log("TransactionDashboard unmounted, subscriptions cleaned up");
     };
-  }, [transactionId, currentUser]);
+  }, [transactionId, currentUser, navigate]);
+
+  if (process.env.NODE_ENV === 'development') {
+    console.log("Transaction Dashboard Render State:", {
+      loading,
+      error,
+      transactionExists: !!transaction,
+      transactionId,
+      currentUserId: currentUser?.uid,
+      serviceCount: services.length
+    });
+  }
 
   if (loading) {
     return (
@@ -109,11 +153,49 @@ const TransactionDashboard = () => {
         }}>
           {error}
         </div>
+        <button 
+          onClick={() => navigate('/transactions')}
+          style={{
+            backgroundColor: '#4b5563',
+            color: 'white',
+            padding: '0.5rem 1rem',
+            borderRadius: '0.375rem',
+            border: 'none',
+            cursor: 'pointer'
+          }}
+        >
+          Back to Transactions
+        </button>
       </div>
     );
   }
 
-  if (!transaction) return null;
+  if (!transaction) {
+    return (
+      <div style={{ 
+        maxWidth: '800px', 
+        margin: '0 auto', 
+        padding: '2rem 1rem',
+        textAlign: 'center' 
+      }}>
+        <p>No transaction data available. The transaction may have been deleted or you don't have access.</p>
+        <button 
+          onClick={() => navigate('/transactions')}
+          style={{
+            backgroundColor: '#4b5563',
+            color: 'white',
+            padding: '0.5rem 1rem',
+            borderRadius: '0.375rem',
+            border: 'none',
+            cursor: 'pointer',
+            marginTop: '1rem'
+          }}
+        >
+          Back to Transactions
+        </button>
+      </div>
+    );
+  }
 
   const isAgent = currentUser.uid === transaction.agentId;
   const isClient = currentUser.uid === transaction.clientId;
