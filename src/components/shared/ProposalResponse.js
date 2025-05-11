@@ -1,986 +1,710 @@
 // src/components/shared/ProposalResponse.js
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc, updateDoc, collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../../services/firebase/config';
-import { useAuth } from '../../contexts/AuthContext';
-import { createTransaction } from '../../services/firebase/transactions';
-import LoadingSpinner from '../common/LoadingSpinner';
-import { Card, CardHeader, CardBody } from '../common/Card';
-import { Button } from '../common/Button';
+import React, { useState } from 'react';
 
-// Icons
-const CheckCircle = () => (
-  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-  </svg>
-);
+const ProposalResponse = ({ proposal, listing, onAccept, onReject, onMessage }) => {
+  // Check if proposal exists and initialize it with default values if not
+  const safeProposal = proposal || {
+    agentName: 'Unknown Agent',
+    status: 'Pending',
+    createdAt: new Date(),
+    message: 'No message provided',
+    enhancedDetails: {}
+  };
 
-const XCircle = () => (
-  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-  </svg>
-);
-
-const UserIcon = () => (
-  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-  </svg>
-);
-
-const HomeIcon = () => (
-  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-  </svg>
-);
-
-const MessageIcon = () => (
-  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-  </svg>
-);
-
-const ProposalResponse = () => {
-  console.log("ProposalResponse component rendering");
-  const { proposalId } = useParams();
-  const navigate = useNavigate();
-  const { currentUser } = useAuth();
-  const [proposal, setProposal] = useState(null);
-  const [listing, setListing] = useState(null);
-  const [agent, setAgent] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [accepting, setAccepting] = useState(false);
-  const [rejecting, setRejecting] = useState(false);
-  const [rejectReason, setRejectReason] = useState('');
-  const [showRejectModal, setShowRejectModal] = useState(false);
-  const [showAcceptConfirmation, setShowAcceptConfirmation] = useState(false);
-  const [transaction, setTransaction] = useState(null);
-  const [success, setSuccess] = useState(null);
+  const [expandedSections, setExpandedSections] = useState({
+    communication: false,
+    experience: false,
+    availability: false,
+    transaction: false,
+    valueAdded: false
+  });
   
-  // Message related states
-  const [existingChannel, setExistingChannel] = useState(null);
-  const [creatingChannel, setCreatingChannel] = useState(false);
+  // Toggle section expansion
+  const toggleSection = (section) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
   
-  // Add isMobile state to handle responsive layout
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-
-  // Add resize listener to update isMobile state
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
-  }, []);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!currentUser || !proposalId) {
-        setError('Authentication required');
-        setLoading(false);
-        return;
-      }
-
-      try {
-        console.log("Fetching proposal data:", proposalId);
-        const proposalRef = doc(db, 'proposals', proposalId);
-        const proposalDoc = await getDoc(proposalRef);
-
-        if (!proposalDoc.exists()) {
-          console.error("Proposal not found");
-          setError('Proposal not found');
-          setLoading(false);
-          return;
-        }
-
-        const proposalData = { id: proposalDoc.id, ...proposalDoc.data() };
-        console.log("Retrieved proposal data:", proposalData);
-        
-        // Check if user is authorized to view this proposal
-        const listingCollection = proposalData.listingType === 'seller' ? 'sellerListings' : 'buyerListings';
-        const listingRef = doc(db, listingCollection, proposalData.listingId);
-        const listingDoc = await getDoc(listingRef);
-        
-        if (!listingDoc.exists()) {
-          console.error("Listing not found");
-          setError('Listing not found');
-          setLoading(false);
-          return;
-        }
-        
-        if (listingDoc.data().userId !== currentUser.uid) {
-          console.error("User not authorized to view this proposal");
-          setError('Not authorized to view this proposal');
-          setLoading(false);
-          return;
-        }
-
-        const listingData = { id: listingDoc.id, ...listingDoc.data() };
-        console.log("Retrieved listing data:", listingData);
-        
-        const agentRef = doc(db, 'users', proposalData.agentId);
-        const agentDoc = await getDoc(agentRef);
-        const agentData = agentDoc.exists() ? { id: agentDoc.id, ...agentDoc.data() } : null;
-        console.log("Retrieved agent data:", agentData);
-
-        setProposal(proposalData);
-        setListing(listingData);
-        setAgent(agentData);
-
-        // Check for existing transaction if the proposal is accepted
-        if (proposalData.status === 'Accepted' && proposalData.transactionId) {
-          console.log("Checking for existing transaction:", proposalData.transactionId);
-          try {
-            const transactionRef = doc(db, 'transactions', proposalData.transactionId);
-            const transactionDoc = await getDoc(transactionRef);
-            
-            if (transactionDoc.exists()) {
-              setTransaction({ id: transactionDoc.id, ...transactionDoc.data() });
-              console.log("Retrieved transaction data");
-            } else {
-              console.log("Transaction referenced but not found");
-            }
-          } catch (err) {
-            console.error("Error fetching transaction:", err);
-          }
-        }
-        
-        // Check for existing message channel
-        console.log("Checking for existing message channel");
-        try {
-          const channelsRef = collection(db, 'messageChannels');
-          const q = query(
-            channelsRef,
-            where('participants', 'array-contains', currentUser.uid),
-            where('proposalId', '==', proposalId)
-          );
-          const channelDocs = await getDocs(q);
-          
-          if (!channelDocs.empty) {
-            const channel = channelDocs.docs[0];
-            setExistingChannel({ id: channel.id, ...channel.data() });
-            console.log("Found existing message channel:", channel.id);
-          } else {
-            console.log("No existing message channel found");
-          }
-        } catch (err) {
-          console.error("Error checking for message channel:", err);
-        }
-      } catch (err) {
-        console.error('Error fetching proposal data:', err);
-        setError('Failed to load proposal data: ' + err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [currentUser, proposalId]);
-
-  // Function to create or navigate to a message channel
-  const handleMessage = async () => {
-    if (!listing || !agent || !currentUser) return;
+  // Format date
+  const formatDate = (timestamp) => {
+    if (!timestamp) return 'N/A';
     
-    // If there's already a channel, navigate to it
-    if (existingChannel) {
-      navigate(`/${proposal.listingType === 'buyer' ? 'buyer' : 'seller'}/messages/${existingChannel.id}`);
-      return;
-    }
-    
-    // Otherwise, create a new channel
-    setCreatingChannel(true);
     try {
-      const channelData = {
-        participants: [currentUser.uid, agent.id],
-        proposalId: proposalId,
-        listingId: listing.id,
-        listingType: proposal.listingType,
-        lastMessage: null,
-        lastMessageTime: serverTimestamp(),
-        createdAt: serverTimestamp(),
-        status: 'active',
-        participantInfo: {
-          [currentUser.uid]: {
-            name: currentUser.displayName || 'Client',
-            role: proposal.listingType === 'seller' ? 'seller' : 'buyer',
-            avatar: null
-          },
-          [agent.id]: {
-            name: agent.displayName || 'Agent',
-            role: 'agent',
-            avatar: agent.profilePhotoURL || null
-          }
-        }
-      };
-
-      const channelRef = await addDoc(collection(db, 'messageChannels'), channelData);
-      console.log("Created new message channel:", channelRef.id);
-      
-      // Create first welcome message
-      await addDoc(collection(db, 'messageChannels', channelRef.id, 'messages'), {
-        text: `Hi ${agent.displayName}! I'm interested in discussing my ${proposal.listingType === 'buyer' ? 'property search' : 'property listing'} further.`,
-        senderId: currentUser.uid,
-        timestamp: serverTimestamp(),
-        read: false,
-        type: 'text'
-      });
-      
-      // Navigate to the new channel
-      navigate(`/${proposal.listingType === 'buyer' ? 'buyer' : 'seller'}/messages/${channelRef.id}`);
-    } catch (err) {
-      console.error('Error creating message channel:', err);
-      setError('Failed to start conversation: ' + err.message);
-    } finally {
-      setCreatingChannel(false);
+      const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+      return new Intl.DateTimeFormat('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric'
+      }).format(date);
+    } catch (error) {
+      // Return a safe default if date parsing fails
+      return 'N/A';
     }
   };
 
-  const handleAcceptProposal = async () => {
-    if (!currentUser || !proposal) return;
-
-    setAccepting(true);
-    try {
-      console.log("Accepting proposal:", proposalId);
-      
-      // Update proposal status - using 'Accepted' with capital A
-      const proposalRef = doc(db, 'proposals', proposalId);
-      await updateDoc(proposalRef, {
-        status: 'Accepted',
-        acceptedAt: serverTimestamp()
-      });
-      console.log("Updated proposal status to Accepted");
-
-      // Update listing status
-      const listingRef = doc(db, proposal.listingType === 'seller' ? 'sellerListings' : 'buyerListings', proposal.listingId);
-      await updateDoc(listingRef, {
-        status: 'accepted',
-        acceptedProposalId: proposalId,
-        acceptedAgentId: proposal.agentId,
-        acceptedAt: serverTimestamp()
-      });
-      console.log("Updated listing status to accepted");
-
-      // Notify other agents that this listing has been accepted
-      console.log("Updating other proposals");
-      const proposalsRef = collection(db, 'proposals');
-      const q = query(
-        proposalsRef,
-        where('listingId', '==', proposal.listingId),
-        where('listingType', '==', proposal.listingType),
-        where('status', '==', 'active')
-      );
-      
-      const otherProposals = await getDocs(q);
-      const updatePromises = [];
-      
-      for (const otherProposalDoc of otherProposals.docs) {
-        if (otherProposalDoc.id !== proposalId) {
-          updatePromises.push(
-            updateDoc(doc(db, 'proposals', otherProposalDoc.id), {
-              status: 'rejected',
-              rejectedReason: 'Another proposal was accepted',
-              rejectedAt: serverTimestamp()
-            })
-          );
-        }
-      }
-      
-      await Promise.all(updatePromises);
-      console.log("All other proposals updated");
-      
-      // Create transaction for this accepted proposal
-      console.log("Creating transaction for accepted proposal");
-      const transactionId = await createTransaction(
-        proposal,
-        currentUser.uid,  // Client ID
-        proposal.agentId  // Agent ID
-      );
-      console.log("Transaction created with ID:", transactionId);
-      
-      // Create notification for the agent
-      console.log("Creating notification for agent");
-      await addDoc(collection(db, 'notifications'), {
-        type: 'proposal_accepted',
-        title: 'Proposal Accepted!',
-        message: `Your proposal for ${listing.propertyAddress || listing.location || 'a property'} has been accepted.`,
-        userId: proposal.agentId,
-        read: false,
-        actionUrl: `/agent/proposals/${proposalId}`,
-        createdAt: serverTimestamp()
-      });
-
-      // Update local state
-      setProposal({
-        ...proposal,
-        status: 'Accepted',
-        acceptedAt: serverTimestamp(),
-        transactionId: transactionId
-      });
-      
-      // Show success message and redirect to the transaction
-      setSuccess('Proposal accepted! Creating your transaction workspace...');
-      
-      // Wait a moment before redirecting
-      setTimeout(() => {
-        navigate(`/transaction/${transactionId}`);
-      }, 2000);
-
-    } catch (err) {
-      console.error('Error accepting proposal:', err);
-      setError('Failed to accept proposal: ' + err.message);
-    } finally {
-      setAccepting(false);
-      setShowAcceptConfirmation(false);
-    }
-  };
-
-  const handleRejectProposal = async () => {
-    if (!currentUser || !proposal) return;
-    
-    setRejecting(true);
-    try {
-      console.log("Rejecting proposal:", proposalId);
-      
-      // Update proposal status
-      const proposalRef = doc(db, 'proposals', proposalId);
-      await updateDoc(proposalRef, {
-        status: 'rejected',
-        rejectedReason: rejectReason || 'Declined by client',
-        rejectedAt: serverTimestamp()
-      });
-      console.log("Updated proposal status to rejected");
-      
-      // Create notification for the agent
-      console.log("Creating notification for agent");
-      await addDoc(collection(db, 'notifications'), {
-        type: 'proposal_rejected',
-        title: 'Proposal Rejected',
-        message: `Your proposal for ${listing.propertyAddress || listing.location || 'a property'} has been rejected.`,
-        userId: proposal.agentId,
-        read: false,
-        actionUrl: `/agent/proposals/${proposalId}`,
-        createdAt: serverTimestamp()
-      });
-      
-      // Update local state
-      setProposal({
-        ...proposal,
-        status: 'rejected',
-        rejectedReason: rejectReason || 'Declined by client',
-        rejectedAt: serverTimestamp()
-      });
-      
-      // Close modal
-      setShowRejectModal(false);
-      
-      // Show success message and reload page
-      setSuccess('Proposal rejected successfully');
-      
-      // Wait a moment before redirecting
-      setTimeout(() => {
-        navigate(-1);
-      }, 2000);
-      
-    } catch (err) {
-      console.error('Error rejecting proposal:', err);
-      setError('Failed to reject proposal: ' + err.message);
-    } finally {
-      setRejecting(false);
-    }
-  };
-
-  const getStatusStyle = (status) => {
-    if (!status) return { backgroundColor: '#f3f4f6', color: '#6b7280' };
-    
-    const statusLower = status.toLowerCase();
-    switch (statusLower) {
+  // Status badge styles
+  const getStatusBadgeStyle = (status) => {
+    switch (status) {
       case 'accepted':
-        return { backgroundColor: '#dcfce7', color: '#15803d' };
+      case 'Accepted':
+        return {
+          backgroundColor: '#dcfce7',
+          color: '#166534'
+        };
       case 'rejected':
-        return { backgroundColor: '#fee2e2', color: '#b91c1c' };
-      case 'active':
+      case 'Rejected':
+        return {
+          backgroundColor: '#fee2e2',
+          color: '#b91c1c'
+        };
       case 'pending':
-        return { backgroundColor: '#dbeafe', color: '#1e40af' };
+      case 'Pending':
       default:
-        return { backgroundColor: '#f3f4f6', color: '#6b7280' };
+        return {
+          backgroundColor: '#f3f4f6',
+          color: '#4b5563'
+        };
     }
   };
-
-  // Confirmation Modal Component
-  const AcceptConfirmationModal = () => (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        borderRadius: '0.5rem',
-        padding: '1.5rem',
-        width: isMobile ? '90%' : '30rem',
-        maxHeight: '90vh',
-        overflow: 'auto'
-      }}>
-        <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '1rem' }}>
-          Accept Proposal
-        </h3>
-        <div style={{ backgroundColor: '#f0fdf4', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1.5rem' }}>
-          <p style={{ color: '#166534', marginBottom: '1rem' }}>
-            <strong>You're about to accept this proposal from {agent?.displayName || 'this agent'}.</strong>
-          </p>
-          <p style={{ color: '#166534', marginBottom: '0.5rem' }}>
-            What happens next:
-          </p>
-          <ul style={{ paddingLeft: '1.5rem', color: '#166534' }}>
-            <li>All other proposals for this listing will be automatically rejected</li>
-            <li>Your listing status will be updated to "Accepted"</li>
-            <li>A transaction workspace will be created for you and the agent</li>
-            <li>The agent will be notified that their proposal was accepted</li>
-          </ul>
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
-          <Button
-            onClick={() => setShowAcceptConfirmation(false)}
-            variant="secondary"
-            style={{ border: '1px solid #d1d5db' }}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleAcceptProposal}
-            disabled={accepting}
-            style={{
-              backgroundColor: '#16a34a',
-              color: 'white'
-            }}
-          >
-            {accepting ? 'Accepting...' : 'Confirm Acceptance'}
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-
-  // Rejection Modal Component
-  const RejectModal = () => (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        borderRadius: '0.5rem',
-        padding: '1.5rem',
-        width: isMobile ? '90%' : '30rem',
-        maxHeight: '90vh',
-        overflow: 'auto'
-      }}>
-        <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '1rem' }}>
-          Reject Proposal
-        </h3>
-        <p style={{ marginBottom: '1rem', color: '#4b5563' }}>
-          Please provide a reason for rejecting this proposal (optional):
-        </p>
-        <textarea
-          value={rejectReason}
-          onChange={(e) => setRejectReason(e.target.value)}
-          placeholder="Optional: Provide feedback to the agent"
-          style={{
-            width: '100%',
-            minHeight: '5rem',
-            padding: '0.5rem',
-            borderRadius: '0.25rem',
-            border: '1px solid #d1d5db',
-            marginBottom: '1.5rem'
-          }}
-        />
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
-          <Button
-            onClick={() => setShowRejectModal(false)}
-            variant="secondary"
-            style={{ border: '1px solid #d1d5db' }}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleRejectProposal}
-            disabled={rejecting}
-            style={{
-              backgroundColor: '#ef4444',
-              color: 'white'
-            }}
-          >
-            {rejecting ? 'Rejecting...' : 'Confirm Rejection'}
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '3rem 1rem' }}>
-        <LoadingSpinner />
-        <span style={{ marginLeft: '1rem' }}>Loading proposal...</span>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div style={{ maxWidth: '48rem', margin: '0 auto', padding: '1rem' }}>
-        <div style={{ backgroundColor: '#fee2e2', color: '#b91c1c', padding: '1rem', borderRadius: '0.5rem' }}>
-          {error}
-        </div>
-        <div style={{ marginTop: '1rem', textAlign: 'center' }}>
-          <Button onClick={() => navigate(-1)}>
-            Go Back
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  if (!proposal || !listing || !agent) {
-    return (
-      <div style={{ maxWidth: '48rem', margin: '0 auto', padding: '1rem' }}>
-        <div style={{ backgroundColor: '#fef9c3', color: '#854d0e', padding: '1rem', borderRadius: '0.5rem' }}>
-          Proposal data incomplete
-        </div>
-        <div style={{ marginTop: '1rem', textAlign: 'center' }}>
-          <Button onClick={() => navigate(-1)}>
-            Go Back
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  // Case insensitive status check
-  const isAccepted = proposal.status?.toLowerCase() === 'accepted';
-  const isRejected = proposal.status?.toLowerCase() === 'rejected';
-  const isActive = proposal.status?.toLowerCase() === 'active' || proposal.status?.toLowerCase() === 'pending';
   
-  // Success message display
-  if (success) {
-    return (
-      <div style={{ maxWidth: '48rem', margin: '0 auto', padding: '1rem', textAlign: 'center' }}>
+  // Styles
+  const sectionStyle = {
+    marginBottom: '1rem',
+    padding: '0.75rem',
+    borderRadius: '0.375rem',
+    border: '1px solid #e5e7eb',
+    backgroundColor: '#f9fafb'
+  };
+  
+  const sectionHeaderStyle = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    cursor: 'pointer'
+  };
+  
+  // Format currency
+  const formatCurrency = (value) => {
+    if (!value && value !== 0) return 'Not specified';
+    return `$${Number(value).toLocaleString()}`;
+  };
+  
+  // Check if enhanced details exist
+  const hasEnhancedDetails = safeProposal.enhancedDetails && 
+    Object.keys(safeProposal.enhancedDetails).length > 0;
+
+  return (
+    <div style={{ 
+      borderRadius: '0.5rem',
+      border: '1px solid #e5e7eb',
+      overflow: 'hidden',
+      marginBottom: '1.5rem'
+    }}>
+      {/* Header */}
+      <div style={{ 
+        padding: '1rem',
+        backgroundColor: '#f3f4f6',
+        borderBottom: '1px solid #e5e7eb',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+      }}>
+        <div>
+          <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 'bold' }}>
+            {safeProposal.agentName}
+          </h3>
+          <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.875rem', color: '#6b7280' }}>
+            Submitted {formatDate(safeProposal.createdAt)}
+          </p>
+        </div>
+        
         <div style={{ 
-          backgroundColor: isRejected ? '#fee2e2' : '#dcfce7', 
-          color: isRejected ? '#b91c1c' : '#15803d', 
-          padding: '2rem', 
-          borderRadius: '0.5rem',
-          marginBottom: '1rem'
+          padding: '0.25rem 0.75rem',
+          borderRadius: '9999px',
+          fontSize: '0.75rem',
+          fontWeight: '500',
+          ...getStatusBadgeStyle(safeProposal.status)
         }}>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>
-            {success}
-          </h2>
-          <p>{isRejected ? 'Redirecting you back to proposals...' : 'Redirecting you to the transaction workspace...'}</p>
-          <div style={{ marginTop: '1rem' }}>
-            <LoadingSpinner />
-          </div>
+          {safeProposal.status}
         </div>
       </div>
-    );
-  }
-
-  // Enhanced version with better UI
-  return (
-    <div style={{ maxWidth: '48rem', margin: '0 auto', padding: '1rem' }}>
-      {showRejectModal && <RejectModal />}
-      {showAcceptConfirmation && <AcceptConfirmationModal />}
       
-      <Card>
-        <CardHeader style={{
-          backgroundColor: '#f9fafb',
-          padding: '1rem',
-          borderBottom: '1px solid #e5e7eb',
+      {/* Fee Structure */}
+      <div style={{ padding: '1rem', borderBottom: '1px solid #e5e7eb' }}>
+        <div style={{ 
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'center'
+          marginBottom: '0.5rem'
         }}>
-          <div>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>
-              Proposal Details
-            </h2>
-          </div>
-          <div>
-            <span style={{
-              padding: '0.25rem 0.75rem',
-              borderRadius: '9999px',
-              ...getStatusStyle(proposal.status),
+          <h4 style={{ margin: 0, fontSize: '0.875rem', fontWeight: '600' }}>
+            Fee Structure:
+          </h4>
+          <span style={{ 
+            fontSize: '0.875rem', 
+            fontWeight: '600',
+            color: '#2563eb'
+          }}>
+            {safeProposal.feeStructure === 'percentage' || safeProposal.commissionRate 
+              ? `${safeProposal.commissionRate || safeProposal.feePercentage}% Commission` 
+              : safeProposal.flatFee 
+                ? `${formatCurrency(safeProposal.flatFee)} Flat Fee`
+                : safeProposal.fee
+                  ? `${formatCurrency(safeProposal.fee)}`
+                  : 'Not specified'}
+          </span>
+        </div>
+        
+        {safeProposal.packageInfo && (
+          <div style={{ marginTop: '0.5rem' }}>
+            <p style={{ 
+              margin: '0 0 0.25rem 0', 
               fontSize: '0.875rem',
               fontWeight: '500'
             }}>
-              {proposal.status ? proposal.status.charAt(0).toUpperCase() + proposal.status.slice(1) : 'Pending'}
-            </span>
+              Service Package: {' '}
+              <span style={{ 
+                display: 'inline-block',
+                backgroundColor: '#e0f2fe',
+                color: '#0369a1',
+                padding: '0.125rem 0.5rem',
+                borderRadius: '9999px',
+                fontSize: '0.75rem'
+              }}>
+                {safeProposal.packageInfo.name}
+              </span>
+            </p>
           </div>
-        </CardHeader>
+        )}
         
-        <CardBody style={{ padding: '1.5rem' }}>
-          {/* Listing info */}
+        {(safeProposal.offerRebate || safeProposal.rebateAmount) && (
           <div style={{ 
-            backgroundColor: '#f9fafb', 
-            padding: '1rem', 
-            borderRadius: '0.5rem',
-            marginBottom: '1.5rem',
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: '0.75rem'
+            marginTop: '0.5rem',
+            backgroundColor: '#fffbeb',
+            borderRadius: '0.375rem',
+            padding: '0.5rem 0.75rem',
+            fontSize: '0.875rem',
+            color: '#92400e'
           }}>
-            <div style={{
-              backgroundColor: '#e0f2fe',
-              borderRadius: '50%',
-              width: '2.5rem',
-              height: '2.5rem',
+            <p style={{ margin: 0 }}>
+              <span style={{ fontWeight: '500' }}>Rebate Offer:</span> {safeProposal.rebateAmount}
+            </p>
+          </div>
+        )}
+      </div>
+      
+      {/* Services Included */}
+      <div style={{ padding: '1rem', borderBottom: '1px solid #e5e7eb' }}>
+        <h4 style={{ margin: '0 0 0.75rem 0', fontSize: '0.875rem', fontWeight: '600' }}>
+          Services Included:
+        </h4>
+        {safeProposal.services && safeProposal.services.length > 0 ? (
+          <ul style={{
+            padding: '0 0 0 1.25rem',
+            margin: 0,
+            columns: '2',
+            columnGap: '1rem',
+            fontSize: '0.875rem'
+          }}>
+            {safeProposal.services.map((service, index) => (
+              <li key={index} style={{ marginBottom: '0.375rem' }}>{service}</li>
+            ))}
+          </ul>
+        ) : (
+          <p style={{ fontSize: '0.875rem', color: '#6b7280', margin: 0 }}>
+            Standard services package
+          </p>
+        )}
+        
+        {safeProposal.additionalServices && (
+          <div style={{ marginTop: '0.75rem' }}>
+            <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.875rem', fontWeight: '600' }}>
+              Additional Services:
+            </h4>
+            <p style={{ margin: 0, fontSize: '0.875rem' }}>
+              {safeProposal.additionalServices}
+            </p>
+          </div>
+        )}
+      </div>
+      
+      {/* Enhanced Agent Details - NEW SECTION */}
+      {hasEnhancedDetails && (
+        <div style={{ padding: '1rem', borderBottom: '1px solid #e5e7eb' }}>
+          <h4 style={{ 
+            margin: '0 0 1rem 0', 
+            fontSize: '0.875rem', 
+            fontWeight: '600',
+            borderBottom: '1px dashed #e5e7eb',
+            paddingBottom: '0.5rem'
+          }}>
+            Agent Qualifications & Commitments
+          </h4>
+          
+          {/* Communication Section */}
+          {safeProposal.enhancedDetails.communication && 
+           Object.values(safeProposal.enhancedDetails.communication).some(val => val && (Array.isArray(val) ? val.length > 0 : val)) && (
+            <div style={sectionStyle}>
+              <div 
+                style={sectionHeaderStyle}
+                onClick={() => toggleSection('communication')}
+              >
+                <h5 style={{ margin: 0, fontSize: '0.875rem', fontWeight: '500' }}>
+                  Communication
+                </h5>
+                <span>{expandedSections.communication ? '−' : '+'}</span>
+              </div>
+              
+              {expandedSections.communication && (
+                <div style={{ marginTop: '0.75rem', fontSize: '0.875rem' }}>
+                  {safeProposal.enhancedDetails.communication.languages?.length > 0 && (
+                    <div style={{ marginBottom: '0.5rem' }}>
+                      <p style={{ margin: '0 0 0.25rem 0', fontWeight: '500' }}>Languages:</p>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
+                        {safeProposal.enhancedDetails.communication.languages.map((lang, idx) => (
+                          <span 
+                            key={idx}
+                            style={{
+                              backgroundColor: '#e0f2fe',
+                              color: '#0369a1',
+                              padding: '0.125rem 0.5rem',
+                              borderRadius: '9999px',
+                              fontSize: '0.75rem'
+                            }}
+                          >
+                            {lang}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {safeProposal.enhancedDetails.communication.responseTime && (
+                    <div style={{ marginBottom: '0.5rem' }}>
+                      <p style={{ margin: '0 0 0.25rem 0', fontWeight: '500' }}>Response Time:</p>
+                      <p style={{ margin: 0, color: '#4b5563' }}>
+                        {safeProposal.enhancedDetails.communication.responseTime === '1hour' ? 'Within 1 hour during business hours' :
+                         safeProposal.enhancedDetails.communication.responseTime === 'sameDay' ? 'Same business day' :
+                         safeProposal.enhancedDetails.communication.responseTime === '24hours' ? 'Within 24 hours' :
+                         safeProposal.enhancedDetails.communication.responseTime === '48hours' ? 'Within 48 hours' :
+                         safeProposal.enhancedDetails.communication.responseTime}
+                      </p>
+                    </div>
+                  )}
+                  
+                  {safeProposal.enhancedDetails.communication.updateFrequency && (
+                    <div style={{ marginBottom: '0.5rem' }}>
+                      <p style={{ margin: '0 0 0.25rem 0', fontWeight: '500' }}>Update Frequency:</p>
+                      <p style={{ margin: 0, color: '#4b5563' }}>
+                        {safeProposal.enhancedDetails.communication.updateFrequency === 'daily' ? 'Daily updates' :
+                         safeProposal.enhancedDetails.communication.updateFrequency === 'biweekly' ? 'Twice a week' :
+                         safeProposal.enhancedDetails.communication.updateFrequency === 'weekly' ? 'Weekly updates' :
+                         safeProposal.enhancedDetails.communication.updateFrequency === 'bimonthly' ? 'Every two weeks' :
+                         safeProposal.enhancedDetails.communication.updateFrequency === 'asNeeded' ? 'As needed when there are developments' :
+                         safeProposal.enhancedDetails.communication.updateFrequency}
+                      </p>
+                    </div>
+                  )}
+                  
+                  {/* Handle different property names for communication methods */}
+                  {(safeProposal.enhancedDetails.communication.communicationMethods?.length > 0 || 
+                    safeProposal.enhancedDetails.communication.methods?.length > 0) && (
+                    <div>
+                      <p style={{ margin: '0 0 0.25rem 0', fontWeight: '500' }}>Preferred Methods:</p>
+                      <ul style={{ margin: 0, paddingLeft: '1.5rem' }}>
+                        {/* Check both properties for different data structures */}
+                        {(safeProposal.enhancedDetails.communication.communicationMethods || 
+                          safeProposal.enhancedDetails.communication.methods || []).map((method, idx) => (
+                          <li key={idx}>
+                            {method === 'email' ? 'Email' :
+                             method === 'phone' ? 'Phone Calls' :
+                             method === 'text' ? 'Text Messages' :
+                             method === 'video' ? 'Video Calls' :
+                             method === 'inPerson' ? 'In-Person Meetings' :
+                             method}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* Experience & Expertise Section */}
+          {safeProposal.enhancedDetails.experience && 
+           Object.values(safeProposal.enhancedDetails.experience).some(val => val && (Array.isArray(val) ? val.length > 0 : val)) && (
+            <div style={sectionStyle}>
+              <div 
+                style={sectionHeaderStyle}
+                onClick={() => toggleSection('experience')}
+              >
+                <h5 style={{ margin: 0, fontSize: '0.875rem', fontWeight: '500' }}>
+                  Experience & Expertise
+                </h5>
+                <span>{expandedSections.experience ? '−' : '+'}</span>
+              </div>
+              
+              {expandedSections.experience && (
+                <div style={{ marginTop: '0.75rem', fontSize: '0.875rem' }}>
+                  {safeProposal.enhancedDetails.experience.yearsOfExperience && (
+                    <div style={{ marginBottom: '0.5rem' }}>
+                      <p style={{ margin: '0 0 0.25rem 0', fontWeight: '500' }}>Years of Experience:</p>
+                      <p style={{ margin: 0, color: '#4b5563' }}>
+                        {safeProposal.enhancedDetails.experience.yearsOfExperience}
+                      </p>
+                    </div>
+                  )}
+                  
+                  {safeProposal.enhancedDetails.experience.areaSpecialization && (
+                    <div style={{ marginBottom: '0.5rem' }}>
+                      <p style={{ margin: '0 0 0.25rem 0', fontWeight: '500' }}>Area Specialization:</p>
+                      <p style={{ margin: 0, color: '#4b5563' }}>
+                        {safeProposal.enhancedDetails.experience.areaSpecialization}
+                      </p>
+                    </div>
+                  )}
+                  
+                  {/* Support both property names for specializations */}
+                  {(safeProposal.enhancedDetails.experience.specializations?.length > 0 || 
+                    safeProposal.enhancedDetails.experience.propertyTypes?.length > 0) && (
+                    <div style={{ marginBottom: '0.5rem' }}>
+                      <p style={{ margin: '0 0 0.25rem 0', fontWeight: '500' }}>Specializations:</p>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
+                        {(safeProposal.enhancedDetails.experience.specializations || 
+                          safeProposal.enhancedDetails.experience.propertyTypes || []).map((spec, idx) => (
+                          <span 
+                            key={idx}
+                            style={{
+                              backgroundColor: '#f0fdf4',
+                              color: '#166534',
+                              padding: '0.125rem 0.5rem',
+                              borderRadius: '9999px',
+                              fontSize: '0.75rem'
+                            }}
+                          >
+                            {spec}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Support both property names for track record */}
+                  {(safeProposal.enhancedDetails.experience.trackRecord?.length > 0 || 
+                    safeProposal.enhancedDetails.experience.metrics?.length > 0) && (
+                    <div>
+                      <p style={{ margin: '0 0 0.25rem 0', fontWeight: '500' }}>Track Record Strengths:</p>
+                      <ul style={{ margin: 0, paddingLeft: '1.5rem' }}>
+                        {(safeProposal.enhancedDetails.experience.trackRecord || 
+                          safeProposal.enhancedDetails.experience.metrics || []).map((metric, idx) => (
+                          <li key={idx}>
+                            {metric === 'daysOnMarket' ? 'Low days on market / Quick closing ability' :
+                             metric === 'priceToListRatio' ? 'Strong negotiation results' :
+                             metric === 'closingRate' ? 'High closing success rate' :
+                             metric === 'volumeOfTransactions' ? 'High volume of transactions' :
+                             metric}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  
+                  {/* Support for neighborhoods property */}
+                  {safeProposal.enhancedDetails.experience.neighborhoods?.length > 0 && (
+                    <div style={{ marginTop: '0.5rem' }}>
+                      <p style={{ margin: '0 0 0.25rem 0', fontWeight: '500' }}>Neighborhood Expertise:</p>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
+                        {safeProposal.enhancedDetails.experience.neighborhoods.map((neighborhood, idx) => (
+                          <span 
+                            key={idx}
+                            style={{
+                              backgroundColor: '#fef3c7',
+                              color: '#92400e',
+                              padding: '0.125rem 0.5rem',
+                              borderRadius: '9999px',
+                              fontSize: '0.75rem'
+                            }}
+                          >
+                            {neighborhood}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* Availability Section */}
+          {(safeProposal.enhancedDetails.availability?.length > 0 || 
+            (safeProposal.enhancedDetails.availability && 
+             Object.values(safeProposal.enhancedDetails.availability).some(val => val))) && (
+            <div style={sectionStyle}>
+              <div 
+                style={sectionHeaderStyle}
+                onClick={() => toggleSection('availability')}
+              >
+                <h5 style={{ margin: 0, fontSize: '0.875rem', fontWeight: '500' }}>
+                  Availability
+                </h5>
+                <span>{expandedSections.availability ? '−' : '+'}</span>
+              </div>
+              
+              {expandedSections.availability && (
+                <div style={{ marginTop: '0.75rem', fontSize: '0.875rem' }}>
+                  {/* Handle Array or Object structure */}
+                  {Array.isArray(safeProposal.enhancedDetails.availability) ? (
+                    <div>
+                      <p style={{ margin: '0 0 0.25rem 0', fontWeight: '500' }}>Available Times:</p>
+                      <ul style={{ margin: 0, paddingLeft: '1.5rem' }}>
+                        {safeProposal.enhancedDetails.availability.map((time, idx) => (
+                          <li key={idx}>
+                            {time === 'weekdays' ? 'Standard weekday hours (9am-5pm)' :
+                             time === 'evenings' ? 'Weekday evenings (after 5pm)' :
+                             time === 'weekends' ? 'Weekends' :
+                             time}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : (
+                    // Object structure
+                    <div>
+                      {safeProposal.enhancedDetails.availability.times?.length > 0 && (
+                        <div style={{ marginBottom: '0.5rem' }}>
+                          <p style={{ margin: '0 0 0.25rem 0', fontWeight: '500' }}>Available Times:</p>
+                          <ul style={{ margin: 0, paddingLeft: '1.5rem' }}>
+                            {safeProposal.enhancedDetails.availability.times.map((time, idx) => (
+                              <li key={idx}>
+                                {time === 'weekdays' ? 'Standard weekday hours (9am-5pm)' :
+                                 time === 'evenings' ? 'Weekday evenings (after 5pm)' :
+                                 time === 'weekends' ? 'Weekends' :
+                                 time}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      
+                      {safeProposal.enhancedDetails.availability.flexibility && (
+                        <div>
+                          <p style={{ margin: '0 0 0.25rem 0', fontWeight: '500' }}>Scheduling Flexibility:</p>
+                          <p style={{ margin: 0, color: '#4b5563' }}>
+                            {safeProposal.enhancedDetails.availability.flexibility}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* Transaction Process Section - support both names */}
+          {(safeProposal.enhancedDetails.transaction || safeProposal.enhancedDetails.approach) && (
+            <div style={sectionStyle}>
+              <div 
+                style={sectionHeaderStyle}
+                onClick={() => toggleSection('transaction')}
+              >
+                <h5 style={{ margin: 0, fontSize: '0.875rem', fontWeight: '500' }}>
+                  Transaction Approach
+                </h5>
+                <span>{expandedSections.transaction ? '−' : '+'}</span>
+              </div>
+              
+              {expandedSections.transaction && (
+                <div style={{ marginTop: '0.75rem', fontSize: '0.875rem' }}>
+                  {/* Use transaction or approach depending on structure */}
+                  {(safeProposal.enhancedDetails.transaction?.negotiationStyle || 
+                    safeProposal.enhancedDetails.approach?.negotiationStyle) && (
+                    <div style={{ marginBottom: '0.5rem' }}>
+                      <p style={{ margin: '0 0 0.25rem 0', fontWeight: '500' }}>Negotiation Style:</p>
+                      <p style={{ margin: 0, color: '#4b5563' }}>
+                        {(safeProposal.enhancedDetails.transaction?.negotiationStyle || 
+                          safeProposal.enhancedDetails.approach?.negotiationStyle) === 'aggressive' ? 'Aggressive/Assertive' :
+                         (safeProposal.enhancedDetails.transaction?.negotiationStyle || 
+                          safeProposal.enhancedDetails.approach?.negotiationStyle) === 'balanced' ? 'Balanced/Firm-but-Fair' :
+                         (safeProposal.enhancedDetails.transaction?.negotiationStyle || 
+                          safeProposal.enhancedDetails.approach?.negotiationStyle) === 'collaborative' ? 'Collaborative/Cooperative' :
+                         (safeProposal.enhancedDetails.transaction?.negotiationStyle || 
+                          safeProposal.enhancedDetails.approach?.negotiationStyle) === 'analytical' ? 'Analytical/Data-Driven' :
+                          safeProposal.enhancedDetails.transaction?.negotiationStyle || 
+                          safeProposal.enhancedDetails.approach?.negotiationStyle}
+                      </p>
+                    </div>
+                  )}
+                  
+                  {(safeProposal.enhancedDetails.transaction?.documentationLevel || 
+                    safeProposal.enhancedDetails.approach?.documentation) && (
+                    <div style={{ marginBottom: '0.5rem' }}>
+                      <p style={{ margin: '0 0 0.25rem 0', fontWeight: '500' }}>Documentation Level:</p>
+                      <p style={{ margin: 0, color: '#4b5563' }}>
+                        {(safeProposal.enhancedDetails.transaction?.documentationLevel || 
+                          safeProposal.enhancedDetails.approach?.documentation) === 'comprehensive' ? 'Comprehensive/Detailed' :
+                         (safeProposal.enhancedDetails.transaction?.documentationLevel || 
+                          safeProposal.enhancedDetails.approach?.documentation) === 'standard' ? 'Standard/Thorough' :
+                         (safeProposal.enhancedDetails.transaction?.documentationLevel || 
+                          safeProposal.enhancedDetails.approach?.documentation) === 'streamlined' ? 'Streamlined/Efficient' :
+                          safeProposal.enhancedDetails.transaction?.documentationLevel || 
+                          safeProposal.enhancedDetails.approach?.documentation}
+                      </p>
+                    </div>
+                  )}
+                  
+                  {(safeProposal.enhancedDetails.transaction?.postClosingSupport || 
+                    safeProposal.enhancedDetails.approach?.postClosing) && (
+                    <div>
+                      <p style={{ margin: '0 0 0.25rem 0', fontWeight: '500' }}>Post-Closing Support:</p>
+                      <p style={{ margin: 0, color: '#4b5563' }}>
+                        {(safeProposal.enhancedDetails.transaction?.postClosingSupport || 
+                          safeProposal.enhancedDetails.approach?.postClosing) === 'premium' ? 'Premium (Ongoing assistance & check-ins)' :
+                         (safeProposal.enhancedDetails.transaction?.postClosingSupport || 
+                          safeProposal.enhancedDetails.approach?.postClosing) === 'standard' ? 'Standard (Available when needed)' :
+                         (safeProposal.enhancedDetails.transaction?.postClosingSupport || 
+                          safeProposal.enhancedDetails.approach?.postClosing) === 'basic' ? 'Basic (Closing day support)' :
+                          safeProposal.enhancedDetails.transaction?.postClosingSupport || 
+                          safeProposal.enhancedDetails.approach?.postClosing}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* Value-Added Services Section */}
+          {safeProposal.enhancedDetails.valueAdded && 
+           ((safeProposal.enhancedDetails.valueAdded.services?.length > 0) || 
+            (safeProposal.enhancedDetails.valueAdded.otherServices) ||
+            (safeProposal.enhancedDetails.valueAdded.specialFeatures)) && (
+            <div style={sectionStyle}>
+              <div 
+                style={sectionHeaderStyle}
+                onClick={() => toggleSection('valueAdded')}
+              >
+                <h5 style={{ margin: 0, fontSize: '0.875rem', fontWeight: '500' }}>
+                  Value-Added Services
+                </h5>
+                <span>{expandedSections.valueAdded ? '−' : '+'}</span>
+              </div>
+              
+              {expandedSections.valueAdded && (
+                <div style={{ marginTop: '0.75rem', fontSize: '0.875rem' }}>
+                  {safeProposal.enhancedDetails.valueAdded.services?.length > 0 && (
+                    <div style={{ marginBottom: '0.5rem' }}>
+                      <p style={{ margin: '0 0 0.25rem 0', fontWeight: '500' }}>Additional Services:</p>
+                      <ul style={{ margin: 0, paddingLeft: '1.5rem' }}>
+                        {safeProposal.enhancedDetails.valueAdded.services.map((service, idx) => (
+                          <li key={idx}>{service}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  
+                  {safeProposal.enhancedDetails.valueAdded.otherServices && (
+                    <div style={{ marginBottom: '0.5rem' }}>
+                      <p style={{ margin: '0 0 0.25rem 0', fontWeight: '500' }}>Other Services:</p>
+                      <p style={{ margin: 0, color: '#4b5563' }}>
+                        {safeProposal.enhancedDetails.valueAdded.otherServices}
+                      </p>
+                    </div>
+                  )}
+                  
+                  {safeProposal.enhancedDetails.valueAdded.specialFeatures && (
+                    <div>
+                      <p style={{ margin: '0 0 0.25rem 0', fontWeight: '500' }}>Special Features:</p>
+                      <p style={{ margin: 0, color: '#4b5563' }}>
+                        {safeProposal.enhancedDetails.valueAdded.specialFeatures}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+      
+      {/* Proposal Message */}
+      <div style={{ padding: '1rem', borderBottom: '1px solid #e5e7eb' }}>
+        <h4 style={{ margin: '0 0 0.75rem 0', fontSize: '0.875rem', fontWeight: '600' }}>
+          Agent Message:
+        </h4>
+        <p style={{ margin: 0, fontSize: '0.875rem', whiteSpace: 'pre-line' }}>
+          {safeProposal.message}
+        </p>
+      </div>
+      
+      {/* Action Buttons */}
+      {(safeProposal.status === 'Pending' || safeProposal.status === 'pending') && (
+        <div style={{ 
+          padding: '1rem',
+          display: 'flex',
+          justifyContent: 'space-between',
+          gap: '0.5rem'
+        }}>
+          <button
+            onClick={() => onMessage && onMessage(safeProposal)}
+            style={{
+              padding: '0.5rem 0.75rem',
+              border: '1px solid #d1d5db',
+              borderRadius: '0.375rem',
+              backgroundColor: 'white',
+              fontSize: '0.875rem',
+              cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0
-            }}>
-              <HomeIcon />
-            </div>
-            <div>
-              <h3 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '0.5rem' }}>
-                {proposal.listingType === 'buyer' 
-                  ? `Buyer Listing: ${listing.location || 'Not specified'}`
-                  : `Seller Listing: ${listing.address || 'Not specified'}`}
-              </h3>
-              <p style={{ 
-                fontSize: '0.875rem', 
-                color: '#6b7280',
-                margin: 0 
-              }}>
-                {proposal.listingType === 'buyer' 
-                  ? `Budget: ${listing.budget ? `$${listing.budget.toLocaleString()}` : 'Not specified'}`
-                  : `Price: ${listing.price ? `$${listing.price.toLocaleString()}` : 'Not specified'}`}
-              </p>
-            </div>
-          </div>
+              gap: '0.375rem'
+            }}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '1rem', height: '1rem' }}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+            </svg>
+            Message
+          </button>
           
-          {/* Agent info with message button */}
-          <div style={{ 
-            display: 'flex', 
-            flexDirection: isMobile ? 'column' : 'row',
-            alignItems: isMobile ? 'stretch' : 'flex-start', 
-            gap: '1rem', 
-            marginBottom: '2rem',
-            padding: '1rem',
-            backgroundColor: '#f3f4f6',
-            borderRadius: '0.5rem'
-          }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '1rem',
-              flex: 1
-            }}>
-              <div style={{
-                width: '3.5rem',
-                height: '3.5rem',
-                backgroundColor: '#dbeafe',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0
-              }}>
-                <UserIcon />
-              </div>
-              <div>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
-                  {agent.displayName}
-                </h3>
-                <p style={{ color: '#6b7280', fontSize: '0.875rem', marginBottom: '0.25rem' }}>
-                  <strong>Agency:</strong> {agent.brokerageName || 'Not specified'}
-                </p>
-                {agent.location && (
-                  <p style={{ color: '#6b7280', fontSize: '0.875rem', marginBottom: '0.25rem' }}>
-                    <strong>Location:</strong> {agent.location}
-                  </p>
-                )}
-              </div>
-            </div>
-            
-            {/* Message button */}
-            <div style={{ alignSelf: isMobile ? 'stretch' : 'center' }}>
-              <Button
-                onClick={handleMessage}
-                disabled={creatingChannel}
-                style={{ 
-                  backgroundColor: '#3b82f6', 
-                  color: 'white',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  width: isMobile ? '100%' : 'auto'
-                }}
-              >
-                <MessageIcon />
-                {existingChannel ? 'Continue Conversation' : 'Message Agent'}
-              </Button>
-            </div>
-          </div>
-          
-          {/* Proposal info */}
-          <div style={{ marginBottom: '2rem' }}>
-            <h3 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '1rem' }}>
-              Proposal Details
-            </h3>
-            <div style={{ 
-              padding: '1rem', 
-              backgroundColor: '#f9fafb', 
-              borderRadius: '0.5rem',
-              border: '1px solid #e5e7eb'
-            }}>
-              <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', 
-                gap: '1rem',
-                marginBottom: '1rem'
-              }}>
-                <div>
-                  <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '0.25rem' }}>
-                    Fee Structure
-                  </p>
-                  <p style={{ fontWeight: '500' }}>
-                    {proposal.feeStructure === 'percentage' ? 'Percentage Commission' : 'Flat Fee'}
-                  </p>
-                </div>
-                
-                {proposal.feeStructure === 'percentage' && (
-                  <div>
-                    <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '0.25rem' }}>
-                      Commission Rate
-                    </p>
-                    <p style={{ fontWeight: '500' }}>
-                      {proposal.commissionRate}%
-                    </p>
-                  </div>
-                )}
-                
-                {proposal.feeStructure === 'flat' && (
-                  <div>
-                    <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '0.25rem' }}>
-                      Flat Fee
-                    </p>
-                    <p style={{ fontWeight: '500' }}>
-                      ${proposal.flatFee}
-                    </p>
-                  </div>
-                )}
-              </div>
-              
-              {/* Services */}
-              {proposal.services && proposal.services.length > 0 && (
-                <div style={{ marginBottom: '1rem' }}>
-                  <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '0.5rem' }}>
-                    Services Included
-                  </p>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                    {proposal.services.map((service, index) => (
-                      <span key={index} style={{
-                        backgroundColor: '#e0f2fe',
-                        color: '#0369a1',
-                        padding: '0.25rem 0.5rem',
-                        borderRadius: '0.25rem',
-                        fontSize: '0.875rem'
-                      }}>
-                        {service}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {/* Agent Message */}
-              {proposal.message && (
-                <div>
-                  <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '0.5rem' }}>
-                    Agent's Message
-                  </p>
-                  <div style={{ 
-                    padding: '1rem', 
-                    backgroundColor: 'white', 
-                    borderRadius: '0.375rem',
-                    border: '1px solid #e5e7eb',
-                    whiteSpace: 'pre-wrap'
-                  }}>
-                    {proposal.message}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-          
-          {/* Action buttons */}
-          {isActive && (
-            <div style={{ 
-              display: 'flex', 
-              flexDirection: isMobile ? 'column' : 'row',
-              justifyContent: 'center', 
-              gap: '1rem',
-              marginTop: '2rem',
-              marginBottom: '1rem'
-            }}>
-              <Button
-                onClick={() => setShowRejectModal(true)}
-                style={{ 
-                  backgroundColor: '#ef4444', 
-                  color: 'white',
-                  padding: '0.75rem 1.25rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.5rem',
-                  fontSize: '1rem',
-                  width: isMobile ? '100%' : 'auto'
-                }}
-              >
-                <XCircle />
-                Reject Proposal
-              </Button>
-              
-              <Button
-                onClick={() => setShowAcceptConfirmation(true)}
-                disabled={accepting}
-                style={{ 
-                  backgroundColor: '#16a34a', 
-                  color: 'white',
-                  padding: '0.75rem 1.25rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.5rem',
-                  fontSize: '1rem',
-                  width: isMobile ? '100%' : 'auto'
-                }}
-              >
-                <CheckCircle />
-                Accept Proposal
-              </Button>
-            </div>
-          )}
-          
-          {/* Show if rejected */}
-          {isRejected && (
-            <div style={{ 
-              marginTop: '1rem',
-              padding: '1rem', 
-              backgroundColor: '#fee2e2', 
-              borderRadius: '0.5rem'
-            }}>
-              <h3 style={{ color: '#b91c1c', fontWeight: 'bold', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <XCircle />
-                Proposal Rejected
-              </h3>
-              {proposal.rejectedReason && (
-                <p style={{ color: '#b91c1c' }}>Reason: {proposal.rejectedReason}</p>
-              )}
-              {proposal.rejectedAt && (
-                <p style={{ color: '#b91c1c', fontSize: '0.875rem', marginTop: '0.5rem' }}>
-                  Rejected on {proposal.rejectedAt.toDate().toLocaleDateString()}
-                </p>
-              )}
-            </div>
-          )}
-          
-          {/* Show if accepted */}
-          {isAccepted && (
-            <div style={{ 
-              marginTop: '1rem',
-              padding: '1rem', 
-              backgroundColor: '#dcfce7', 
-              borderRadius: '0.5rem'
-            }}>
-              <h3 style={{ color: '#16a34a', fontWeight: 'bold', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <CheckCircle />
-                Proposal Accepted
-              </h3>
-              <p style={{ color: '#16a34a', marginBottom: '1rem' }}>
-                This proposal has been accepted and a transaction workspace has been created.
-              </p>
-              
-              {proposal.acceptedAt && (
-                <p style={{ color: '#16a34a', fontSize: '0.875rem', marginBottom: '1rem' }}>
-                  Accepted on {proposal.acceptedAt.toDate().toLocaleDateString()}
-                </p>
-              )}
-              
-              <div style={{ 
-                display: 'flex', 
-                flexDirection: isMobile ? 'column' : 'row',
-                gap: '1rem',
-                marginTop: '1rem'
-              }}>
-                {proposal.transactionId && (
-                  <Button
-                    onClick={() => navigate(`/transaction/${proposal.transactionId}`)}
-                    style={{ 
-                      backgroundColor: '#16a34a', 
-                      color: 'white',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.5rem',
-                      width: isMobile ? '100%' : 'auto'
-                    }}
-                  >
-                    Go to Transaction Workspace
-                  </Button>
-                )}
-                
-                <Button
-                  onClick={handleMessage}
-                  disabled={creatingChannel}
-                  style={{ 
-                    backgroundColor: '#3b82f6', 
-                    color: 'white',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.5rem',
-                    width: isMobile ? '100%' : 'auto'
-                  }}
-                >
-                  <MessageIcon />
-                  {existingChannel ? 'Continue Conversation' : 'Message Agent'}
-                </Button>
-              </div>
-            </div>
-          )}
-          
-          {/* Back button */}
-          <div style={{ marginTop: '2rem', textAlign: 'center' }}>
-            <Button
-              onClick={() => navigate(-1)}
-              variant="secondary"
-              style={{ padding: '0.5rem 1rem' }}
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button
+              onClick={() => onReject && onReject(safeProposal)}
+              style={{
+                padding: '0.5rem 0.75rem',
+                border: '1px solid #ef4444',
+                borderRadius: '0.375rem',
+                backgroundColor: 'white',
+                color: '#ef4444',
+                fontSize: '0.875rem',
+                cursor: 'pointer'
+              }}
             >
-              Back to Proposals
-            </Button>
+              Decline
+            </button>
+            
+            <button
+              onClick={() => onAccept && onAccept(safeProposal)}
+              style={{
+                padding: '0.5rem 0.75rem',
+                border: '1px solid #10b981',
+                borderRadius: '0.375rem',
+                backgroundColor: '#10b981',
+                color: 'white',
+                fontSize: '0.875rem',
+                cursor: 'pointer',
+                fontWeight: '500'
+              }}
+            >
+              Accept Proposal
+            </button>
           </div>
-        </CardBody>
-      </Card>
+        </div>
+      )}
     </div>
   );
 };

@@ -6,6 +6,7 @@ import { db } from '../../services/firebase/config';
 import { useAuth } from '../../contexts/AuthContext';
 import { Card, CardHeader, CardBody, CardFooter } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
+import EnhancedPreferencesDisplay from '../shared/EnhancedPreferencesDisplay';
 
 const SellerListingDetail = () => {
   const { listingId } = useParams();
@@ -277,7 +278,7 @@ const SellerListingDetail = () => {
             fontWeight: 'bold', 
             margin: 0 
           }}>
-            {listing.propertyName || 'Property Listing'}
+            {listing.title || listing.propertyName || 'Property Listing'}
           </h1>
           <div style={{ 
             backgroundColor: '#e0f2fe', 
@@ -288,7 +289,7 @@ const SellerListingDetail = () => {
             fontWeight: '500',
             alignSelf: isMobile ? 'flex-start' : 'center'
           }}>
-            {listing.status || 'Active'}
+            Seller Listing
           </div>
         </CardHeader>
         
@@ -297,7 +298,9 @@ const SellerListingDetail = () => {
             <h2 style={{ 
               fontSize: isMobile ? '1.125rem' : '1.25rem', 
               fontWeight: 'bold', 
-              marginBottom: '1rem' 
+              marginBottom: '1rem',
+              borderBottom: '1px solid #e5e7eb',
+              paddingBottom: '0.5rem'
             }}>
               Property Details
             </h2>
@@ -377,7 +380,7 @@ const SellerListingDetail = () => {
                   margin: '0 0 1rem 0',
                   fontSize: isMobile ? '0.875rem' : '1rem'
                 }}>
-                  {listing.price ? `$${listing.price.toLocaleString()}` : 'Not specified'}
+                  {listing.price ? `$${Number(listing.price).toLocaleString()}` : 'Not specified'}
                 </p>
                 
                 <p style={{ 
@@ -391,7 +394,7 @@ const SellerListingDetail = () => {
                   margin: '0 0 1rem 0',
                   fontSize: isMobile ? '0.875rem' : '1rem'
                 }}>
-                  {listing.squareFootage ? `${listing.squareFootage.toLocaleString()} sq ft` : 'Not specified'}
+                  {listing.squareFootage ? `${Number(listing.squareFootage).toLocaleString()} sq ft` : 'Not specified'}
                 </p>
               </div>
             </div>
@@ -401,7 +404,9 @@ const SellerListingDetail = () => {
             <h2 style={{ 
               fontSize: isMobile ? '1.125rem' : '1.25rem', 
               fontWeight: 'bold', 
-              marginBottom: '1rem' 
+              marginBottom: '1rem',
+              borderBottom: '1px solid #e5e7eb',
+              paddingBottom: '0.5rem'
             }}>
               Property Description
             </h2>
@@ -413,11 +418,51 @@ const SellerListingDetail = () => {
             </p>
           </div>
           
+          {/* Property Features Section - NEW! */}
+          {listing.features && listing.features.length > 0 && (
+            <div style={{ marginBottom: '2rem' }}>
+              <h2 style={{ 
+                fontSize: isMobile ? '1.125rem' : '1.25rem', 
+                fontWeight: 'bold', 
+                marginBottom: '1rem',
+                borderBottom: '1px solid #e5e7eb',
+                paddingBottom: '0.5rem'
+              }}>
+                Property Features
+              </h2>
+              
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
+                {listing.features.map((feature, index) => (
+                  <div key={index} style={{
+                    backgroundColor: '#f9fafb',
+                    border: '1px solid #e5e7eb',
+                    padding: '0.5rem 0.75rem',
+                    borderRadius: '0.375rem',
+                    fontSize: '0.875rem'
+                  }}>
+                    {feature}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {/* Enhanced Preferences Section - NEW! */}
+          {listing.enhancedPreferences && Object.keys(listing.enhancedPreferences).length > 0 && (
+            <EnhancedPreferencesDisplay 
+              preferences={listing.enhancedPreferences}
+              userType="seller"
+              isMobile={isMobile}
+            />
+          )}
+          
           <div style={{ marginBottom: '2rem' }}>
             <h2 style={{ 
               fontSize: isMobile ? '1.125rem' : '1.25rem', 
               fontWeight: 'bold', 
-              marginBottom: '1rem' 
+              marginBottom: '1rem',
+              borderBottom: '1px solid #e5e7eb',
+              paddingBottom: '0.5rem'
             }}>
               Agent Services Required
             </h2>
@@ -426,7 +471,8 @@ const SellerListingDetail = () => {
               <h3 style={{ 
                 fontSize: isMobile ? '0.9375rem' : '1rem', 
                 fontWeight: '600', 
-                marginBottom: '0.5rem' 
+                marginBottom: '0.5rem',
+                color: '#4b5563'
               }}>
                 Must-Have Services:
               </h3>
@@ -450,7 +496,8 @@ const SellerListingDetail = () => {
               <h3 style={{ 
                 fontSize: isMobile ? '0.9375rem' : '1rem', 
                 fontWeight: '600', 
-                marginBottom: '0.5rem' 
+                marginBottom: '0.5rem',
+                color: '#4b5563'
               }}>
                 Nice-to-Have Services:
               </h3>
@@ -475,7 +522,9 @@ const SellerListingDetail = () => {
             <h2 style={{ 
               fontSize: isMobile ? '1.125rem' : '1.25rem', 
               fontWeight: 'bold', 
-              marginBottom: '1rem' 
+              marginBottom: '1rem',
+              borderBottom: '1px solid #e5e7eb',
+              paddingBottom: '0.5rem'
             }}>
               Additional Information
             </h2>
@@ -483,7 +532,7 @@ const SellerListingDetail = () => {
               fontSize: isMobile ? '0.875rem' : '1rem',
               lineHeight: '1.6'
             }}>
-              {listing.additionalInfo || 'No additional information provided'}
+              {listing.additionalInfo || listing.additionalNotes || 'No additional information provided'}
             </p>
           </div>
         </CardBody>
@@ -580,6 +629,29 @@ const SellerListingDetail = () => {
                         </p>
                       </div>
                     </div>
+                    
+                    {/* Enhanced proposal details hint - shows if the proposal has enhanced details */}
+                    {proposal.enhancedDetails && Object.keys(proposal.enhancedDetails).some(key => 
+                      proposal.enhancedDetails[key] && 
+                      (typeof proposal.enhancedDetails[key] === 'object' ? 
+                        Object.keys(proposal.enhancedDetails[key]).length > 0 : 
+                        true)
+                    ) && (
+                      <div style={{
+                        backgroundColor: '#f0f9ff',
+                        border: '1px solid #bae6fd',
+                        borderRadius: '0.375rem',
+                        padding: '0.5rem 0.75rem',
+                        marginBottom: '0.75rem',
+                        fontSize: '0.875rem',
+                        color: '#0c4a6e'
+                      }}>
+                        <p style={{ margin: 0, fontWeight: '500' }}>
+                          <span style={{ marginRight: '0.5rem' }}>✓</span>
+                          This agent has provided detailed qualifications that match your preferences
+                        </p>
+                      </div>
+                    )}
                     
                     <p style={{ 
                       marginBottom: '1rem',

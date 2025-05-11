@@ -9,6 +9,7 @@ import { calculateTokenCost, getHighestPriorityBid } from '../../services/fireba
 import { Card, CardHeader, CardBody } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import ServiceSelector from '../services/ServiceSelector';
+import EnhancedProposalOptions from '../shared/EnhancedProposalOptions';
 import { sellerServices } from '../../config/services';
 import { subscriptionTiers, tokenPackages, getTokenPackagePrice } from '../../config/subscriptions';
 
@@ -32,6 +33,7 @@ const AgentSellerListingDetail = () => {
   const [bidLoading, setBidLoading] = useState(false);
   const [bidError, setBidError] = useState('');
   const [alreadyBid, setAlreadyBid] = useState(false);
+  const [enhancedDetails, setEnhancedDetails] = useState(null);
   
   // Dynamic token pricing states
   const [tokenCost, setTokenCost] = useState(2);
@@ -184,6 +186,10 @@ const AgentSellerListingDetail = () => {
       setCommissionRate(packageRates[info.packageId] || '');
     }
   };
+
+  const handleEnhancedDetailsChange = (details) => {
+    setEnhancedDetails(details);
+  };
   
   const handleSubmitBid = async (e) => {
     e.preventDefault();
@@ -238,7 +244,7 @@ const AgentSellerListingDetail = () => {
         .filter(service => selectedServices.includes(service.id))
         .map(service => service.name);
       
-      // Create the proposal document with priority information
+      // Create the proposal document with priority information and enhanced details
       await addDoc(collection(db, 'proposals'), {
         listingId,
         listingType: 'seller',
@@ -254,6 +260,8 @@ const AgentSellerListingDetail = () => {
         tokenCost: tokenCost,
         boostAmount: boostAmount,
         totalTokensSpent: totalTokensNeeded,
+        // Enhanced details
+        enhancedDetails: enhancedDetails,
         status: 'Pending',
         createdAt: serverTimestamp()
       });
@@ -265,6 +273,7 @@ const AgentSellerListingDetail = () => {
       setFlatFee('');
       setPackageInfo(null);
       setBoostAmount(0);
+      setEnhancedDetails(null);
       
       // Show a success message or redirect
       alert('Your proposal has been submitted successfully!');
@@ -633,6 +642,193 @@ const AgentSellerListingDetail = () => {
             <p>{listing.description || 'No description provided'}</p>
           </div>
           
+          {/* Enhanced Preferences Section - NEW! */}
+          {listing.enhancedPreferences && (
+            <div style={{ marginBottom: '2rem' }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>
+                Additional Agent Preferences
+              </h2>
+              
+              {/* Communication Preferences */}
+              {listing.enhancedPreferences.communication && (
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '0.5rem' }}>
+                    Communication Preferences:
+                  </h3>
+                  
+                  {listing.enhancedPreferences.communication.languages?.length > 0 && (
+                    <div style={{ marginBottom: '0.75rem' }}>
+                      <h4 style={{ fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.25rem' }}>
+                        Language Preferences:
+                      </h4>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                        {listing.enhancedPreferences.communication.languages.map((language, index) => (
+                          <span
+                            key={index}
+                            style={{
+                              backgroundColor: '#e0f2fe',
+                              color: '#0369a1',
+                              padding: '0.25rem 0.75rem',
+                              borderRadius: '9999px',
+                              fontSize: '0.75rem'
+                            }}
+                          >
+                            {language}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {listing.enhancedPreferences.communication.communicationMethods?.length > 0 && (
+                    <div style={{ marginBottom: '0.75rem' }}>
+                      <h4 style={{ fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.25rem' }}>
+                        Preferred Communication Methods:
+                      </h4>
+                      <ul style={{ margin: 0, paddingLeft: '1.5rem' }}>
+                        {listing.enhancedPreferences.communication.communicationMethods.map((method, index) => (
+                          <li key={index}>
+                            {method === 'email' ? 'Email' : 
+                             method === 'phone' ? 'Phone Calls' : 
+                             method === 'text' ? 'Text Messages' : 
+                             method === 'video' ? 'Video Calls' : 
+                             method === 'inPerson' ? 'In-Person Meetings' : method}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  
+                  {listing.enhancedPreferences.communication.responseTimeExpectation && (
+                    <div style={{ marginBottom: '0.75rem' }}>
+                      <h4 style={{ fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.25rem' }}>
+                        Response Time Expectation:
+                      </h4>
+                      <p style={{ margin: 0 }}>
+                        {listing.enhancedPreferences.communication.responseTimeExpectation === '1hour' ? 'Within 1 hour during business hours' :
+                         listing.enhancedPreferences.communication.responseTimeExpectation === 'sameDay' ? 'Same business day' :
+                         listing.enhancedPreferences.communication.responseTimeExpectation === '24hours' ? 'Within 24 hours' :
+                         listing.enhancedPreferences.communication.responseTimeExpectation === '48hours' ? 'Within 48 hours' :
+                         listing.enhancedPreferences.communication.responseTimeExpectation === 'notImportant' ? 'Not a priority' :
+                         listing.enhancedPreferences.communication.responseTimeExpectation}
+                      </p>
+                    </div>
+                  )}
+                  
+                  {listing.enhancedPreferences.communication.updateFrequency && (
+                    <div>
+                      <h4 style={{ fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.25rem' }}>
+                        Preferred Update Frequency:
+                      </h4>
+                      <p style={{ margin: 0 }}>
+                        {listing.enhancedPreferences.communication.updateFrequency === 'daily' ? 'Daily updates' :
+                         listing.enhancedPreferences.communication.updateFrequency === 'biweekly' ? 'Twice a week' :
+                         listing.enhancedPreferences.communication.updateFrequency === 'weekly' ? 'Weekly updates' :
+                         listing.enhancedPreferences.communication.updateFrequency === 'bimonthly' ? 'Every two weeks' :
+                         listing.enhancedPreferences.communication.updateFrequency === 'asNeeded' ? 'Only when there are developments' :
+                         listing.enhancedPreferences.communication.updateFrequency}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {/* Experience & Expertise Preferences */}
+              {listing.enhancedPreferences.expertise && (
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '0.5rem' }}>
+                    Experience & Expertise Preferences:
+                  </h3>
+                  
+                  {listing.enhancedPreferences.expertise.minExperienceYears && (
+                    <div style={{ marginBottom: '0.75rem' }}>
+                      <h4 style={{ fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.25rem' }}>
+                        Minimum Years of Experience:
+                      </h4>
+                      <p style={{ margin: 0 }}>
+                        {listing.enhancedPreferences.expertise.minExperienceYears === '1' ? 'At least 1 year' :
+                         listing.enhancedPreferences.expertise.minExperienceYears === '3' ? 'At least 3 years' :
+                         listing.enhancedPreferences.expertise.minExperienceYears === '5' ? 'At least 5 years' :
+                         listing.enhancedPreferences.expertise.minExperienceYears === '10' ? 'At least 10 years' :
+                         listing.enhancedPreferences.expertise.minExperienceYears === '15' ? 'At least 15 years' :
+                         listing.enhancedPreferences.expertise.minExperienceYears}
+                      </p>
+                    </div>
+                  )}
+                  
+                  {listing.enhancedPreferences.expertise.specialistInNeighborhood && (
+                    <div style={{ marginBottom: '0.75rem' }}>
+                      <p style={{ 
+                        margin: 0, 
+                        padding: '0.5rem 0.75rem', 
+                        backgroundColor: '#fef9c3', 
+                        color: '#854d0e', 
+                        borderRadius: '0.375rem',
+                        fontSize: '0.875rem',
+                        fontWeight: '500'
+                      }}>
+                        <span style={{ marginRight: '0.5rem' }}>⭐</span>
+                        This seller specifically wants an agent who specializes in their neighborhood
+                      </p>
+                    </div>
+                  )}
+                  
+                  {listing.enhancedPreferences.expertise.specializations?.length > 0 && (
+                    <div style={{ marginBottom: '0.75rem' }}>
+                      <h4 style={{ fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.25rem' }}>
+                        Preferred Specializations:
+                      </h4>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                        {listing.enhancedPreferences.expertise.specializations.map((specialization, index) => (
+                          <span
+                            key={index}
+                            style={{
+                              backgroundColor: '#f0fdf4',
+                              color: '#166534',
+                              padding: '0.25rem 0.75rem',
+                              borderRadius: '9999px',
+                              fontSize: '0.75rem'
+                            }}
+                          >
+                            {specialization === 'luxury' ? 'Luxury Properties' :
+                             specialization === 'investment' ? 'Investment Properties' :
+                             specialization === 'newConstruction' ? 'New Construction' :
+                             specialization === 'historic' ? 'Historic Homes' :
+                             specialization === 'shortSale' ? 'Short Sales' :
+                             specialization === 'distress' ? 'Distress Sales' :
+                             specialization}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {listing.enhancedPreferences.expertise.trackRecordMetrics && (
+                    <div>
+                      <h4 style={{ fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.25rem' }}>
+                        Track Record Metrics That Matter:
+                      </h4>
+                      <ul style={{ margin: 0, paddingLeft: '1.5rem' }}>
+                        {listing.enhancedPreferences.expertise.trackRecordMetrics.daysOnMarket && (
+                          <li>Quick sales ability</li>
+                        )}
+                        {listing.enhancedPreferences.expertise.trackRecordMetrics.priceToListRatio && (
+                          <li>Strong negotiation results</li>
+                        )}
+                        {listing.enhancedPreferences.expertise.trackRecordMetrics.closingRate && (
+                          <li>High closing success rate</li>
+                        )}
+                        {listing.enhancedPreferences.expertise.trackRecordMetrics.volumeOfTransactions && (
+                          <li>High volume of transactions</li>
+                        )}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+          
           {listing.services && (
             <div style={{ marginBottom: '2rem' }}>
               <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>
@@ -953,6 +1149,14 @@ const AgentSellerListingDetail = () => {
                   />
                 </div>
                 
+                {/* Enhanced Proposal Options - NEW! */}
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <EnhancedProposalOptions
+                    userType="seller"
+                    onChange={handleEnhancedDetailsChange}
+                  />
+                </div>
+                
                 <div style={{ marginBottom: '1.5rem' }}>
                   <label 
                     htmlFor="bidMessage" 
@@ -998,6 +1202,7 @@ const AgentSellerListingDetail = () => {
                       setFlatFee('');
                       setBidError('');
                       setBoostAmount(0);
+                      setEnhancedDetails(null);
                     }}
                     disabled={bidLoading}
                   >

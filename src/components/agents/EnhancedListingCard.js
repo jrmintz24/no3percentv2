@@ -34,7 +34,8 @@ const EnhancedListingCard = ({ listing, onSelect }) => {
     
     // For buyer listings
     if (isBuyerListing) {
-      const location = listing.location || 'Any location';
+      const location = listing.location || (listing.locations && listing.locations.length > 0 ? 
+        listing.locations[0] : 'Any location');
       const bedrooms = listing.bedrooms ? `${listing.bedrooms} bed` : '';
       const bathrooms = listing.bathrooms ? `${listing.bathrooms} bath` : '';
       const roomInfo = bedrooms || bathrooms ? `${bedrooms}${bedrooms && bathrooms ? '/' : ''}${bathrooms}` : '';
@@ -72,6 +73,26 @@ const EnhancedListingCard = ({ listing, onSelect }) => {
       return 'Recently';
     }
   };
+
+  // Check if listing has enhanced preferences
+  const hasEnhancedPreferences = listing.enhancedPreferences && 
+    Object.keys(listing.enhancedPreferences).some(key => 
+      listing.enhancedPreferences[key] && 
+      (typeof listing.enhancedPreferences[key] === 'object' ? 
+        Object.keys(listing.enhancedPreferences[key]).length > 0 : 
+        true)
+    );
+  
+  // Count how many preference categories are specified
+  const getPreferenceCategoriesCount = () => {
+    if (!listing.enhancedPreferences) return 0;
+    return Object.keys(listing.enhancedPreferences).filter(key => 
+      listing.enhancedPreferences[key] && 
+      (typeof listing.enhancedPreferences[key] === 'object' ? 
+        Object.keys(listing.enhancedPreferences[key]).length > 0 : 
+        true)
+    ).length;
+  };
   
   return (
     <div 
@@ -85,7 +106,11 @@ const EnhancedListingCard = ({ listing, onSelect }) => {
         transition: 'all 0.2s',
         backgroundColor: '#ffffff',
         boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-        position: 'relative'
+        position: 'relative',
+        ':hover': {
+          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+          transform: 'translateY(-2px)'
+        }
       }}
     >
       {/* Header with listing type and status badges */}
@@ -110,6 +135,26 @@ const EnhancedListingCard = ({ listing, onSelect }) => {
         </div>
         
         <div style={{ display: 'flex', gap: '0.5rem' }}>
+          {/* Enhanced Preferences Badge - NEW */}
+          {hasEnhancedPreferences && (
+            <div style={{
+              backgroundColor: '#eef2ff',
+              color: '#4338ca',
+              padding: '0.25rem 0.75rem',
+              borderRadius: '9999px',
+              fontSize: '0.75rem',
+              fontWeight: '500',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.25rem'
+            }}>
+              <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+              </svg>
+              {getPreferenceCategoriesCount()} Detailed Preferences
+            </div>
+          )}
+          
           {/* Verification Badge */}
           {listing.verificationStatus === 'verified' && (
             <div style={{
@@ -242,6 +287,96 @@ const EnhancedListingCard = ({ listing, onSelect }) => {
         </div>
       )}
       
+      {/* Enhanced Preferences Preview - NEW */}
+      {hasEnhancedPreferences && (
+        <div style={{ 
+          marginTop: '0.75rem',
+          backgroundColor: '#f9fafb',
+          padding: '0.75rem',
+          borderRadius: '0.375rem',
+          border: '1px dashed #d1d5db'
+        }}>
+          <div style={{ 
+            fontSize: '0.875rem', 
+            fontWeight: '500',
+            marginBottom: '0.5rem',
+            color: '#4338ca',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}>
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+            </svg>
+            Agent Preference Requirements
+          </div>
+          
+          <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+            This {isBuyerListing ? 'buyer' : 'seller'} has specified detailed preferences for their ideal agent.
+            <div style={{ fontWeight: '500', marginTop: '0.5rem', color: '#4b5563' }}>
+              Including requirements for:
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem' }}>
+              {listing.enhancedPreferences?.communication && (
+                <span style={{
+                  backgroundColor: '#e0e7ff',
+                  color: '#4338ca',
+                  padding: '0.25rem 0.5rem',
+                  borderRadius: '0.25rem',
+                  fontSize: '0.75rem'
+                }}>
+                  Communication Style
+                </span>
+              )}
+              {listing.enhancedPreferences?.experience && (
+                <span style={{
+                  backgroundColor: '#fef3c7',
+                  color: '#92400e',
+                  padding: '0.25rem 0.5rem',
+                  borderRadius: '0.25rem',
+                  fontSize: '0.75rem'
+                }}>
+                  Experience & Expertise
+                </span>
+              )}
+              {listing.enhancedPreferences?.availability && (
+                <span style={{
+                  backgroundColor: '#dcfce7',
+                  color: '#166534',
+                  padding: '0.25rem 0.5rem',
+                  borderRadius: '0.25rem',
+                  fontSize: '0.75rem'
+                }}>
+                  Availability
+                </span>
+              )}
+              {listing.enhancedPreferences?.approach && (
+                <span style={{
+                  backgroundColor: '#dbeafe',
+                  color: '#1e40af',
+                  padding: '0.25rem 0.5rem',
+                  borderRadius: '0.25rem',
+                  fontSize: '0.75rem'
+                }}>
+                  Transaction Approach
+                </span>
+              )}
+              {listing.enhancedPreferences?.valueAdded && (
+                <span style={{
+                  backgroundColor: '#ffe4e6',
+                  color: '#be123c',
+                  padding: '0.25rem 0.5rem',
+                  borderRadius: '0.25rem',
+                  fontSize: '0.75rem'
+                }}>
+                  Value-Added Services
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Listing date and view button */}
       <div style={{ 
         display: 'flex', 
@@ -255,16 +390,26 @@ const EnhancedListingCard = ({ listing, onSelect }) => {
           Listed: {formatDate(listing.createdAt)}
         </div>
         
-        <button style={{
-          backgroundColor: '#2563eb',
-          color: 'white',
-          border: 'none',
-          padding: '0.5rem 1rem',
-          borderRadius: '0.375rem',
-          fontSize: '0.875rem',
-          fontWeight: '500',
-          cursor: 'pointer'
-        }}>
+        <button 
+          onClick={(e) => {
+            e.stopPropagation(); // Prevent card click event from firing
+            onSelect(listing);
+          }}
+          style={{
+            backgroundColor: '#2563eb',
+            color: 'white',
+            border: 'none',
+            padding: '0.5rem 1rem',
+            borderRadius: '0.375rem',
+            fontSize: '0.875rem',
+            fontWeight: '500',
+            cursor: 'pointer',
+            transition: 'background-color 0.2s',
+            ':hover': {
+              backgroundColor: '#1d4ed8'
+            }
+          }}
+        >
           View Details
         </button>
       </div>

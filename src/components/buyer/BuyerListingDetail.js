@@ -8,6 +8,7 @@ import { Card, CardHeader, CardBody, CardFooter } from '../../components/common/
 import { Button } from '../../components/common/Button';
 import BuyerListingForm from './BuyerListingForm';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import EnhancedPreferencesDisplay from '../shared/EnhancedPreferencesDisplay';
 
 const BuyerListingDetail = () => {
   const { listingId } = useParams();
@@ -311,7 +312,7 @@ const BuyerListingDetail = () => {
             fontWeight: '500',
             alignSelf: isMobile ? 'flex-start' : 'center'
           }}>
-            {listing.status || 'Active'}
+            Buyer Listing
           </div>
         </CardHeader>
         
@@ -320,7 +321,9 @@ const BuyerListingDetail = () => {
             <h2 style={{ 
               fontSize: isMobile ? '1.125rem' : '1.25rem', 
               fontWeight: 'bold', 
-              marginBottom: '1rem' 
+              marginBottom: '1rem',
+              borderBottom: '1px solid #e5e7eb',
+              paddingBottom: '0.5rem'
             }}>
               Property Details
             </h2>
@@ -342,7 +345,8 @@ const BuyerListingDetail = () => {
                   margin: '0 0 1rem 0',
                   fontSize: isMobile ? '0.875rem' : '1rem'
                 }}>
-                  {listing.location || 'Not specified'}
+                  {listing.location || (listing.locations && listing.locations.length > 0 ? 
+                    listing.locations.join(', ') : 'Not specified')}
                 </p>
                 
                 <p style={{ 
@@ -356,7 +360,9 @@ const BuyerListingDetail = () => {
                   margin: '0 0 1rem 0',
                   fontSize: isMobile ? '0.875rem' : '1rem'
                 }}>
-                  {listing.propertyType || 'Not specified'}
+                  {listing.propertyType || 
+                   (listing.propertyTypes && listing.propertyTypes.length > 0 ? 
+                    listing.propertyTypes.join(', ') : 'Not specified')}
                 </p>
                 
                 <p style={{ 
@@ -400,7 +406,11 @@ const BuyerListingDetail = () => {
                   margin: '0 0 1rem 0',
                   fontSize: isMobile ? '0.875rem' : '1rem'
                 }}>
-                  {listing.budget ? `$${listing.budget.toLocaleString()}` : 'Not specified'}
+                  {listing.budget ? 
+                    `$${Number(listing.budget).toLocaleString()}` : 
+                    listing.priceRange?.min && listing.priceRange?.max ? 
+                    `$${Number(listing.priceRange.min).toLocaleString()} - $${Number(listing.priceRange.max).toLocaleString()}` : 
+                    'Not specified'}
                 </p>
                 
                 <p style={{ 
@@ -424,7 +434,9 @@ const BuyerListingDetail = () => {
             <h2 style={{ 
               fontSize: isMobile ? '1.125rem' : '1.25rem', 
               fontWeight: 'bold', 
-              marginBottom: '1rem' 
+              marginBottom: '1rem',
+              borderBottom: '1px solid #e5e7eb',
+              paddingBottom: '0.5rem'
             }}>
               Requirements
             </h2>
@@ -433,7 +445,8 @@ const BuyerListingDetail = () => {
               <h3 style={{ 
                 fontSize: isMobile ? '0.9375rem' : '1rem', 
                 fontWeight: '600', 
-                marginBottom: '0.5rem' 
+                marginBottom: '0.5rem',
+                color: '#4b5563'
               }}>
                 Must-Have Features:
               </h3>
@@ -457,7 +470,8 @@ const BuyerListingDetail = () => {
               <h3 style={{ 
                 fontSize: isMobile ? '0.9375rem' : '1rem', 
                 fontWeight: '600', 
-                marginBottom: '0.5rem' 
+                marginBottom: '0.5rem',
+                color: '#4b5563'
               }}>
                 Nice-to-Have Features:
               </h3>
@@ -478,11 +492,61 @@ const BuyerListingDetail = () => {
             </div>
           </div>
           
+          {/* Enhanced Preferences Section - NEW! */}
+          {listing.enhancedPreferences && Object.keys(listing.enhancedPreferences).length > 0 && (
+            <EnhancedPreferencesDisplay 
+              preferences={listing.enhancedPreferences}
+              userType="buyer"
+              isMobile={isMobile}
+            />
+          )}
+          
+          {/* Payment Preferences */}
+          {listing.paymentPreference && (
+            <div style={{ marginBottom: '2rem' }}>
+              <h2 style={{ 
+                fontSize: isMobile ? '1.125rem' : '1.25rem', 
+                fontWeight: 'bold', 
+                marginBottom: '1rem',
+                borderBottom: '1px solid #e5e7eb',
+                paddingBottom: '0.5rem'
+              }}>
+                Payment Preferences
+              </h2>
+              
+              <div style={{ 
+                backgroundColor: '#f3f4f6',
+                padding: '1rem',
+                borderRadius: '0.5rem'
+              }}>
+                <p style={{ 
+                  margin: '0 0 0.5rem 0',
+                  fontWeight: '500'
+                }}>
+                  Preferred Payment Type: {listing.paymentPreference.type === 'flat_fee' ? 'Flat Fee' : 'Commission Percentage'}
+                </p>
+                
+                {listing.paymentPreference.requireRebate && (
+                  <p style={{ 
+                    margin: '0',
+                    color: '#2563eb',
+                    fontWeight: '500'
+                  }}>
+                    <span style={{ marginRight: '0.5rem' }}>💰</span>
+                    Requires rebate if seller pays commission
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+          
           <div>
             <h2 style={{ 
               fontSize: isMobile ? '1.125rem' : '1.25rem', 
               fontWeight: 'bold', 
-              marginBottom: '1rem' 
+              marginBottom: '1rem',
+              borderBottom: '1px solid #e5e7eb',
+              paddingBottom: '0.5rem'
             }}>
               Additional Information
             </h2>
@@ -587,6 +651,29 @@ const BuyerListingDetail = () => {
                         </p>
                       </div>
                     </div>
+                    
+                    {/* Enhanced proposal details hint - shows if the proposal has enhanced details */}
+                    {proposal.enhancedDetails && Object.keys(proposal.enhancedDetails).some(key => 
+                      proposal.enhancedDetails[key] && 
+                      (typeof proposal.enhancedDetails[key] === 'object' ? 
+                        Object.keys(proposal.enhancedDetails[key]).length > 0 : 
+                        true)
+                    ) && (
+                      <div style={{
+                        backgroundColor: '#f0f9ff',
+                        border: '1px solid #bae6fd',
+                        borderRadius: '0.375rem',
+                        padding: '0.5rem 0.75rem',
+                        marginBottom: '0.75rem',
+                        fontSize: '0.875rem',
+                        color: '#0c4a6e'
+                      }}>
+                        <p style={{ margin: 0, fontWeight: '500' }}>
+                          <span style={{ marginRight: '0.5rem' }}>✓</span>
+                          This agent has provided detailed qualifications that match your preferences
+                        </p>
+                      </div>
+                    )}
                     
                     <p style={{ 
                       marginBottom: '1rem',

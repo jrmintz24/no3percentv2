@@ -1,18 +1,20 @@
 // src/components/buyer/BuyerListingForm.js
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { useNavigate, useParams } from 'react-router-dom';
+import { collection, addDoc, serverTimestamp, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../services/firebase/config';
 import { useAuth } from '../../contexts/AuthContext';
 import { Card, CardHeader, CardBody, CardFooter } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import ServiceSelector from '../services/ServiceSelector';
+import EnhancedPreferenceSelector from '../shared/EnhancedPreferenceSelector';
 import { buyerServices } from '../../config/services';
 
-const BuyerListingForm = () => {
+const BuyerListingForm = ({ existingListingMode }) => {
   const { currentUser, userProfile } = useAuth();
   const navigate = useNavigate();
+  const { listingId } = useParams();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   
   const [formData, setFormData] = useState({
@@ -29,13 +31,16 @@ const BuyerListingForm = () => {
     preferredMoveInDate: '',
     financingType: 'conventional',
     preApprovalAmount: '',
-    additionalNotes: ''
+    additionalNotes: '',
+    // Add enhanced preferences structure
+    enhancedPreferences: null
   });
 
   const [currentLocation, setCurrentLocation] = useState('');
   const [currentFeature, setCurrentFeature] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [initialLoading, setInitialLoading] = useState(existingListingMode);
 
   // Handle resize
   useEffect(() => {
@@ -46,6 +51,32 @@ const BuyerListingForm = () => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Fetch existing listing data if in edit mode
+  useEffect(() => {
+    const fetchListing = async () => {
+      if (!existingListingMode || !listingId) return;
+      
+      try {
+        const docRef = doc(db, 'buyerListings', listingId);
+        const docSnap = await getDoc(docRef);
+        
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setFormData(data);
+        } else {
+          setError('Listing not found');
+        }
+      } catch (err) {
+        console.error('Error fetching listing:', err);
+        setError('Failed to load listing data');
+      } finally {
+        setInitialLoading(false);
+      }
+    };
+    
+    fetchListing();
+  }, [existingListingMode, listingId]);
 
   const propertyTypes = [
     'Single Family Home',
@@ -148,6 +179,14 @@ const BuyerListingForm = () => {
     }));
   };
 
+  // Handler for enhanced preferences
+  const handleEnhancedPreferencesChange = (preferences) => {
+    setFormData(prev => ({
+      ...prev,
+      enhancedPreferences: preferences
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -159,22 +198,42 @@ const BuyerListingForm = () => {
         userId: currentUser.uid,
         userEmail: currentUser.email,
         userName: userProfile?.displayName || 'Anonymous',
-        paymentPreference: formData.paymentPreference,
         status: 'active',
-        createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       };
 
-      const docRef = await addDoc(collection(db, 'buyerListings'), listingData);
+      if (!existingListingMode) {
+        // Creating a new listing
+        listingData.createdAt = serverTimestamp();
+        const docRef = await addDoc(collection(db, 'buyerListings'), listingData);
+        navigate(`/buyer/listing/${docRef.id}`);
+      } else {
+        // Updating an existing listing
+        const docRef = doc(db, 'buyerListings', listingId);
+        await updateDoc(docRef, listingData);
+        navigate(`/buyer/listing/${listingId}`);
+      }
       
-      navigate(`/buyer/listing/${docRef.id}`);
     } catch (err) {
-      console.error('Error creating listing:', err);
-      setError('Failed to create listing. Please try again.');
+      console.error('Error with listing:', err);
+      setError(`Failed to ${existingListingMode ? 'update' : 'create'} listing. Please try again.`);
     } finally {
       setLoading(false);
     }
   };
+
+  if (initialLoading) {
+    return (
+      <div style={{ 
+        maxWidth: '800px', 
+        margin: '0 auto', 
+        padding: '2rem 1rem',
+        textAlign: 'center'
+      }}>
+        Loading listing data...
+      </div>
+    );
+  }
 
   return (
     <div style={{ 
@@ -189,7 +248,7 @@ const BuyerListingForm = () => {
             fontWeight: 'bold', 
             marginBottom: '0.5rem' 
           }}>
-            Create Your Buyer Profile
+            {existingListingMode ? 'Edit Your Buyer Profile' : 'Create Your Buyer Profile'}
           </h1>
           <p style={{ 
             color: '#6b7280',
@@ -633,6 +692,15 @@ const BuyerListingForm = () => {
               </div>
             </div>
 
+            {/* Enhanced Agent Preferences Section - NEW! */}
+            <div style={{ marginBottom: '2rem' }}>
+              <EnhancedPreferenceSelector 
+                userType="buyer"
+                initialPreferences={formData.enhancedPreferences}
+                onChange={handleEnhancedPreferencesChange}
+              />
+            </div>
+
             {/* Services Selection with Packages */}
             <div style={{ marginBottom: '2rem' }}>
               <h2 style={{ 
@@ -649,6 +717,7 @@ const BuyerListingForm = () => {
                 onSelectionChange={handleServiceSelection}
                 userType="buyer"
                 onPackageChange={handlePackageChange}
+                onPaymentPreferenceChange={handlePaymentPreferenceChange}
                 basePropertyValue={Number(formData.priceRange.max) || 500000}
                 isMobile={isMobile}
               />
@@ -739,7 +808,7 @@ const BuyerListingForm = () => {
                 disabled={loading}
                 style={isMobile ? { width: '100%' } : {}}
               >
-                {loading ? 'Creating Profile...' : 'Create Profile'}
+                {loading ? (existingListingMode ? 'Updating...' : 'Creating...') : (existingListingMode ? 'Update Profile' : 'Create Profile')}
               </Button>
             </div>
           </CardFooter>
